@@ -1,20 +1,22 @@
 # Implementation plan
 
 The work is split into small tasks with explicit dependencies.
-The order is intentional: data first, Agents plus Backend second, and Frontend last.
+The order is intentional: data foundation first, Data and Agents plus Backend in parallel, and Frontend last.
 
 The shared target is one reliable offline demo loop.
 
 ```text
-bundled data
-    -> backend pipeline
+data contract and fixtures
+    -> data and backend work in parallel
     -> typed API fixtures
     -> dashboard
 ```
 
-## Track 1: Data foundation
+## Track 1: Data foundation and curation
 
 This track makes the demo inputs trustworthy and reproducible.
+It does not mean every real external integration must be finished before backend work starts.
+The minimal contract and fixture set are the first dependency.
 
 | ID | Task | Depends on | Done when |
 | --- | --- | --- | --- |
@@ -24,21 +26,23 @@ This track makes the demo inputs trustworthy and reproducible.
 | DATA-04 | Complete the intervention catalog citations | DATA-01 | Every catalog action has usable provenance and required policy fields. |
 | DATA-05 | Implement the local cache read/write layer | DATA-01 | Cached snapshots round-trip with timestamps and source metadata. |
 | DATA-06 | Implement synthetic demo reports and structuring fixtures | DATA-01 | Initial reports and the Cheeca Rocks update load deterministically. |
-| DATA-07 | Implement NOAA and AGRRA snapshot adapters | DATA-05 | Prefetch can populate cache, and forced-cache mode never calls the network. |
-| DATA-08 | Add data validation and a repeatable fixture check | DATA-02, DATA-03, DATA-04, DATA-06 | One command proves the demo inputs are complete and honestly labeled. |
+| DATA-07 | Implement NOAA and AGRRA snapshot adapters | DATA-05 | Prefetch can populate cache, and forced-cache mode never calls the network. This does not block the offline backend slice. |
+| DATA-08 | Add data validation and a repeatable fixture check | DATA-02, DATA-03, DATA-04, DATA-05, DATA-06 | One command proves the demo inputs are complete and honestly labeled. |
 
 Data track handoff: the backend can load sites, scenario, catalog, cached signals, and demo reports without network access.
+The real NOAA and AGRRA adapters can finish after the fixture-backed backend path exists.
 
 ## Track 2: Agents plus Backend
 
-This track turns the data foundation into a deterministic, testable decision pipeline.
+This track turns the minimal data foundation into a deterministic, testable decision pipeline.
+It can start as soon as DATA-01 and the relevant fixture contracts are stable.
 The LLM remains behind a stub or fixture implementation until the deterministic path works.
 
 | ID | Task | Depends on | Done when |
 | --- | --- | --- | --- |
 | BACK-01 | Implement site score calculation | DATA-02 | Ecological and strategic values are separate and tested. |
-| BACK-02 | Implement deterministic thermal evidence | DATA-07 | DHW and HotSpot produce documented alert and support behavior. |
-| BACK-03 | Implement fixture-backed disease, runoff, and physical evidence | DATA-06, DATA-07 | All four causes return support, confidence, rationale, citations, and provenance. |
+| BACK-02 | Implement deterministic thermal evidence | DATA-01 | DHW and HotSpot fixtures produce documented alert and support behavior. |
+| BACK-03 | Implement fixture-backed disease, runoff, and physical evidence | DATA-06 | All four causes return support, confidence, rationale, citations, and provenance. |
 | BACK-04 | Implement evidence fusion | BACK-02, BACK-03 | Dominant causes, ambiguity, and lowest confidence are deterministic and tested. |
 | BACK-05 | Implement policy catalog loading and eligibility | DATA-04, BACK-04 | Only source-backed, condition-compatible actions reach the Coordinator. |
 | AGENT-01 | Implement Coordinator prompt and fixture decisions | BACK-04, BACK-05 | Ambiguous cases request named evidence; clear cases approve only eligible actions. |
@@ -69,7 +73,10 @@ Frontend work starts after BACK-10 provides stable API responses or fixtures mat
 
 ## Execution rules
 
-- Finish DATA-01 through DATA-08 before depending on live external services.
+- Finish DATA-01 before parallel implementation begins.
+- Use labeled fixture data to unblock backend work; real external curation is a hardening task, not the first blocker.
+- Finish DATA-02, DATA-03, DATA-04, and DATA-06 before the offline plan handoff.
+- Finish DATA-05 and DATA-07 before claiming the external-data path is demo-ready.
 - Finish BACK-08 before polishing the dashboard.
 - Keep the first Coordinator implementation deterministic and fixture-backed.
 - Do not make the frontend invent fields that are absent from the API contract.
@@ -78,5 +85,5 @@ Frontend work starts after BACK-10 provides stable API responses or fixtures mat
 
 ## First milestone
 
-The first milestone is DATA-01 through DATA-08 plus BACK-01 through BACK-08.
+The first milestone is DATA-01 plus the minimal fixture tasks DATA-02, DATA-03, DATA-04, and DATA-06, together with BACK-01 through BACK-08.
 Its acceptance test is a cached `GET /plan/current` response containing a valid `ResponsePlan`, the simulated-data banner, provenance, assignments or deferrals, and binding constraints.

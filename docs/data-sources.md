@@ -1,6 +1,7 @@
 # Data sources
 
 Every adapter records, for every value it returns, whether the value came from a live call or from cache, and the timestamp of the snapshot.
+The versioned fixture and provenance contract is defined in `backend/src/reefcommand/domain/provenance.py` and documented in `backend/src/reefcommand/data/README.md`.
 
 ## NOAA Coral Reef Watch
 
