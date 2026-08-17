@@ -48,6 +48,8 @@ jobs:
   frontend:
     name: Dashboard
     runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
     defaults:
       run:
         working-directory: frontend
@@ -86,16 +88,16 @@ jobs:
 
       - name: No em dashes
         run: |
-          # AGENT.md forbids the em dash and en dash characters anywhere in the repo.
+          # AGENTS.md forbids the em dash and en dash characters anywhere in the repo.
           if grep -rInP '\x{2014}|\x{2013}' --exclude-dir=.git .; then
-            echo "::error::Found an em dash or en dash. Use a plain dash '-' instead. See AGENT.md."
+            echo "::error::Found an em dash or en dash. Use a plain dash '-' instead. See AGENTS.md."
             exit 1
           fi
           echo "No em dashes found."
 
       - name: No AI co-author trailers
         run: |
-          # AGENT.md forbids AI attribution in commit messages.
+          # AGENTS.md forbids AI attribution in commit messages.
           base="${{ github.event.pull_request.base.sha }}"
           head="${{ github.event.pull_request.head.sha }}"
           if [ -z "$base" ]; then
@@ -103,7 +105,7 @@ jobs:
             exit 0
           fi
           if git log --format='%B' "$base..$head" | grep -inE 'co-authored-by:.*(claude|copilot|cursor|codex|bot)|generated with'; then
-            echo "::error::Commit message contains AI attribution. See AGENT.md."
+            echo "::error::Commit message contains AI attribution. See AGENTS.md."
             exit 1
           fi
           echo "Commit messages are clean."

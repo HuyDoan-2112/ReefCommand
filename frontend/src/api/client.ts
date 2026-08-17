@@ -1,8 +1,10 @@
 /**
  * Typed fetch client for the ReefCommand API.
  *
- * Requests go through the Vite dev proxy at /api, so the base URL is configured
- * in one place rather than sprinkled through feature code.
+ * Requests go to the same-origin `/api` path, which Next.js rewrites to the
+ * Python backend (see next.config.ts). Same origin means no CORS setup, and one
+ * place to change the backend location rather than a base URL sprinkled through
+ * feature code.
  */
 
 const BASE_URL = '/api';

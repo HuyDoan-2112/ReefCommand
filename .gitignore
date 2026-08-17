@@ -60,9 +60,11 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Frontend build output
-frontend/dist/
+frontend/.next/
+frontend/out/
 frontend/build/
-frontend/.vite/
+frontend/.vercel/
+next-env.d.ts
 *.tsbuildinfo
 
 # Cached external data
@@ -91,6 +93,8 @@ tmp/
 # One-time bootstrap scripts, not part of the project
 /bootstrap-git.ps1
 /write-github-files.ps1
+/create-issues.ps1
+/new-pr.ps1
 
 # Editors and OS
 .vscode/

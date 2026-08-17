@@ -3,8 +3,7 @@
  *
  * Composition only. Feature logic lives under src/features.
  */
-
-export function PlanPage() {
+export default function PlanPage() {
   return (
     <main className="page">
       <h1>ReefCommand</h1>
