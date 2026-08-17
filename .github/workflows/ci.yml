@@ -23,12 +23,15 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
+          # The lockfile lives in backend/, not at the repository root.
+          cache-dependency-glob: backend/uv.lock
 
       - name: Set up Python
         run: uv python install 3.12
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        # The `data` extra (pandas, xarray, netcdf4) is not needed to lint or test.
+        run: uv sync --locked
 
       - name: Lint
         run: uv run ruff check .
@@ -77,6 +80,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The commit-message check walks base..head, so a shallow clone is not enough.
+          fetch-depth: 0
 
       - name: No em dashes
         run: |
