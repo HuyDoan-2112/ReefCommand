@@ -4,8 +4,9 @@ Label: `track:data`
 
 ## Priority
 
-Data is the first implementation track.
-The rest of the system must be able to run from reproducible, honestly labeled fixtures before live integrations are attempted.
+The data contract and minimal fixtures are the first dependency.
+After that, data curation and Agents plus Backend work in parallel.
+The backend must be able to run from reproducible, honestly labeled fixtures before live integrations are attempted.
 
 ## You own
 
@@ -21,11 +22,14 @@ The rest of the system must be able to run from reproducible, honestly labeled f
 
 ## First deliverables
 
+- Define the fixture and provenance contract before parallel work begins.
 - Complete site, resource, intervention, and demo observation fixtures.
 - Implement cache read/write and forced-cache behavior.
 - Preserve source URL, snapshot timestamp, review metadata, and provenance.
 - Provide deterministic fixture data for the initial plan and the Cheeca Rocks evidence update.
 - Make the prefetch and seed scripts executable without a task runner.
+
+Real NOAA and AGRRA adapter work is important, but it must not block the fixture-backed backend path.
 
 ## Rules
 

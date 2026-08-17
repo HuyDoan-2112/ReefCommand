@@ -402,18 +402,18 @@ If a feature does not strengthen this closed loop, treat it as secondary.
 ## Build plan
 
 Work is split into small tasks in `docs/implementation-plan.md`.
-The order is strict:
+The dependency order is:
 
-1. Data foundation.
-2. Agents plus Backend.
-3. Frontend.
+1. Minimal data contract and reproducible fixtures.
+2. Data curation and Agents plus Backend in parallel.
+3. Frontend after stable API fixtures.
 
 Data tasks produce reproducible, honestly labeled fixtures and cached signals.
-Agents plus Backend tasks turn those inputs into a complete offline plan and stable API.
+Agents plus Backend tasks can use those fixtures while real NOAA and AGRRA adapters are still being hardened.
 Frontend tasks start only after the API serves fixtures matching its OpenAPI contract.
 
 The first milestone is a cached `GET /plan/current` response containing a valid `ResponsePlan`, provenance, the simulated-data banner, assignments or deferrals, and binding constraints.
-Live external services, live LLM calls, and dashboard polish are later milestones.
+Exhaustive real-data curation, live external services, live LLM calls, and dashboard polish are later milestones.
 
 ## Repository map
 
