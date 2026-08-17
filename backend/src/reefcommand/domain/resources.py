@@ -10,7 +10,9 @@ without declaring what it is.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from reefcommand.domain.enums import Provenance
 
@@ -30,7 +32,17 @@ class DiveTeam(BaseModel):
     team_id: str
     name: str
     diver_count: int = Field(ge=1)
-    available_hours: float = Field(ge=0.0)
+    available_hours: float = Field(
+        ge=0.0,
+        description=(
+            "Team-level elapsed in-water hours available in the planning window. "
+            "These are not diver-hours and must not be multiplied by diver_count."
+        ),
+    )
+    available_hours_basis: Literal["team_elapsed_hours"] = Field(
+        default="team_elapsed_hours",
+        description="The unit represented by available_hours.",
+    )
     certifications: list[str] = Field(default_factory=list)
 
 
@@ -58,6 +70,13 @@ class ResourceScenario(BaseModel):
     budget_usd: float = Field(ge=0.0)
     daylight_hours: float = Field(ge=0.0)
 
+    @model_validator(mode="after")
+    def require_simulated_provenance(self) -> ResourceScenario:
+        """Reject resource data that could be displayed as live capacity."""
+        if self.provenance is not Provenance.SIMULATED:
+            raise ValueError("prototype resource scenarios must use simulated provenance")
+        return self
+
     @property
     def is_simulated(self) -> bool:
         return self.provenance is Provenance.SIMULATED
@@ -68,4 +87,4 @@ class ResourceScenario(BaseModel):
             return (
                 "Simulated operational capacity. Not a real organization's fleet or personnel data."
             )
-        return f"Operational capacity: {self.label}"
+        raise ValueError("cannot display a resource scenario without simulated provenance")

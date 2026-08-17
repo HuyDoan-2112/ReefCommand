@@ -39,16 +39,19 @@ records:
           name: Dive Team A
           diver_count: 3
           available_hours: 4.7
+          available_hours_basis: team_elapsed_hours
           certifications: []
         - team_id: team_2
           name: Dive Team B
           diver_count: 2
           available_hours: 4.4
+          available_hours_basis: team_elapsed_hours
           certifications: []
         - team_id: team_3
           name: Dive Team C
           diver_count: 2
           available_hours: 4.1
+          available_hours_basis: team_elapsed_hours
           certifications: []
       inventory:
         shade_units: 4
@@ -64,11 +67,12 @@ records:
         SIMULATED capacity. Anchors, per field.
         operational_hours 6.0: Keys Marine Laboratory FY2026 rate sheet defines a
         full vessel day as 6 hrs (https://www.fio.usf.edu/wp-content/uploads/2026/03/2026-KML-Facilities-Rates_FINAL.pdf).
-        available_hours 4.7 / 4.4 / 4.1: in-water hours per diver-day derived from the
-        Florida Keys Coral Disease Strike Team final reports, 980 h over 237 diver-days
-        in FY2021-22 (4.13) and 1173 h over 251 diver-days in FY2022-23 (4.67). The three
-        teams span that observed range rather than repeating one value. Derived by us
-        from published totals; the ratio itself is not published.
+        available_hours 4.7 / 4.4 / 4.1: team-level elapsed in-water hours, using the
+        Florida Keys Coral Disease Strike Team final reports as a proxy source: 980 h
+        over 237 diver-days in FY2021-22 (4.13) and 1173 h over 251 diver-days in
+        FY2022-23 (4.67). The three teams span that observed range rather than repeating
+        one value. These are team elapsed hours, not diver-hours, and the conversion from
+        the published per-diver-day ratios is a ReefCommand modelling assumption.
         diver_count 3 / 2 / 2: AAUS Standards section 2.30 makes the buddy pair the
         in-water minimum; the Strike Team reports imply about 2.47 divers per boat-day
         (237 diver-days over 96 boat-days). No published divers-per-boat figure exists
@@ -103,16 +107,19 @@ records:
           name: Dive Team A
           diver_count: 3
           available_hours: 4.7
+          available_hours_basis: team_elapsed_hours
           certifications: []
         - team_id: team_2
           name: Dive Team B
           diver_count: 2
           available_hours: 4.4
+          available_hours_basis: team_elapsed_hours
           certifications: []
         - team_id: team_3
           name: Dive Team C
           diver_count: 2
           available_hours: 4.1
+          available_hours_basis: team_elapsed_hours
           certifications: []
       inventory:
         shade_units: 4

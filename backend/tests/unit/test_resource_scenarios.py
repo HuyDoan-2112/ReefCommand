@@ -50,6 +50,26 @@ def test_the_banner_says_simulated(scenarios) -> None:
         assert "not a real organization" in record.data.display_banner().lower()
 
 
+def test_team_hours_have_an_explicit_unit(scenarios) -> None:
+    for record in scenarios.records:
+        for team in record.data.dive_teams:
+            assert team.available_hours_basis == "team_elapsed_hours"
+
+
+def test_live_resource_data_is_rejected() -> None:
+    with pytest.raises(ValueError, match="simulated provenance"):
+        ResourceScenario(
+            scenario_id="live_capacity",
+            label="Unexpected live capacity",
+            provenance=Provenance.LIVE,
+            boats=[],
+            dive_teams=[],
+            inventory={},
+            budget_usd=0.0,
+            daylight_hours=0.0,
+        )
+
+
 def test_the_outage_variant_differs_only_in_vessel_availability(scenarios) -> None:
     """The teams still exist. They have no second vessel. That is the point."""
     default = by_id(scenarios, "demo_default")
@@ -87,10 +107,13 @@ def test_dive_teams_meet_the_buddy_pair_minimum(scenarios) -> None:
             assert team.diver_count >= 2
 
 
-def test_dive_hours_sit_in_the_observed_range(scenarios) -> None:
-    """Derived from the Florida Keys Coral Disease Strike Team reports: 4.13 and 4.67
-    in-water hours per diver-day across two fiscal years. Values outside that range
-    would no longer be anchored to anything published."""
+def test_team_hours_sit_in_the_observed_range(scenarios) -> None:
+    """Team-hour proxies are based on the observed per-diver-day range.
+
+    The fixture treats each team's shared in-water window as elapsed team time,
+    rather than diver-hours. Values outside the observed range would no longer be
+    anchored to the cited reports.
+    """
     for record in scenarios.records:
         for team in record.data.dive_teams:
             assert 4.0 <= team.available_hours <= 5.0
