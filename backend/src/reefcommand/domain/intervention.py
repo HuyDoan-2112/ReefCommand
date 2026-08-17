@@ -23,15 +23,22 @@ from reefcommand.domain.enums import ActionClass, Cause
 
 
 class ResourceRequirement(BaseModel):
-    """What one execution of an action costs from the simulated capacity pool."""
+    """What one execution of an action costs from the simulated capacity pool.
 
-    model_config = ConfigDict(frozen=True)
+    Every field here must have a counterpart in `resources.Inventory` or in the
+    scenario, or the optimizer cannot constrain on it. `extra="forbid"` is set so
+    that a catalog entry naming a resource this model does not carry fails at load
+    rather than being silently dropped, which would make the constraint invisible.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     boats: int = Field(default=0, ge=0)
     dive_teams: int = Field(default=0, ge=0)
     dive_hours: float = Field(default=0.0, ge=0.0)
     shade_units: int = Field(default=0, ge=0)
     monitoring_kits: int = Field(default=0, ge=0)
+    sampling_kits: int = Field(default=0, ge=0)
     cost_usd: float = Field(default=0.0, ge=0.0)
 
 

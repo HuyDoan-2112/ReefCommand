@@ -11,7 +11,12 @@
 # applicable to the evidence pattern. It does NOT mean the action is guaranteed
 # to work at a given site.
 #
-# TODO: replace every "provenance: TODO" with a real citation before the demo.
+# CITATION STANDARD. Every provenance names a specific document, its publisher,
+# its year, and a URL. Where the operative method is spread across more than one
+# document, all of them are named. Where an action rests on agency guidance
+# rather than a formal standard, the provenance says which it is. Where a source
+# is a news release or a practitioner blog post rather than a technical document,
+# the provenance says so, because a reviewer should be able to discount it.
 
 interventions:
   - action_id: intensive_monitoring
@@ -30,8 +35,23 @@ interventions:
       monitoring_kits: 1
       cost_usd: 800.0
     expected_compatibility: 0.7
-    provenance: "TODO: cite the monitoring protocol this follows."
-    notes: "Always eligible at a low bar. This is the fallback when capacity is short."
+    provenance: >
+      Formal field protocol. NOAA Coral Reef Conservation Program (2022).
+      National Coral Reef Monitoring Program Benthic Community Assessment Survey
+      Field Protocols for U.S. Atlantic: Florida, Flower Garden Banks, Puerto Rico,
+      and U.S. Virgin Islands. DOI 10.25923/0708-8333.
+      https://repository.library.noaa.gov/view/noaa/41725/noaa_41725_DS1.pdf
+      Specifies a 15 m line point intercept survey with 100 points, and a 15 x 2 m
+      belt for ESA-listed corals and reef complexity.
+    notes: >
+      Always eligible at a low bar. This is the fallback when capacity is short.
+      NCRMP is chosen over the two Florida alternatives deliberately. FWC CREMP is
+      a fixed permanently staked station design and cannot be applied to an
+      arbitrary site. The Florida Reef Resilience Program Disturbance Response
+      Monitoring programme publishes quick-look reports and datasets but no
+      standalone protocol document, so it is not citable as a method here.
+      Goergen et al. 2020, NOAA NOS NCCOS 279, is the right citation instead if
+      this action is ever narrowed to restoration-site monitoring.
 
   - action_id: targeted_disease_survey
     action_class: targeted_disease_survey
@@ -49,7 +69,23 @@ interventions:
       monitoring_kits: 1
       cost_usd: 1200.0
     expected_compatibility: 0.8
-    provenance: "TODO: cite the SCTLD survey protocol used."
+    provenance: >
+      Composite, because no single Florida document joins the survey method to the
+      diagnostic criteria. Diagnostic criteria: Florida DEP (2018), Case Definition,
+      Stony Coral Tissue Loss Disease, 2 October 2018,
+      https://floridadep.gov/sites/default/files/Copy%20of%20StonyCoralTissueLossDisease_CaseDefinition%20final%2010022018.pdf
+      Survey method: SCTLD Census Swim Survey, Reef Resilience Network / AGRRA,
+      https://reefresilience.org/wp-content/uploads/SCTLD-Census-Swim-Survey.pdf
+      Lesion photography as practice: Neely, K. (2022), Florida Keys Coral Disease
+      Strike Team FY 2021/2022 Final Report, Florida DEP,
+      https://floridadep.gov/sites/default/files/6.%20Florida%20Keys%20Coral%20Disease%20Strike%20Team%20FY%202021-2022%20Final%20Report_0.pdf
+    notes: >
+      Provenance weakness, stated rather than hidden. The census swim survey sheet
+      carries no author or date, and it says photographs "are not required". The
+      photography step in this action's title comes from the Strike Team treatment
+      workflow, which is an intervention record rather than a surveillance protocol.
+      If a reviewer challenges the photography requirement, that challenge is
+      correct and the action title should narrow to a census swim survey.
 
   - action_id: biosecurity_workflow
     action_class: biosecurity_workflow
@@ -59,12 +95,26 @@ interventions:
     minimum_confidence: 0.4
     requirements:
       - "A dive is already scheduled at this site"
-    contraindications: []
+    contraindications:
+      - "Disinfectant contact time cannot be met between consecutive dives"
     resources:
       dive_hours: 0.5
       cost_usd: 150.0
     expected_compatibility: 0.9
-    provenance: "TODO: cite the biosecurity guidance followed."
+    provenance: >
+      Agency guidance. Florida Keys National Marine Sanctuary, NOAA (2019).
+      Coral Disease Decontamination Protocol, version dated 30 October 2019.
+      https://nmsfloridakeys.blob.core.windows.net/floridakeys-prod/media/docs/coral-disease-decontamination-protocol.pdf
+      Specifies a 10 minute soak in 1 percent bleach for non-sensitive equipment,
+      0.5 percent RelyOn or 1 percent Virkon S for exposure suits and regulators,
+      and the dive-order rule: "The preferred option is to dive the cleanest site
+      first and move to the dirtiest site last."
+    notes: >
+      Pin the 2019 version. An earlier 9 October 2018 version circulates on other
+      sites and specifies a materially different 10 percent bleach concentration.
+      The dive-order rule is what makes this action worth scheduling even when a
+      site is not itself the treatment target, since it constrains the order of the
+      whole day rather than one dive.
 
   - action_id: water_quality_investigation
     action_class: water_quality_investigation
@@ -82,7 +132,23 @@ interventions:
       sampling_kits: 1
       cost_usd: 900.0
     expected_compatibility: 0.7
-    provenance: "TODO: cite the water-quality sampling protocol used."
+    provenance: >
+      Institutional technical report carrying the operative method. Briceno, H.O.
+      and Boyer, J.N. (2015). 2014 Annual Report of the Water Quality Monitoring
+      Project for the Water Quality Protection Program of the Florida Keys National
+      Marine Sanctuary. Southeast Environmental Research Center, Florida
+      International University, SERC Research Report 111.
+      https://digitalcommons.fiu.edu/sercrp/111/
+      Specifies surface collection at about 0.25 m and near-bottom at about 1 m by
+      Niskin bottle, with CTD depth profiles of temperature, salinity, dissolved
+      oxygen, PAR, chlorophyll a fluorescence and turbidity in NTU.
+    notes: >
+      No standalone FKNMS Water Quality Protection Program protocol or quality
+      assurance plan is publicly posted. The programme pages describe parameters and
+      quarterly frequency but link to no method document, so the operative
+      methodology is published inside the SERC annual reports and is cited that way.
+      For regulatory-grade sampling the binding documents are Florida DEP SOPs
+      FS 2100 and FT 1600, incorporated by reference into Chapter 62-160 F.A.C.
 
   - action_id: physical_damage_assessment
     action_class: physical_damage_assessment
@@ -99,7 +165,21 @@ interventions:
       dive_hours: 4.0
       cost_usd: 1100.0
     expected_compatibility: 0.75
-    provenance: "TODO: cite the damage-assessment protocol used."
+    provenance: >
+      Agency guidance, explicitly not a formal standard. Collier, C., Dodge, R.,
+      Gilliam, D., Gracie, K., Gregg, L., Jaap, W., Mastry, M. and Poulos, N. (2007).
+      Rapid Response and Restoration for Coral Reef Injuries in Southeast Florida:
+      Guidelines and Recommendations. Florida DEP and National Coral Reef Institute,
+      Nova Southeastern University, SEFCRI project MICCI-02.
+      https://floridadep.gov/sites/default/files/MICCI-02-Guidelines.pdf
+      Specifies a systematic grid of transects or quadrats per injury site, and
+      Portland cement or cement and sand as the common reattachment method.
+    notes: >
+      Dated 2007, so reattachment practice has moved on in places and the cement
+      recommendation should not be read as current best practice on its own.
+      No accessible NOAA Damage Assessment Remediation and Restoration Program
+      coral injury protocol was found; that programme publishes case pages rather
+      than a method document.
 
   - action_id: temporary_shading
     action_class: temporary_shading
@@ -114,6 +194,7 @@ interventions:
     contraindications:
       - "Open reef area too large for the available units to cover meaningfully"
       - "Deployment window shorter than the expected thermal stress period"
+      - "Lowering the nursery in place is available, which has better evidence"
     resources:
       boats: 1
       dive_teams: 1
@@ -121,10 +202,31 @@ interventions:
       shade_units: 2
       cost_usd: 2500.0
     expected_compatibility: 0.4
-    provenance: "TODO: cite both the deployment guidance AND the field study that found no measurable benefit at two coral nursery sites."
+    provenance: >
+      Practitioner guidance plus two peer-reviewed field studies that disagree.
+      Guidance: Coral Restoration Consortium (2023), 2023 Coral Bleaching Guidance,
+      published via ICRI, https://icriforum.org/crc-2023-bleaching-guidance/
+      which recommends "reducing UV irradiation by moving to shaded locations or
+      installing shade structures".
+      Null result: Strudwick, P., Suggett, D.J., Edmondson, J. and Camp, E.F. (2025).
+      Assessing protective shading and lowering of coral nurseries during a mass
+      bleaching event on the Great Barrier Reef. Coral Reefs 44(4): 1093-1105.
+      DOI 10.1007/s00338-025-02665-2.
+      https://link.springer.com/article/10.1007/s00338-025-02665-2
+      Reports that "shading nurseries did not reduce coral paling or mortality".
+      Positive result: Coelho, V.R., Fenner, D., Caruso, C., Bayles, B.R., Huang, Y.
+      and Birkeland, C. (2017). Shading as a mitigation tool for coral bleaching in
+      three common Indo-Pacific species. Journal of Experimental Marine Biology and
+      Ecology 497: 152-163. https://repository.library.noaa.gov/view/noaa/49464
     notes: >
-      Effectiveness is context-specific, not a given. A peer-reviewed field study
-      found no measurable shading benefit at two coral nursery sites. That is
-      exactly why expected_compatibility here is modest and why the requirements
-      and contraindications above are checked per site rather than assumed. Do not
-      treat this as a generic fix for thermal stress.
+      Effectiveness is context-specific and the literature is genuinely split, which
+      is why expected_compatibility is modest and the requirements and
+      contraindications above are checked per site rather than assumed. Do not treat
+      this as a generic fix for thermal stress, and do not present either study as
+      settling the question.
+      Two attribution points a reviewer will check. The null result is from the Great
+      Barrier Reef, two sites on Opal Reef during the 2024 heatwave, not from Florida.
+      No Florida shading field trial with a published outcome was found. Shading has
+      been deployed in Florida, ten structures at the Coral Restoration Foundation
+      Tavernier nursery and two at Key West in 2024, but that is documented only in
+      an organizational blog post which reports no outcome data.
