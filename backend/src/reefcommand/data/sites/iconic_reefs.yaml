@@ -1,106 +1,509 @@
-# Study area: the seven Florida Keys sites associated with NOAA Mission: Iconic Reefs.
+# Site records for the seven NOAA Mission: Iconic Reefs study sites.
 #
-# NOAA confirms these sites are ecologically and culturally significant.
-# NOAA does NOT numerically rank them from most to least ecologically valuable,
-# and neither does this file. Order here is geographic, north to south.
+# Replaces the placeholder iconic_reefs.yaml. Every value is externally sourced
+# except restoration_investment, which is not published anywhere and is simulated.
 #
-# measurements.provenance must be one of: live, cache, simulated, synthetic.
-# Where a CREMP station is used, record distance_km, habitat_type, and
-# matching_method so a reviewer can disagree with the match. CREMP monitors
-# roughly 40 Florida Keys sites and Iconic Reefs covers seven restoration sites;
-# they are not a 1:1 mapping. Where no suitable CREMP coverage exists, use another
-# cited source or a clearly labeled placeholder. Never substitute silently.
+# A site's values do not share an origin, so each block carries its own provenance:
 #
-# TODO: fill coordinates and measurements from cited sources before the demo.
+#   record-level    study-area membership, from Mission: Iconic Reefs
+#   location        codified sanctuary boundaries, or FKNMS mooring buoys
+#   measurements    FWC CREMP where the site is named, NOAA NCRMP otherwise
+#   restoration_investment   simulated, with the required note
+#
+# THE TWO MONITORING PROGRAMMES ARE NOT INTERCHANGEABLE.
+# CREMP cover includes Millepora, a hydrocoral, and an unidentified Scleractinia
+# bin. The NCRMP figures here exclude Millepora. Because score_sites normalizes
+# across the seven sites, a systematic difference between programmes becomes a
+# systematic difference in site value. sampling.program is a required field for
+# this reason and must reach the dashboard next to the value.
+#
+# Sample size and spread are first-class fields rather than prose, so a consumer
+# can see that Horseshoe rests on five sample units and Cheeca Rocks on 27,
+# without this fixture imposing a confidence weight of its own.
 
-sites:
-  - site_id: carysfort
-    name: Carysfort Reef
-    latitude: null
-    longitude: null
-    has_active_restoration: false
-    restoration_investment: 0.0
-    measurements:
-      coral_cover_pct: null
-      species_richness: null
-      provenance: synthetic
-      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
-      cremp: null
+metadata:
+  schema_version: 1
+  fixture_id: iconic_reefs
+  description: The seven Mission Iconic Reefs study sites, with per-block provenance.
+  created_at: 2026-08-17T21:52:13Z
 
-  - site_id: horseshoe
-    name: Horseshoe Reef
-    latitude: null
-    longitude: null
-    has_active_restoration: false
-    restoration_investment: 0.0
-    measurements:
-      coral_cover_pct: null
-      species_richness: null
-      provenance: synthetic
-      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
-      cremp: null
+records:
+  - record_id: carysfort
+    data:
+      site_id: carysfort
+      name: Carysfort Reef
+      has_active_restoration: true
+      location:
+        latitude: 25.21762
+        longitude: -80.21468
+        location_basis: spa_polygon_area_centroid
+        zone_name_in_source: Carysfort/South Carysfort Reef
+        zone_span_km: 3.88
+        provenance:
+          kind: cache
+          source: 15 CFR Part 922 Subpart P Appendix V, Sanctuary Preservation Areas Boundary Coordinates
+          source_url: https://www.govinfo.gov/content/pkg/CFR-2022-title15-vol3/xml/CFR-2022-title15-vol3-part922-subpartP-appV.xml
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Area centroid of the four codified vertices. The CFR zone bundles Carysfort and South
+            Carysfort into one polygon, so the centroid falls between the two reefs rather than on the
+            Carysfort spur-and-groove proper. Cross-checked against Kelly et al. 2024, which publishes
+            25.2209, -80.2102, 0.4 km away.
+      measurements:
+        coral_cover_pct: 2.66
+        species_richness: 10
+        sampling:
+          program: CREMP
+          sampling_design: fixed permanently staked transects, photo point counts, four stations per sub-site
+          reference_years: [2023]
+          sample_n: 8
+          sample_unit: station
+          sample_sd_pct: 0.69
+          matching_method: named_site_exact
+          matching_distance_km: 0.0
+          habitat_types: ['offshore_shallow', 'offshore_deep']
+          richness_definition: >
+            count of distinct stony coral taxa with non-zero cover across the site stations in the
+            reference year, excluding Millepora and the unidentified Scleractinia bin
+          includes_millepora: true
+          station_ids: ['501', '502', '503', '504', '701', '702', '703', '704']
+        provenance:
+          kind: cache
+          source: FWC Coral Reef Evaluation and Monitoring Project, tables 10 and 11
+          source_url: https://gis.myfwc.com/hosting/rest/services/Open_Data/Coral_Reef_Evaluation_and_Monitoring_Project_Locations/MapServer
+          observed_at: 2023-12-31
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Named CREMP site, siteid 50 Carysfort Shallow and 70 Carysfort Deep, four stations each.
+            Cover is the mean of the eight station values for 2023; station range 1.61 to 3.60 percent.
+            Summing the table 10 species columns reproduces the table 11 Stony_coral total per station,
+            so the two tables agree.
+      restoration_investment:
+        value: 0.9
+        provenance:
+          kind: simulated
+          source: ReefCommand demo scenario
+          fetched_at: null
+          note: >
+            SIMULATED. No public dataset publishes per-site restoration spend for Mission Iconic Reefs.
+            Invented for the demo and used only in strategic_value. The relative ordering across sites
+            is a stated assumption, not a measurement.
+    provenance:
+      kind: cache
+      source: NOAA Mission Iconic Reefs
+      source_url: https://missioniconicreefs.org/mission/
+      fetched_at: 2026-08-17T21:52:13Z
+      note: >
+        Study-area membership. All seven sites are named Mission Iconic Reefs restoration sites,
+        which is what has_active_restoration records. NOAA confirms the seven are ecologically and
+        culturally significant. NOAA does not numerically rank them, and neither does this fixture.
 
-  - site_id: cheeca_rocks
-    name: Cheeca Rocks
-    latitude: null
-    longitude: null
-    has_active_restoration: false
-    restoration_investment: 0.0
-    measurements:
-      coral_cover_pct: null
-      species_richness: null
-      provenance: synthetic
-      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
-      cremp: null
+  - record_id: horseshoe
+    data:
+      site_id: horseshoe
+      name: Horseshoe Reef
+      has_active_restoration: true
+      location:
+        latitude: 25.13913
+        longitude: -80.29445
+        location_basis: fknms_mooring_buoy_midpoint
+        zone_name_in_source: Horseshoe Reef 1 and Horseshoe Reef 2
+        zone_span_km: null
+        provenance:
+          kind: cache
+          source: FKNMS Mooring Buoy Locations
+          source_url: https://floridakeys.noaa.gov/mbuoy/allmbuoys.html
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Not a Sanctuary Preservation Area, so no codified polygon exists. Midpoint of buoys
+            Horseshoe Reef 1 at 25 deg 08.313 min N, 80 deg 17.690 min W and Horseshoe Reef 2 at 25 deg
+            08.383 min N, 80 deg 17.644 min W. The source PDF states the coordinates are not to be used
+            for navigation. NOAA describes the feature as a cluster of patch reefs, so this is a
+            convention, not a survey point.
+      measurements:
+        coral_cover_pct: 1.4
+        species_richness: 3
+        sampling:
+          program: NCRMP
+          sampling_design: stratified random sample units, linear point intercept
+          reference_years: [2022, 2024]
+          sample_n: 5
+          sample_unit: sample_unit
+          sample_sd_pct: 1.14
+          matching_method: spatial_buffer_1km_pooled_sample_units
+          matching_distance_km: 1.0
+          habitat_types: ['patch']
+          richness_definition: >
+            count of distinct scleractinian cover categories observed in the buffer across the reference
+            years, excluding Millepora
+          includes_millepora: false
+          station_ids: []
+        provenance:
+          kind: cache
+          source: NOAA National Coral Reef Monitoring Program, benthic cover, Florida
+          source_url: https://www.ncei.noaa.gov/erddap/tabledap/CRCP_Benthic_Cover_Florida.html
+          observed_at: null
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Not a named site in any dataset. NCRMP sample units carry numeric codes, so this pools the
+            five distinct sample units falling inside a 1 km box around the site coordinate, across 2022
+            and 2024. Five units is a thin basis; sample_n is a first-class field so a consumer can see
+            that without the model imposing a weight.
+      restoration_investment:
+        value: 0.55
+        provenance:
+          kind: simulated
+          source: ReefCommand demo scenario
+          fetched_at: null
+          note: >
+            SIMULATED. No public dataset publishes per-site restoration spend for Mission Iconic Reefs.
+            Invented for the demo and used only in strategic_value. The relative ordering across sites
+            is a stated assumption, not a measurement.
+    provenance:
+      kind: cache
+      source: NOAA Mission Iconic Reefs
+      source_url: https://missioniconicreefs.org/mission/
+      fetched_at: 2026-08-17T21:52:13Z
+      note: >
+        Study-area membership. All seven sites are named Mission Iconic Reefs restoration sites,
+        which is what has_active_restoration records. NOAA confirms the seven are ecologically and
+        culturally significant. NOAA does not numerically rank them, and neither does this fixture.
 
-  - site_id: sombrero
-    name: Sombrero Reef
-    latitude: null
-    longitude: null
-    has_active_restoration: false
-    restoration_investment: 0.0
-    measurements:
-      coral_cover_pct: null
-      species_richness: null
-      provenance: synthetic
-      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
-      cremp: null
+  - record_id: cheeca_rocks
+    data:
+      site_id: cheeca_rocks
+      name: Cheeca Rocks
+      has_active_restoration: true
+      location:
+        latitude: 24.9042
+        longitude: -80.61593
+        location_basis: spa_polygon_area_centroid
+        zone_name_in_source: Cheeca Rocks
+        zone_span_km: 0.59
+        provenance:
+          kind: cache
+          source: 15 CFR Part 922 Subpart P Appendix V, Sanctuary Preservation Areas Boundary Coordinates
+          source_url: https://www.govinfo.gov/content/pkg/CFR-2022-title15-vol3/xml/CFR-2022-title15-vol3-part922-subpartP-appV.xml
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Compact zone, about 0.6 km across, so the centroid is a fair single point.
+      measurements:
+        coral_cover_pct: 23.93
+        species_richness: 12
+        sampling:
+          program: NCRMP
+          sampling_design: stratified random sample units, linear point intercept
+          reference_years: [2016, 2018, 2022, 2024]
+          sample_n: 27
+          sample_unit: sample_unit
+          sample_sd_pct: 9.06
+          matching_method: spatial_buffer_1km_pooled_sample_units
+          matching_distance_km: 1.0
+          habitat_types: ['inshore_patch']
+          richness_definition: >
+            count of distinct scleractinian cover categories observed in the buffer across the reference
+            years, excluding Millepora
+          includes_millepora: false
+          station_ids: []
+        provenance:
+          kind: cache
+          source: NOAA National Coral Reef Monitoring Program, benthic cover, Florida
+          source_url: https://www.ncei.noaa.gov/erddap/tabledap/CRCP_Benthic_Cover_Florida.html
+          observed_at: null
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Not a named site. Pools 27 distinct sample units inside a 1 km box across 2016, 2018, 2022
+            and 2024. Per-unit values range 11 to 46 percent, so the spread is large and real. Units are
+            unevenly distributed across years, one in 2016, one in 2018, thirteen in 2022 and twelve in
+            2024, so the pooled mean is weighted toward the recent years. This is an inshore patch reef
+            in a different habitat class from the offshore bank reefs in this set.
+      restoration_investment:
+        value: 0.45
+        provenance:
+          kind: simulated
+          source: ReefCommand demo scenario
+          fetched_at: null
+          note: >
+            SIMULATED. No public dataset publishes per-site restoration spend for Mission Iconic Reefs.
+            Invented for the demo and used only in strategic_value. The relative ordering across sites
+            is a stated assumption, not a measurement.
+    provenance:
+      kind: cache
+      source: NOAA Mission Iconic Reefs
+      source_url: https://missioniconicreefs.org/mission/
+      fetched_at: 2026-08-17T21:52:13Z
+      note: >
+        Study-area membership. All seven sites are named Mission Iconic Reefs restoration sites,
+        which is what has_active_restoration records. NOAA confirms the seven are ecologically and
+        culturally significant. NOAA does not numerically rank them, and neither does this fixture.
 
-  - site_id: newfound_harbor
-    name: Newfound Harbor
-    latitude: null
-    longitude: null
-    has_active_restoration: false
-    restoration_investment: 0.0
-    measurements:
-      coral_cover_pct: null
-      species_richness: null
-      provenance: synthetic
-      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
-      cremp: null
+  - record_id: sombrero
+    data:
+      site_id: sombrero
+      name: Sombrero Reef
+      has_active_restoration: true
+      location:
+        latitude: 24.62589
+        longitude: -81.11033
+        location_basis: spa_polygon_area_centroid
+        zone_name_in_source: Sombrero Key
+        zone_span_km: 1.22
+        provenance:
+          kind: cache
+          source: 15 CFR Part 922 Subpart P Appendix V, Sanctuary Preservation Areas Boundary Coordinates
+          source_url: https://www.govinfo.gov/content/pkg/CFR-2022-title15-vol3/xml/CFR-2022-title15-vol3-part922-subpartP-appV.xml
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            The CFR names this zone Sombrero Key; Mission Iconic Reefs calls it Sombrero Reef. Same
+            feature, marked by Sombrero Key Light. The only zone of the six codified as a triangle
+            rather than a quadrilateral. Cross-checked against Miller et al. 2023, which publishes 24.63
+            N, 81.11 W.
+      measurements:
+        coral_cover_pct: 1.72
+        species_richness: 7
+        sampling:
+          program: CREMP
+          sampling_design: fixed permanently staked transects, photo point counts, four stations per sub-site
+          reference_years: [2023]
+          sample_n: 8
+          sample_unit: station
+          sample_sd_pct: 0.88
+          matching_method: named_site_exact
+          matching_distance_km: 0.0
+          habitat_types: ['offshore_shallow', 'offshore_deep']
+          richness_definition: >
+            count of distinct stony coral taxa with non-zero cover across the site stations in the
+            reference year, excluding Millepora and the unidentified Scleractinia bin
+          includes_millepora: true
+          station_ids: ['561', '562', '563', '564', '761', '762', '763', '764']
+        provenance:
+          kind: cache
+          source: FWC Coral Reef Evaluation and Monitoring Project, tables 10 and 11
+          source_url: https://gis.myfwc.com/hosting/rest/services/Open_Data/Coral_Reef_Evaluation_and_Monitoring_Project_Locations/MapServer
+          observed_at: 2023-12-31
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Named CREMP site, siteid 56 Sombrero Shallow and 76 Sombrero Deep. Mean of eight stations
+            for 2023; station range 0.60 to 3.26 percent. The lowest cover of the three CREMP sites in
+            this set.
+      restoration_investment:
+        value: 0.7
+        provenance:
+          kind: simulated
+          source: ReefCommand demo scenario
+          fetched_at: null
+          note: >
+            SIMULATED. No public dataset publishes per-site restoration spend for Mission Iconic Reefs.
+            Invented for the demo and used only in strategic_value. The relative ordering across sites
+            is a stated assumption, not a measurement.
+    provenance:
+      kind: cache
+      source: NOAA Mission Iconic Reefs
+      source_url: https://missioniconicreefs.org/mission/
+      fetched_at: 2026-08-17T21:52:13Z
+      note: >
+        Study-area membership. All seven sites are named Mission Iconic Reefs restoration sites,
+        which is what has_active_restoration records. NOAA confirms the seven are ecologically and
+        culturally significant. NOAA does not numerically rank them, and neither does this fixture.
 
-  - site_id: looe_key
-    name: Looe Key
-    latitude: null
-    longitude: null
-    has_active_restoration: false
-    restoration_investment: 0.0
-    measurements:
-      coral_cover_pct: null
-      species_richness: null
-      provenance: synthetic
-      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
-      cremp: null
+  - record_id: newfound_harbor
+    data:
+      site_id: newfound_harbor
+      name: Newfound Harbor
+      has_active_restoration: true
+      location:
+        latitude: 24.61537
+        longitude: -81.39286
+        location_basis: spa_polygon_area_centroid
+        zone_name_in_source: Newfound Harbor Key
+        zone_span_km: 0.67
+        provenance:
+          kind: cache
+          source: 15 CFR Part 922 Subpart P Appendix V, Sanctuary Preservation Areas Boundary Coordinates
+          source_url: https://www.govinfo.gov/content/pkg/CFR-2022-title15-vol3/xml/CFR-2022-title15-vol3-part922-subpartP-appV.xml
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            A field of inshore patch reefs roughly 1.1 km square. The centroid falls between patches and
+            coincides with no individual patch reef.
+      measurements:
+        coral_cover_pct: 4.42
+        species_richness: 7
+        sampling:
+          program: NCRMP
+          sampling_design: stratified random sample units, linear point intercept
+          reference_years: [2016, 2022, 2024]
+          sample_n: 12
+          sample_unit: sample_unit
+          sample_sd_pct: 5.7
+          matching_method: spatial_buffer_1km_pooled_sample_units
+          matching_distance_km: 1.0
+          habitat_types: ['inshore_patch']
+          richness_definition: >
+            count of distinct scleractinian cover categories observed in the buffer across the reference
+            years, excluding Millepora
+          includes_millepora: false
+          station_ids: []
+        provenance:
+          kind: cache
+          source: NOAA National Coral Reef Monitoring Program, benthic cover, Florida
+          source_url: https://www.ncei.noaa.gov/erddap/tabledap/CRCP_Benthic_Cover_Florida.html
+          observed_at: null
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Not a named site. Pools 12 sample units inside a 1 km box across 2016, 2022 and 2024.
+            Per-unit values range 1 to 21 percent, so the standard deviation exceeds the mean and the
+            site is highly heterogeneous.
+      restoration_investment:
+        value: 0.5
+        provenance:
+          kind: simulated
+          source: ReefCommand demo scenario
+          fetched_at: null
+          note: >
+            SIMULATED. No public dataset publishes per-site restoration spend for Mission Iconic Reefs.
+            Invented for the demo and used only in strategic_value. The relative ordering across sites
+            is a stated assumption, not a measurement.
+    provenance:
+      kind: cache
+      source: NOAA Mission Iconic Reefs
+      source_url: https://missioniconicreefs.org/mission/
+      fetched_at: 2026-08-17T21:52:13Z
+      note: >
+        Study-area membership. All seven sites are named Mission Iconic Reefs restoration sites,
+        which is what has_active_restoration records. NOAA confirms the seven are ecologically and
+        culturally significant. NOAA does not numerically rank them, and neither does this fixture.
 
-  - site_id: eastern_dry_rocks
-    name: Eastern Dry Rocks
-    latitude: null
-    longitude: null
-    has_active_restoration: false
-    restoration_investment: 0.0
-    measurements:
-      coral_cover_pct: null
-      species_richness: null
-      provenance: synthetic
-      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
-      cremp: null
+  - record_id: looe_key
+    data:
+      site_id: looe_key
+      name: Looe Key
+      has_active_restoration: true
+      location:
+        latitude: 24.54815
+        longitude: -81.40586
+        location_basis: spa_polygon_area_centroid
+        zone_name_in_source: Looe Key
+        zone_span_km: 1.33
+        provenance:
+          kind: cache
+          source: 15 CFR Part 922 Subpart P Appendix V, Sanctuary Preservation Areas Boundary Coordinates
+          source_url: https://www.govinfo.gov/content/pkg/CFR-2022-title15-vol3/xml/CFR-2022-title15-vol3-part922-subpartP-appV.xml
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Disambiguation. A second codified Looe Key zone exists in Appendix VI, the Looe Key Research
+            Only Special-Use Area, about 2 km northeast. This record is the Sanctuary Preservation Area,
+            which is the Mission Iconic Reefs site.
+      measurements:
+        coral_cover_pct: 5.32
+        species_richness: 12
+        sampling:
+          program: CREMP
+          sampling_design: fixed permanently staked transects, photo point counts, four stations per sub-site
+          reference_years: [2023]
+          sample_n: 8
+          sample_unit: station
+          sample_sd_pct: 1.79
+          matching_method: named_site_exact
+          matching_distance_km: 0.0
+          habitat_types: ['offshore_shallow', 'offshore_deep']
+          richness_definition: >
+            count of distinct stony coral taxa with non-zero cover across the site stations in the
+            reference year, excluding Millepora and the unidentified Scleractinia bin
+          includes_millepora: true
+          station_ids: ['571', '572', '573', '574', '771', '772', '773', '774']
+        provenance:
+          kind: cache
+          source: FWC Coral Reef Evaluation and Monitoring Project, tables 10 and 11
+          source_url: https://gis.myfwc.com/hosting/rest/services/Open_Data/Coral_Reef_Evaluation_and_Monitoring_Project_Locations/MapServer
+          observed_at: 2023-12-31
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Named CREMP site, siteid 57 Looe Key Shallow and 77 Looe Key Deep. Mean of eight stations
+            for 2023; station range 3.19 to 8.18 percent. Acropora palmata is present here and at no
+            other CREMP site in this set.
+      restoration_investment:
+        value: 0.65
+        provenance:
+          kind: simulated
+          source: ReefCommand demo scenario
+          fetched_at: null
+          note: >
+            SIMULATED. No public dataset publishes per-site restoration spend for Mission Iconic Reefs.
+            Invented for the demo and used only in strategic_value. The relative ordering across sites
+            is a stated assumption, not a measurement.
+    provenance:
+      kind: cache
+      source: NOAA Mission Iconic Reefs
+      source_url: https://missioniconicreefs.org/mission/
+      fetched_at: 2026-08-17T21:52:13Z
+      note: >
+        Study-area membership. All seven sites are named Mission Iconic Reefs restoration sites,
+        which is what has_active_restoration records. NOAA confirms the seven are ecologically and
+        culturally significant. NOAA does not numerically rank them, and neither does this fixture.
+
+  - record_id: eastern_dry_rocks
+    data:
+      site_id: eastern_dry_rocks
+      name: Eastern Dry Rocks
+      has_active_restoration: true
+      location:
+        latitude: 24.46176
+        longitude: -81.84378
+        location_basis: spa_polygon_area_centroid
+        zone_name_in_source: Eastern Dry Rocks
+        zone_span_km: 0.83
+        provenance:
+          kind: cache
+          source: 15 CFR Part 922 Subpart P Appendix V, Sanctuary Preservation Areas Boundary Coordinates
+          source_url: https://www.govinfo.gov/content/pkg/CFR-2022-title15-vol3/xml/CFR-2022-title15-vol3-part922-subpartP-appV.xml
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Compact zone, about 0.8 km across, so the centroid is a fair single point.
+      measurements:
+        coral_cover_pct: 3.38
+        species_richness: 10
+        sampling:
+          program: NCRMP
+          sampling_design: stratified random sample units, linear point intercept
+          reference_years: [2016, 2018, 2022, 2024]
+          sample_n: 26
+          sample_unit: sample_unit
+          sample_sd_pct: 5.04
+          matching_method: spatial_buffer_1km_pooled_sample_units
+          matching_distance_km: 1.0
+          habitat_types: ['offshore_shallow']
+          richness_definition: >
+            count of distinct scleractinian cover categories observed in the buffer across the reference
+            years, excluding Millepora
+          includes_millepora: false
+          station_ids: []
+        provenance:
+          kind: cache
+          source: NOAA National Coral Reef Monitoring Program, benthic cover, Florida
+          source_url: https://www.ncei.noaa.gov/erddap/tabledap/CRCP_Benthic_Cover_Florida.html
+          observed_at: null
+          fetched_at: 2026-08-17T21:52:13Z
+          note: >
+            Not a named site. Pools 26 sample units inside a 1 km box across 2016, 2018, 2022 and 2024.
+            Per-unit values range 0 to 22 percent. Acropora cervicornis and Acropora palmata both
+            observed.
+      restoration_investment:
+        value: 0.8
+        provenance:
+          kind: simulated
+          source: ReefCommand demo scenario
+          fetched_at: null
+          note: >
+            SIMULATED. No public dataset publishes per-site restoration spend for Mission Iconic Reefs.
+            Invented for the demo and used only in strategic_value. The relative ordering across sites
+            is a stated assumption, not a measurement.
+    provenance:
+      kind: cache
+      source: NOAA Mission Iconic Reefs
+      source_url: https://missioniconicreefs.org/mission/
+      fetched_at: 2026-08-17T21:52:13Z
+      note: >
+        Study-area membership. All seven sites are named Mission Iconic Reefs restoration sites,
+        which is what has_active_restoration records. NOAA confirms the seven are ecologically and
+        culturally significant. NOAA does not numerically rank them, and neither does this fixture.
+

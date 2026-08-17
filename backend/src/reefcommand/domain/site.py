@@ -5,31 +5,76 @@ NOAA Mission: Iconic Reefs.
 
 NOAA confirms these sites are ecologically and culturally significant.
 NOAA does not numerically rank them, and neither does this model.
+
+A site's values do not share an origin. Coordinates come from codified sanctuary
+boundaries, ecological measurements come from one of two monitoring programmes,
+and prior restoration investment is not published anywhere and is simulated.
+Each of those is therefore a nested block carrying its own ProvenanceMetadata,
+rather than one record-level provenance covering values of mixed origin, which
+`data/README.md` forbids.
 """
 
 from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from reefcommand.domain.enums import Provenance
+from reefcommand.domain.enums import MonitoringProgram
+from reefcommand.domain.provenance import ProvenanceMetadata
 
 
-class CrempCorrespondence(BaseModel):
-    """How a site's ecological measurements were matched to a CREMP station.
+class SamplingMetadata(BaseModel):
+    """How a measurement was obtained, as data rather than as prose.
 
-    CREMP monitors roughly 40 sites across the Florida Keys.
-    Mission: Iconic Reefs covers seven restoration sites.
-    They are not a 1:1 mapping, so the matching method is recorded rather than assumed.
+    Every field here exists because a reviewer could reasonably disagree with the
+    choice it records. Sample size and spread are first-class so that downstream
+    consumers can see how thin a measurement is, without the model imposing a
+    confidence weight of its own.
     """
 
     model_config = ConfigDict(frozen=True)
 
-    station_id: str
-    distance_km: float = Field(ge=0.0)
-    habitat_type: str
-    matching_method: str = Field(
-        description="How this station was selected, so a reviewer can disagree with it."
+    program: MonitoringProgram
+    sampling_design: str = Field(
+        description="How the programme samples, in one phrase. "
+        "Not interchangeable between programmes."
     )
+    reference_years: list[int] = Field(min_length=1)
+    sample_n: int = Field(ge=1, description="Number of stations or sample units pooled.")
+    sample_unit: str = Field(description="What one unit of sample_n is: station, or sample unit.")
+    sample_sd_pct: float | None = Field(
+        default=None, ge=0.0, description="Standard deviation of cover across the pooled units."
+    )
+    matching_method: str = Field(
+        description="How this site was matched to the source data, "
+        "so a reviewer can disagree with it."
+    )
+    matching_distance_km: float = Field(
+        ge=0.0, description="Zero when the site is named in the source data."
+    )
+    habitat_types: list[str] = Field(min_length=1)
+    richness_definition: str = Field(
+        description="Neither programme publishes a richness field. "
+        "This states how ours was counted."
+    )
+    includes_millepora: bool = Field(
+        description="CREMP cover includes Millepora, a hydrocoral. NCRMP figures here exclude it."
+    )
+    station_ids: list[str] = Field(default_factory=list)
+
+
+class SiteLocation(BaseModel):
+    """A point convention applied to an area, with the convention recorded."""
+
+    model_config = ConfigDict(frozen=True)
+
+    latitude: float = Field(ge=-90.0, le=90.0)
+    longitude: float = Field(ge=-180.0, le=180.0)
+    location_basis: str = Field(
+        description="The convention used to reduce an area to a point. Not a survey position."
+    )
+    zone_name_in_source: str | None = None
+    zone_span_km: float | None = Field(default=None, ge=0.0)
+    provenance: ProvenanceMetadata
 
 
 class EcologicalMeasurements(BaseModel):
@@ -37,11 +82,21 @@ class EcologicalMeasurements(BaseModel):
 
     coral_cover_pct: float = Field(ge=0.0, le=100.0)
     species_richness: int = Field(ge=0)
-    provenance: Provenance
-    source_note: str = Field(
-        description="Cited source, or an explicit statement that this is a labeled placeholder."
-    )
-    cremp: CrempCorrespondence | None = None
+    sampling: SamplingMetadata
+    provenance: ProvenanceMetadata
+
+
+class RestorationInvestment(BaseModel):
+    """Prior management commitment. Feeds strategic_value only.
+
+    No public dataset publishes per-site restoration spend, so every value shipped
+    with the prototype is simulated and its provenance says so.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    value: float = Field(ge=0.0, le=1.0)
+    provenance: ProvenanceMetadata
 
 
 class ReefSite(BaseModel):
@@ -51,23 +106,24 @@ class ReefSite(BaseModel):
 
     site_id: str
     name: str
-    latitude: float = Field(ge=-90.0, le=90.0)
-    longitude: float = Field(ge=-180.0, le=180.0)
-    measurements: EcologicalMeasurements
     has_active_restoration: bool = Field(
         default=False,
         description="Whether active nursery or outplant work exists at this site. "
         "This is prior management commitment, not ecological value. "
         "Do not name specific organizations unless verified per site.",
     )
-    restoration_investment: float = Field(
-        default=0.0,
-        ge=0.0,
-        le=1.0,
-        description=(
-            "Normalized weight for prior restoration commitment. Feeds strategic_value only."
-        ),
-    )
+    location: SiteLocation
+    measurements: EcologicalMeasurements
+    restoration_investment: RestorationInvestment
+
+    @property
+    def latitude(self) -> float:
+        """Convenience accessor so callers do not reach through the nested block."""
+        return self.location.latitude
+
+    @property
+    def longitude(self) -> float:
+        return self.location.longitude
 
 
 class SiteScores(BaseModel):
