@@ -1,0 +1,44 @@
+# SIMULATED operational capacity. This is not a real organization's fleet or
+# personnel data, and it must never be presented as such.
+#
+# The adapter boundary is designed so this file can later be replaced by an
+# organization's actual operational systems without touching the pipeline.
+
+scenario_id: demo_default
+label: "Demo scenario: two boats, three dive teams, one operating day"
+provenance: simulated
+
+boats:
+  - boat_id: boat_a
+    name: Boat A
+    available: true
+    operational_hours: 7.0
+  - boat_id: boat_b
+    name: Boat B
+    available: true
+    operational_hours: 5.0
+
+dive_teams:
+  - team_id: team_1
+    name: Dive Team A
+    diver_count: 4
+    available_hours: 6.0
+    certifications: []
+  - team_id: team_2
+    name: Dive Team B
+    diver_count: 3
+    available_hours: 6.0
+    certifications: []
+  - team_id: team_3
+    name: Dive Team C
+    diver_count: 3
+    available_hours: 4.0
+    certifications: []
+
+inventory:
+  shade_units: 4
+  monitoring_kits: 3
+  sampling_kits: 2
+
+budget_usd: 10000.0
+daylight_hours: 7.0

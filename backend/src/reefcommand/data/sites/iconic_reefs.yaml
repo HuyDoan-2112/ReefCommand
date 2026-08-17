@@ -1,0 +1,106 @@
+# Study area: the seven Florida Keys sites associated with NOAA Mission: Iconic Reefs.
+#
+# NOAA confirms these sites are ecologically and culturally significant.
+# NOAA does NOT numerically rank them from most to least ecologically valuable,
+# and neither does this file. Order here is geographic, north to south.
+#
+# measurements.provenance must be one of: live, cache, simulated, synthetic.
+# Where a CREMP station is used, record distance_km, habitat_type, and
+# matching_method so a reviewer can disagree with the match. CREMP monitors
+# roughly 40 Florida Keys sites and Iconic Reefs covers seven restoration sites;
+# they are not a 1:1 mapping. Where no suitable CREMP coverage exists, use another
+# cited source or a clearly labeled placeholder. Never substitute silently.
+#
+# TODO: fill coordinates and measurements from cited sources before the demo.
+
+sites:
+  - site_id: carysfort
+    name: Carysfort Reef
+    latitude: null
+    longitude: null
+    has_active_restoration: false
+    restoration_investment: 0.0
+    measurements:
+      coral_cover_pct: null
+      species_richness: null
+      provenance: synthetic
+      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
+      cremp: null
+
+  - site_id: horseshoe
+    name: Horseshoe Reef
+    latitude: null
+    longitude: null
+    has_active_restoration: false
+    restoration_investment: 0.0
+    measurements:
+      coral_cover_pct: null
+      species_richness: null
+      provenance: synthetic
+      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
+      cremp: null
+
+  - site_id: cheeca_rocks
+    name: Cheeca Rocks
+    latitude: null
+    longitude: null
+    has_active_restoration: false
+    restoration_investment: 0.0
+    measurements:
+      coral_cover_pct: null
+      species_richness: null
+      provenance: synthetic
+      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
+      cremp: null
+
+  - site_id: sombrero
+    name: Sombrero Reef
+    latitude: null
+    longitude: null
+    has_active_restoration: false
+    restoration_investment: 0.0
+    measurements:
+      coral_cover_pct: null
+      species_richness: null
+      provenance: synthetic
+      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
+      cremp: null
+
+  - site_id: newfound_harbor
+    name: Newfound Harbor
+    latitude: null
+    longitude: null
+    has_active_restoration: false
+    restoration_investment: 0.0
+    measurements:
+      coral_cover_pct: null
+      species_richness: null
+      provenance: synthetic
+      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
+      cremp: null
+
+  - site_id: looe_key
+    name: Looe Key
+    latitude: null
+    longitude: null
+    has_active_restoration: false
+    restoration_investment: 0.0
+    measurements:
+      coral_cover_pct: null
+      species_richness: null
+      provenance: synthetic
+      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
+      cremp: null
+
+  - site_id: eastern_dry_rocks
+    name: Eastern Dry Rocks
+    latitude: null
+    longitude: null
+    has_active_restoration: false
+    restoration_investment: 0.0
+    measurements:
+      coral_cover_pct: null
+      species_richness: null
+      provenance: synthetic
+      source_note: "PLACEHOLDER. Replace with cited CREMP or alternative monitoring data."
+      cremp: null
