@@ -79,16 +79,45 @@ All sites in the study area with both value scores.
       "name": "Sombrero Reef",
       "latitude": 24.6265,
       "longitude": -81.1109,
+      "location": {
+        "latitude": 24.6265,
+        "longitude": -81.1109,
+        "location_basis": "site centroid from the NOAA Mission: Iconic Reefs zone boundary",
+        "zone_name_in_source": "Sombrero Reef",
+        "zone_span_km": null,
+        "provenance": {
+          "kind": "cache",
+          "source": "NOAA Mission: Iconic Reefs",
+          "source_url": "https://sanctuaries.noaa.gov/iconic-reefs/",
+          "observed_at": null,
+          "fetched_at": "2026-08-16T22:14:03Z",
+          "note": "Curated snapshot"
+        }
+      },
       "measurements": {
         "coral_cover_pct": 6.4,
         "species_richness": 21,
-        "provenance": "cache",
-        "source_note": "CREMP station ...",
-        "cremp": {
-          "station_id": "...",
-          "distance_km": 1.2,
-          "habitat_type": "offshore patch",
-          "matching_method": "nearest station of matching habitat type within 5 km"
+        "sampling": {
+          "program": "CREMP",
+          "sampling_design": "fixed transects with photo point counts",
+          "reference_years": [2024],
+          "sample_n": 5,
+          "sample_unit": "sample unit",
+          "sample_sd_pct": 1.8,
+          "matching_method": "named site in the monitoring programme",
+          "matching_distance_km": 0.0,
+          "habitat_types": ["offshore patch"],
+          "richness_definition": "observed coral taxa in the cited sample",
+          "includes_millepora": true,
+          "station_ids": ["..."]
+        },
+        "provenance": {
+          "kind": "cache",
+          "source": "CREMP station ...",
+          "source_url": "https://ocean.floridamarine.org/",
+          "observed_at": null,
+          "fetched_at": "2026-08-16T22:14:03Z",
+          "note": "Curated snapshot"
         }
       },
       "scores": {
@@ -96,7 +125,18 @@ All sites in the study area with both value scores.
         "strategic_value": 0.68,
         "weights_are_prototype_assumptions": true
       },
-      "has_active_restoration": true
+      "has_active_restoration": true,
+      "restoration_investment": {
+        "value": 0.5,
+        "provenance": {
+          "kind": "simulated",
+          "source": "ReefCommand prototype assumption",
+          "source_url": null,
+          "observed_at": null,
+          "fetched_at": null,
+          "note": "SIMULATED management commitment weight, not published expenditure."
+        }
+      }
     }
   ],
   "weights_disclaimer": "Scoring weights are prototype assumptions, not scientific claims."
@@ -105,6 +145,12 @@ All sites in the study area with both value scores.
 
 Both scores are always returned.
 The frontend shows `strategic_value` as what drives allocation and `ecological_value` as the investment-agnostic number.
+
+The site model stores coordinates in the nested `location` block, while `latitude` and `longitude` are also serialized as computed convenience fields for the current flat API shape.
+
+Measurement provenance is structured, and sampling metadata keeps the monitoring programme, sample size, matching method, and programme-specific caveats next to the measurements.
+
+`restoration_investment` is an object because its normalized value is simulated and must travel with its provenance.
 
 ### `GET /sites/{site_id}/evidence`
 

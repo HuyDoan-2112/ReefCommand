@@ -16,7 +16,7 @@ rather than one record-level provenance covering values of mixed origin, which
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from reefcommand.domain.enums import MonitoringProgram
 from reefcommand.domain.provenance import ProvenanceMetadata
@@ -116,13 +116,16 @@ class ReefSite(BaseModel):
     measurements: EcologicalMeasurements
     restoration_investment: RestorationInvestment
 
+    @computed_field
     @property
     def latitude(self) -> float:
-        """Convenience accessor so callers do not reach through the nested block."""
+        """Serialized convenience field for the flat API site shape."""
         return self.location.latitude
 
+    @computed_field
     @property
     def longitude(self) -> float:
+        """Serialized convenience field for the flat API site shape."""
         return self.location.longitude
 
 

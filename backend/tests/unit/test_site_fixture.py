@@ -46,6 +46,14 @@ def test_every_record_loads_as_a_reef_site(sites) -> None:
         assert record.data.site_id == record.record_id
 
 
+def test_coordinates_are_serialized_for_the_api_contract(sites) -> None:
+    """Nested storage must not remove the flat coordinates from API payloads."""
+    for record in sites.records:
+        payload = record.data.model_dump()
+        assert payload["latitude"] == record.data.location.latitude
+        assert payload["longitude"] == record.data.location.longitude
+
+
 def test_no_persisted_record_claims_to_be_live(sites) -> None:
     """The one failure mode the project's rules single out."""
     for record in sites.records:
