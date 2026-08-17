@@ -1,0 +1,134 @@
+# SIMULATED operational capacity. DATA-03.
+#
+# This is not a real organization's fleet, personnel, inventory or budget, and it
+# must never be presented as such. ResourceScenario.display_banner() carries that
+# statement to the dashboard.
+#
+# The numbers are invented, but they are not arbitrary. Every one is anchored to a
+# published figure, and the anchor is recorded per field below. Where nothing is
+# published, the record says so rather than implying a source.
+#
+# Two records:
+#   demo_default              the scenario the first plan is built from
+#   demo_boat_b_unavailable   the resource shock in the demo runbook, step 5
+# Keeping both as data means the re-planning demo is a fixture swap, not a mutation.
+
+metadata:
+  schema_version: 1
+  fixture_id: demo_resource_scenarios
+  description: Simulated operational capacity for the demo planning window, plus the boat-outage variant.
+  created_at: 2026-08-17T21:52:13Z
+
+records:
+  - record_id: demo_default
+    data:
+      scenario_id: demo_default
+      label: "Demo scenario: two boats, three dive teams, one operating day"
+      provenance: simulated
+      boats:
+        - boat_id: boat_a
+          name: Boat A
+          available: true
+          operational_hours: 6.0
+        - boat_id: boat_b
+          name: Boat B
+          available: true
+          operational_hours: 6.0
+      dive_teams:
+        - team_id: team_1
+          name: Dive Team A
+          diver_count: 3
+          available_hours: 4.7
+          certifications: []
+        - team_id: team_2
+          name: Dive Team B
+          diver_count: 2
+          available_hours: 4.4
+          certifications: []
+        - team_id: team_3
+          name: Dive Team C
+          diver_count: 2
+          available_hours: 4.1
+          certifications: []
+      inventory:
+        shade_units: 4
+        monitoring_kits: 3
+        sampling_kits: 2
+      budget_usd: 6000.0
+      daylight_hours: 13.0
+    provenance:
+      kind: simulated
+      source: ReefCommand demo scenario, anchored to published operational figures
+      fetched_at: null
+      note: >
+        SIMULATED capacity. Anchors, per field.
+        operational_hours 6.0: Keys Marine Laboratory FY2026 rate sheet defines a
+        full vessel day as 6 hrs (https://www.fio.usf.edu/wp-content/uploads/2026/03/2026-KML-Facilities-Rates_FINAL.pdf).
+        available_hours 4.7 / 4.4 / 4.1: in-water hours per diver-day derived from the
+        Florida Keys Coral Disease Strike Team final reports, 980 h over 237 diver-days
+        in FY2021-22 (4.13) and 1173 h over 251 diver-days in FY2022-23 (4.67). The three
+        teams span that observed range rather than repeating one value. Derived by us
+        from published totals; the ratio itself is not published.
+        diver_count 3 / 2 / 2: AAUS Standards section 2.30 makes the buddy pair the
+        in-water minimum; the Strike Team reports imply about 2.47 divers per boat-day
+        (237 diver-days over 96 boat-days). No published divers-per-boat figure exists
+        for routine Florida Keys outplanting operations.
+        daylight_hours 13.0: US Naval Observatory, Marathon FL, 15 August 2026,
+        sunrise 06:59 to sunset 19:59, 13 h 00 m. Daylight is not operating time.
+        budget_usd 6000: constructed, not published. Roughly two fully loaded boat days
+        (KML vessel 755 plus staff support and cylinders, about 1300 per boat-day) plus
+        headroom for catalog action costs. Deliberately set so the budget can bind in
+        the demo, which is a demo design choice and is stated as one.
+        inventory: no published source for unit counts. Unsourced demo assumption.
+        No regulatory maximum exists for dives per day or daily bottom time under AAUS
+        or the NOAA Diving Standards and Safety Manual, so the dive-hour figures are
+        operational assumptions, not compliance limits.
+
+  - record_id: demo_boat_b_unavailable
+    data:
+      scenario_id: demo_boat_b_unavailable
+      label: "Demo scenario: Boat B out of service, one boat, three dive teams"
+      provenance: simulated
+      boats:
+        - boat_id: boat_a
+          name: Boat A
+          available: true
+          operational_hours: 6.0
+        - boat_id: boat_b
+          name: Boat B
+          available: false
+          operational_hours: 0.0
+      dive_teams:
+        - team_id: team_1
+          name: Dive Team A
+          diver_count: 3
+          available_hours: 4.7
+          certifications: []
+        - team_id: team_2
+          name: Dive Team B
+          diver_count: 2
+          available_hours: 4.4
+          certifications: []
+        - team_id: team_3
+          name: Dive Team C
+          diver_count: 2
+          available_hours: 4.1
+          certifications: []
+      inventory:
+        shade_units: 4
+        monitoring_kits: 3
+        sampling_kits: 2
+      budget_usd: 6000.0
+      daylight_hours: 13.0
+    provenance:
+      kind: simulated
+      source: ReefCommand demo scenario, anchored to published operational figures
+      fetched_at: null
+      note: >
+        SIMULATED. Identical to demo_default except Boat B is unavailable with zero
+        operational hours. This is the resource shock in step 5 of the demo runbook.
+        Holding it as a second fixture record rather than mutating the first keeps the
+        re-planning demo reproducible and lets the before and after be diffed.
+        Dive teams are unchanged deliberately: the teams still exist, they have no
+        second vessel to reach a site from, which is what makes the constraint bind on
+        vessel capacity rather than on labour.
