@@ -1,0 +1,38 @@
+# ReefCommand backend
+
+Python 3.12+, managed with [uv](https://docs.astral.sh/uv/).
+
+```bash
+uv sync
+uv run uvicorn reefcommand.api.app:app --reload
+uv run pytest
+uv run ruff check .
+```
+
+## Package map
+
+Each stage of the pipeline is one package.
+The boundary between deterministic and autonomous components is the important structural line in this codebase, so it is also the package line.
+
+| Package | Autonomous? | Responsibility |
+| --- | --- | --- |
+| `domain` | no | Pydantic models shared by every stage. The contract between packages. |
+| `ingestion` | no | External adapters plus cache. Every value carries its provenance. |
+| `evidence` | thermal and fusion are deterministic; disease, runoff, physical use an LLM | Four independent support scores, then one reconciled summary. |
+| `policy` | no | Source-grounded intervention knowledge base. Decides what actions are eligible. |
+| `coordinator` | yes, and only this | Act now, or get more data. Schema-constrained output only. |
+| `optimizer` | no | OR-Tools constrained allocation of boats, teams, gear, time, budget. |
+| `orchestration` | no | Wires the stages, handles events, owns re-planning. |
+| `api` | no | FastAPI surface for the dashboard. |
+| `llm` | no | Model client, structured-output plumbing, retries. |
+
+## Rules that this package layout enforces
+
+The LLM does not decide what treatments exist.
+`policy` is the only place candidate actions are defined, and every action carries requirements, contraindications, resource cost, and provenance.
+
+The LLM does not assign boats or teams.
+`optimizer` is the only place allocation happens.
+
+The Coordinator's output never reaches `optimizer` without passing `coordinator/validation.py`.
+That is a hard import-direction rule, not a convention.

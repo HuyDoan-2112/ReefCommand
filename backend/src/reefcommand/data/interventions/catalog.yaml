@@ -1,0 +1,130 @@
+# Source-grounded intervention knowledge base.
+#
+# The language model does not decide what treatments exist. This file does.
+#
+# Every entry requires: applicable_causes, minimum_support, minimum_confidence,
+# requirements, contraindications, resources, expected_compatibility, provenance.
+# knowledge_base.load_catalog fails if any are missing.
+#
+# These are source-backed, policy-eligible candidate actions requiring manager
+# approval. Eligibility means the action is grounded in a cited source and
+# applicable to the evidence pattern. It does NOT mean the action is guaranteed
+# to work at a given site.
+#
+# TODO: replace every "provenance: TODO" with a real citation before the demo.
+
+interventions:
+  - action_id: intensive_monitoring
+    action_class: monitoring
+    title: Intensive monitoring dive
+    applicable_causes: [thermal, disease, runoff, physical]
+    minimum_support: 0.3
+    minimum_confidence: 0.3
+    requirements:
+      - "Site is divable in current conditions"
+    contraindications: []
+    resources:
+      boats: 1
+      dive_teams: 1
+      dive_hours: 3.0
+      monitoring_kits: 1
+      cost_usd: 800.0
+    expected_compatibility: 0.7
+    provenance: "TODO: cite the monitoring protocol this follows."
+    notes: "Always eligible at a low bar. This is the fallback when capacity is short."
+
+  - action_id: targeted_disease_survey
+    action_class: targeted_disease_survey
+    title: Targeted disease survey with lesion photography
+    applicable_causes: [disease]
+    minimum_support: 0.5
+    minimum_confidence: 0.5
+    requirements:
+      - "A field report describes lesions or tissue loss"
+    contraindications: []
+    resources:
+      boats: 1
+      dive_teams: 1
+      dive_hours: 4.0
+      monitoring_kits: 1
+      cost_usd: 1200.0
+    expected_compatibility: 0.8
+    provenance: "TODO: cite the SCTLD survey protocol used."
+
+  - action_id: biosecurity_workflow
+    action_class: biosecurity_workflow
+    title: Gear decontamination and dive-order biosecurity
+    applicable_causes: [disease]
+    minimum_support: 0.5
+    minimum_confidence: 0.4
+    requirements:
+      - "A dive is already scheduled at this site"
+    contraindications: []
+    resources:
+      dive_hours: 0.5
+      cost_usd: 150.0
+    expected_compatibility: 0.9
+    provenance: "TODO: cite the biosecurity guidance followed."
+
+  - action_id: water_quality_investigation
+    action_class: water_quality_investigation
+    title: Water sampling and turbidity profile
+    applicable_causes: [runoff]
+    minimum_support: 0.45
+    minimum_confidence: 0.4
+    requirements:
+      - "Turbidity or sediment was reported, or rainfall exceeded the threshold"
+    contraindications: []
+    resources:
+      boats: 1
+      dive_teams: 1
+      dive_hours: 2.5
+      sampling_kits: 1
+      cost_usd: 900.0
+    expected_compatibility: 0.7
+    provenance: "TODO: cite the water-quality sampling protocol used."
+
+  - action_id: physical_damage_assessment
+    action_class: physical_damage_assessment
+    title: Structural damage assessment and colony stabilization triage
+    applicable_causes: [physical]
+    minimum_support: 0.45
+    minimum_confidence: 0.4
+    requirements:
+      - "Broken coral or a grounding was reported"
+    contraindications: []
+    resources:
+      boats: 1
+      dive_teams: 1
+      dive_hours: 4.0
+      cost_usd: 1100.0
+    expected_compatibility: 0.75
+    provenance: "TODO: cite the damage-assessment protocol used."
+
+  - action_id: temporary_shading
+    action_class: temporary_shading
+    title: Temporary shading of a defined area
+    applicable_causes: [thermal]
+    minimum_support: 0.7
+    minimum_confidence: 0.6
+    requirements:
+      - "Site depth and area are within the shade unit's working envelope"
+      - "Current and wave conditions allow deployment for the intended duration"
+      - "The target area is a defined restoration or nursery footprint"
+    contraindications:
+      - "Open reef area too large for the available units to cover meaningfully"
+      - "Deployment window shorter than the expected thermal stress period"
+    resources:
+      boats: 1
+      dive_teams: 1
+      dive_hours: 5.0
+      shade_units: 2
+      cost_usd: 2500.0
+    expected_compatibility: 0.4
+    provenance: "TODO: cite both the deployment guidance AND the field study that found no measurable benefit at two coral nursery sites."
+    notes: >
+      Effectiveness is context-specific, not a given. A peer-reviewed field study
+      found no measurable shading benefit at two coral nursery sites. That is
+      exactly why expected_compatibility here is modest and why the requirements
+      and contraindications above are checked per site rather than assumed. Do not
+      treat this as a generic fix for thermal stress.
