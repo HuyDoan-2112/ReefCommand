@@ -1,0 +1,306 @@
+# API requirements
+
+The contract between the backend and the dashboard.
+
+This document is the agreement.
+The generated OpenAPI schema at `/docs` is the machine-readable version, and the frontend generates its types from it rather than hand-writing them.
+
+Changing anything here is a shared-contract change: its own pull request, reviewed by both tracks.
+See `.agents/rules/multi-agent-rules.md`.
+
+## Principles
+
+**Explanations are fields, not UI decoration.**
+The dashboard must explain what evidence supported a decision, what uncertainty remains, what constraints caused the trade-offs, and why an action was considered compatible.
+Those all arrive from the backend as data, so the frontend cannot accidentally omit one and the backend cannot quietly stop producing one.
+
+**Provenance travels with every external value.**
+`live`, `cache`, `simulated`, or `synthetic`.
+Never optional, never strippable in a response model.
+
+**Nothing overstates what it proves.**
+Support scores are `support`, not `probability`.
+Prototype weights carry their disclaimer in the payload.
+
+**Fixtures come first.**
+Every endpoint returns a valid hand-written fixture before the pipeline exists, so the frontend is never blocked.
+The shapes below are the shapes on day one.
+
+## Endpoints
+
+### `GET /health`
+
+Liveness. Returns `{"status": "ok"}`.
+
+### `GET /health/data-sources`
+
+Per external source: whether the last value came from a live call or cache, and the snapshot age.
+
+```json
+{
+  "sources": [
+    {
+      "name": "NOAA Coral Reef Watch",
+      "provenance": "cache",
+      "fetched_at": "2026-08-16T22:14:03Z",
+      "age_seconds": 74521,
+      "note": "Prefetched for the demo replay window"
+    },
+    {
+      "name": "AGRRA SCTLD Tracking Map",
+      "provenance": "cache",
+      "fetched_at": "2026-08-16T22:15:11Z",
+      "age_seconds": 74453,
+      "note": "Curated snapshot"
+    },
+    {
+      "name": "Rainfall",
+      "provenance": "synthetic",
+      "fetched_at": null,
+      "age_seconds": null,
+      "note": "Labeled synthetic signal, no live source wired up"
+    }
+  ],
+  "force_cache": true
+}
+```
+
+`force_cache` reflects `REEFCOMMAND_FORCE_CACHE`, so the demo team can confirm at a glance that no live call will be attempted.
+
+### `GET /sites`
+
+All sites in the study area with both value scores.
+
+```json
+{
+  "sites": [
+    {
+      "site_id": "sombrero",
+      "name": "Sombrero Reef",
+      "latitude": 24.6265,
+      "longitude": -81.1109,
+      "measurements": {
+        "coral_cover_pct": 6.4,
+        "species_richness": 21,
+        "provenance": "cache",
+        "source_note": "CREMP station ...",
+        "cremp": {
+          "station_id": "...",
+          "distance_km": 1.2,
+          "habitat_type": "offshore patch",
+          "matching_method": "nearest station of matching habitat type within 5 km"
+        }
+      },
+      "scores": {
+        "ecological_value": 0.71,
+        "strategic_value": 0.68,
+        "weights_are_prototype_assumptions": true
+      },
+      "has_active_restoration": true
+    }
+  ],
+  "weights_disclaimer": "Scoring weights are prototype assumptions, not scientific claims."
+}
+```
+
+Both scores are always returned.
+The frontend shows `strategic_value` as what drives allocation and `ecological_value` as the investment-agnostic number.
+
+### `GET /sites/{site_id}/evidence`
+
+Fused evidence for one site.
+
+```json
+{
+  "site_id": "sombrero",
+  "fused_at": "2026-08-17T14:02:11Z",
+  "by_cause": {
+    "thermal": {
+      "support": 0.82,
+      "confidence": 0.91,
+      "rationale": "DHW 8.4 at alert level 2 for the past 6 days.",
+      "citations": [
+        {
+          "source": "NOAA Coral Reef Watch 5km",
+          "reference": "https://coralreefwatch.noaa.gov/product/5km/",
+          "observed_at": "2026-08-16",
+          "review_status": null,
+          "reporting_organization": "NOAA",
+          "provenance": "cache"
+        }
+      ]
+    },
+    "disease": { "support": 0.61, "confidence": 0.73, "rationale": "...", "citations": [] },
+    "runoff": { "support": 0.13, "confidence": 0.64, "rationale": "...", "citations": [] },
+    "physical": { "support": 0.05, "confidence": 0.78, "rationale": "...", "citations": [] }
+  },
+  "dominant_causes": ["thermal", "disease"],
+  "ambiguity": 0.72,
+  "lowest_confidence": 0.64,
+  "coordinator": {
+    "evidence_sufficient": false,
+    "additional_evidence_needed": true,
+    "next_evidence": [
+      {
+        "type": "close_range_lesion_image",
+        "priority": 1,
+        "rationale": "Thermal and disease are both well supported and imply different actions."
+      }
+    ],
+    "reasoning_summary": "..."
+  }
+}
+```
+
+Note what this response does **not** contain: a winning cause, a diagnosis, or a normalized distribution.
+`dominant_causes` is a list because more than one cause can be in play.
+
+The four `support` values will not sum to 1.
+That is correct, not a bug, and the frontend must not render them as parts of a whole.
+
+### `GET /plan/current`
+
+The current response plan.
+
+```json
+{
+  "plan_id": "plan_20260817_1402",
+  "generated_at": "2026-08-17T14:02:14Z",
+  "scenario_id": "demo_default",
+  "scenario_banner": "Simulated operational capacity. Not a real organization's fleet or personnel data.",
+  "assignments": [
+    {
+      "site_id": "sombrero",
+      "site_name": "Sombrero Reef",
+      "action_id": "intensive_monitoring",
+      "action_class": "monitoring",
+      "boat_id": "boat_a",
+      "team_id": "team_1",
+      "priority": "high",
+      "estimated_hours": 3.0,
+      "estimated_cost_usd": 800.0,
+      "evidence_summary": "Thermal support 0.82 at confidence 0.91.",
+      "remaining_uncertainty": "Disease support 0.61 is unresolved pending lesion imagery.",
+      "compatibility_rationale": "Monitoring is eligible for all four causes and carries no contraindications here.",
+      "requires_manager_approval": true
+    }
+  ],
+  "deferred": [
+    {
+      "site_id": "looe_key",
+      "site_name": "Looe Key",
+      "fallback_action_id": "intensive_monitoring",
+      "reason": "Intervention deferred because both boats are committed for the full operating day."
+    }
+  ],
+  "total_strategic_value": 1.94,
+  "binding_constraints": ["boat_hours", "monitoring_kits"],
+  "replan_trigger": null,
+  "replan_latency_ms": null
+}
+```
+
+`scenario_banner` rides on the plan itself rather than being looked up separately, so it cannot be dropped in the UI.
+
+`binding_constraints` is what lets the dashboard explain a trade-off rather than just presenting a result.
+
+### `POST /observations`
+
+Submit a field report.
+This is the demo's re-planning trigger.
+
+Request:
+
+```json
+{
+  "site_id": "cheeca_rocks",
+  "observed_at": "2026-08-17T14:05:00Z",
+  "observer": "Dive Team B",
+  "text": "Cheeca Rocks now shows localized tissue loss with visible lesions.",
+  "image_refs": []
+}
+```
+
+Response:
+
+```json
+{
+  "report_id": "rpt_0007",
+  "accepted_at": "2026-08-17T14:05:01Z",
+  "structured": { "...": "StructuredObservation" },
+  "replan": { "plan_id": "plan_20260817_1405", "latency_ms": 4180 }
+}
+```
+
+Returning the latency here is what lets the dashboard display responsiveness without measuring it client-side, which would include network noise.
+
+### `GET /resources/scenario` and `PATCH /resources/scenario`
+
+The active simulated capacity, and the controls that change it.
+
+```json
+{
+  "scenario_id": "demo_default",
+  "label": "Demo scenario: two boats, three dive teams, one operating day",
+  "provenance": "simulated",
+  "banner": "Simulated operational capacity. Not a real organization's fleet or personnel data.",
+  "boats": [{ "boat_id": "boat_a", "name": "Boat A", "available": true, "operational_hours": 7.0 }],
+  "dive_teams": [{ "team_id": "team_1", "name": "Dive Team A", "diver_count": 4, "available_hours": 6.0 }],
+  "inventory": { "shade_units": 4, "monitoring_kits": 3, "sampling_kits": 2 },
+  "budget_usd": 10000.0,
+  "daylight_hours": 7.0
+}
+```
+
+`PATCH` accepts a partial update, for example marking Boat B unavailable, and returns the same body plus a `replan` block.
+This is demo beat five.
+
+### `POST /plan/recompute`
+
+Force a recompute. Returns the new plan and its latency.
+Useful for the demo and for debugging; not part of the normal loop.
+
+### `GET /evaluation`
+
+The evaluation results, reported per module.
+
+```json
+{
+  "thermal": {
+    "metric": "IoU vs NOAA Bleaching Alert Area",
+    "value": 0.94,
+    "scope": "thermal-evidence module output only, before fusion",
+    "caveat": "Consistent with NOAA's own designation. Bleaching Alert Area is not an independently verified ground truth."
+  },
+  "disease": { "metric": "...", "value": null, "caveat": "..." },
+  "runoff": { "metric": "...", "value": null, "caveat": "..." },
+  "physical": { "metric": "...", "value": null, "caveat": "..." },
+  "optimizer": {
+    "baseline_strategic_value": 1.42,
+    "optimized_strategic_value": 1.94,
+    "difference_pct": 36.6,
+    "caveat": "Compares two policies inside the same defined problem. Makes no claim about the real ocean."
+  }
+}
+```
+
+There is deliberately no combined accuracy number.
+Rolling the four modules together would recreate the fused-versus-single-cause mismatch the evaluation design exists to avoid.
+
+Each caveat ships next to its number so the UI cannot present the number alone.
+
+## Errors
+
+Standard HTTP status codes with a JSON body:
+
+```json
+{ "detail": "Human-readable message", "code": "machine_readable_code" }
+```
+
+A Coordinator business-rule violation is a server error, not a client error, and it is logged loudly.
+It means the model produced something the pipeline correctly refused, which is the safety mechanism working.
+
+## Versioning
+
+No versioning for the prototype.
+The contract changes by agreement between the two tracks, and the OpenAPI schema is the source of truth for the generated types.

@@ -3,7 +3,8 @@
 Live external APIs are a demo liability, not a feature.
 Run this before the event, then set REEFCOMMAND_FORCE_CACHE=true.
 
-    make prefetch
+    cd backend
+    uv run python ../scripts/prefetch_external_data.py --start YYYY-MM-DD --end YYYY-MM-DD
 
 Caches:
   - NOAA Coral Reef Watch products for the study area and replay window

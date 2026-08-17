@@ -5,7 +5,7 @@
 ## How it was verified
 
 <!--
-For a bug fix, state how the bug was reproduced end to end before the fix, per AGENT.md.
+For a bug fix, state how the bug was reproduced end to end before the fix, per AGENTS.md.
 For a feature, state what you actually ran.
 -->
 

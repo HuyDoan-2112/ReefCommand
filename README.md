@@ -44,10 +44,11 @@ The Coordinator never emits free-form prose into the optimizer: its output is sc
 
 ```text
 ReefCommand/
-  AGENT.md                  Working rules for AI agents. Read this first.
-  CLAUDE.md                 Imports AGENT.md plus a short checklist.
-  tasks.ps1                 Task runner. Run `.\tasks.ps1 help`.
-  docs/                     Architecture, data sources, evaluation, demo runbook.
+  CLAUDE.md                 Full project context. Read this first.
+  AGENTS.md                 General working rules for humans and AI contributors.
+  .agents/                  Commit, code, and multi-agent rules, plus per-track briefs.
+  docs/                     Architecture, data sources, evaluation, demo runbook,
+                            tech decisions, API requirements.
   scripts/                  Operational scripts (cache prefetch, demo seeding).
   backend/                  Python pipeline and API.
     src/reefcommand/
@@ -62,7 +63,7 @@ ReefCommand/
       llm/                  Model client and structured-output plumbing.
       data/                 Site definitions, demo scenarios, cached snapshots.
     tests/                  unit / integration / e2e.
-  frontend/                 Vite + React + TypeScript dashboard.
+  frontend/                 Next.js + React + TypeScript dashboard.
     src/features/           One folder per dashboard surface.
 ```
 
@@ -96,18 +97,25 @@ npm install
 npm run dev
 ```
 
-### Task runner
+The dashboard runs at `http://localhost:3000` and proxies `/api/*` to the backend,
+so both run side by side without CORS configuration.
 
-`tasks.ps1` wraps the common commands on Windows.
+### Checks
 
-```powershell
-.\tasks.ps1 setup
-.\tasks.ps1 api
-.\tasks.ps1 check
+Run the backend and frontend commands directly from their respective folders.
+
+```bash
+cd backend
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+
+cd ../frontend
+npm run lint
+npm run typecheck
+npm run format:check
+npm run build
 ```
-
-Run `.\tasks.ps1 help` for the full list.
-On macOS or Linux, run the underlying commands directly.
 
 ### Environment
 

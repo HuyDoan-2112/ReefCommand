@@ -5,9 +5,11 @@ A reliable three minutes beats a comprehensive integration that might not load.
 
 ## Before the event
 
-1. Run `make prefetch`. This caches NOAA DHW for the study area and replay window, and the AGRRA snapshot for the demo sites.
+1. From `backend/`, run `uv run python ../scripts/prefetch_external_data.py --start YYYY-MM-DD --end YYYY-MM-DD`.
+   This caches NOAA DHW for the study area and replay window, and the AGRRA snapshot for the demo sites.
 2. Set `REEFCOMMAND_FORCE_CACHE=true` in the demo `.env` unless a live call is deliberately part of the show.
-3. Run `make check`. Lint clean, tests green, no skipped tests.
+3. Run the backend and frontend checks from their respective folders.
+   Lint must be clean, tests must be green, and no tests may be skipped.
 4. Run the full demo script twice, end to end, on the machine that will present.
 5. Confirm the live-vs-cache indicator renders correctly, so the team can honestly answer "is this live right now".
 
