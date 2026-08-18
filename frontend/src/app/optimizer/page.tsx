@@ -1,12 +1,17 @@
+import { CurrentPlan } from '@/features/plan';
+import { CapacityPanel } from '@/features/resources';
+
 /**
- * Resource Optimizer.
+ * Resource Optimizer: the capacity in force, the control that changes it, and
+ * the plan that capacity produces.
  *
- * Placeholder. Built in frontend step 6.
+ * Composition only.
  */
-export default function Page() {
+export default function OptimizerPage() {
   return (
-    <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-      This surface is built in a later step.
-    </p>
+    <>
+      <CapacityPanel />
+      <CurrentPlan />
+    </>
   );
 }

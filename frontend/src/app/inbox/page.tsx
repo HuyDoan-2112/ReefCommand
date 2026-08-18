@@ -1,12 +1,16 @@
+import { ReportForm } from '@/features/inbox';
+import { CurrentPlan } from '@/features/plan';
+
 /**
- * Report Inbox.
+ * Report Inbox: submit a field observation and watch the plan change.
  *
- * Placeholder. Built in frontend step 5.
+ * Composition only.
  */
-export default function Page() {
+export default function InboxPage() {
   return (
-    <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-      This surface is built in a later step.
-    </p>
+    <>
+      <ReportForm />
+      <CurrentPlan />
+    </>
   );
 }
