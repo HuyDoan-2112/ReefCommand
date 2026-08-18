@@ -21,7 +21,7 @@ definition.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from reefcommand.domain.intervention import EligibleAction
 from reefcommand.domain.resources import ResourceScenario
@@ -34,27 +34,12 @@ class AllocationProblem(BaseModel):
     candidates: list[EligibleAction]
     scenario: ResourceScenario
     scores: dict[str, SiteScores]
-    site_names: dict[str, str] = Field(default_factory=dict)
 
 
 def build_problem(
     approved: list[EligibleAction],
     scenario: ResourceScenario,
     scores: list[SiteScores],
-    site_names: dict[str, str] | None = None,
 ) -> AllocationProblem:
     """Assemble the allocation instance."""
-    score_by_site = {score.site_id: score for score in scores}
-    missing_scores = sorted({candidate.site_id for candidate in approved} - set(score_by_site))
-    if missing_scores:
-        raise ValueError(f"missing SiteScores for candidate sites: {missing_scores}")
-    candidate_sites = {candidate.site_id for candidate in approved}
-    unknown_names = set(site_names or {}) - candidate_sites
-    if unknown_names:
-        raise ValueError(f"site_names contains unknown candidate sites: {sorted(unknown_names)}")
-    return AllocationProblem(
-        candidates=approved,
-        scenario=scenario,
-        scores=score_by_site,
-        site_names=site_names or {},
-    )
+    raise NotImplementedError
