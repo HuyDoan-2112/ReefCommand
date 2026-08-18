@@ -10,17 +10,18 @@ from ortools.sat.python import cp_model
 from reefcommand.domain.enums import ActionClass
 from reefcommand.domain.intervention import EligibleAction
 from reefcommand.domain.plan import Assignment, DeferredSite, ResponsePlan
+from reefcommand.domain.resources import Boat, DiveTeam
 from reefcommand.optimizer.model import AllocationProblem
 
 SOLVER_TIME_LIMIT_SECONDS = 10.0
 _SCALE = 1000
 
 
-def _available_boats(problem: AllocationProblem):
+def _available_boats(problem: AllocationProblem) -> list[Boat]:
     return [boat for boat in problem.scenario.boats if boat.available]
 
 
-def _available_teams(problem: AllocationProblem):
+def _available_teams(problem: AllocationProblem) -> list[DiveTeam]:
     return [team for team in problem.scenario.dive_teams if team.available_hours > 0]
 
 
