@@ -60,6 +60,8 @@ def test_runoff_agent_uses_rainfall_result_and_labels_fixture() -> None:
         RunoffAssessment(
             support=0.62,
             confidence=0.54,
+            display_summary="Rainfall and turbidity support runoff.",
+            key_findings=["Recent rainfall was elevated.", "Turbidity was reported."],
             rationale="Rainfall and turbidity support runoff.",
         )
     )
@@ -68,6 +70,8 @@ def test_runoff_agent_uses_rainfall_result_and_labels_fixture() -> None:
 
     assert evidence.cause is Cause.RUNOFF
     assert evidence.support == 0.62
+    assert evidence.display_summary == "Rainfall and turbidity support runoff."
+    assert len(evidence.key_findings) == 2
     assert evidence.citations[-1].provenance is Provenance.SYNTHETIC
     assert "synthetic repository fixture" in evidence.rationale
     assert "Rainfall tool result" in completer.prompts[0]
@@ -91,6 +95,8 @@ def test_physical_agent_uses_both_context_tools() -> None:
         PhysicalAssessment(
             support=0.31,
             confidence=0.48,
+            display_summary="Vessel activity lacks direct damage evidence.",
+            key_findings=["No coral breakage was reported.", "Vessel traffic is context only."],
             rationale="Vessel activity is context, but no breakage was reported.",
         )
     )
@@ -98,8 +104,13 @@ def test_physical_agent_uses_both_context_tools() -> None:
     evidence = PhysicalAgent(completer).assess(site, [_observation()], snapshot)
 
     assert evidence.cause is Cause.PHYSICAL
-    assert evidence.support == 0.31
+    assert evidence.support == 0.2
+    assert evidence.display_summary == "No corroborated physical-damage signal was supplied."
+    assert evidence.key_findings[0] == (
+        "No broken coral, storm event, or grounding report was supplied."
+    )
     assert len(evidence.citations) >= 2
+    assert "vessel traffic alone is not damage" in evidence.rationale
     assert "Storm tool result" in completer.prompts[0]
     assert "Vessel tool result" in completer.prompts[0]
 
@@ -117,7 +128,15 @@ def test_agents_reject_mismatched_snapshot() -> None:
 
     with pytest.raises(ValueError, match="snapshot site_id"):
         RunoffAgent(
-            FakeCompleter(RunoffAssessment(support=0.0, confidence=0.0, rationale="none"))
+            FakeCompleter(
+                RunoffAssessment(
+                    support=0.0,
+                    confidence=0.0,
+                    display_summary="No runoff evidence was supplied.",
+                    key_findings=["No runoff evidence was supplied."],
+                    rationale="none",
+                )
+            )
         ).assess(
             site,
             [],

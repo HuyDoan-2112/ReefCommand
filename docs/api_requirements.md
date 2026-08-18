@@ -311,6 +311,12 @@ This is demo beat five.
 Force a recompute. Returns the new plan and its latency.
 Useful for the demo and for debugging; not part of the normal loop.
 
+The optional `execution_mode` field is `configured` by default and follows the backend's runtime configuration.
+Set it to `live_llm` for an explicit provider-backed agent run over the clearly labeled demo evidence.
+This mode keeps the presentation resilient by using the synthetic thermal replay and fixture-backed evidence tools while disease, runoff, physical, and Coordinator reasoning call the configured LLM.
+Live mode fails with HTTP 409 when the configured provider credential is unavailable instead of silently returning fixture output.
+`GET /plan/current` always creates an offline deterministic baseline when no plan has been published yet, so a model call only starts after an explicit live action.
+
 ### `GET /plan/{plan_id}/trace`
 
 Returns the ordered, structured execution trace for one completed plan.

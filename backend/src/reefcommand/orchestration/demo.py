@@ -57,6 +57,8 @@ def disease_completer(
         return disease.DiseaseAssessment(
             support=support,
             confidence=confidence,
+            display_summary=rationale,
+            key_findings=[rationale],
             rationale=f"{_FIXTURE_LABEL} {rationale}",
         )
 
@@ -89,6 +91,8 @@ def runoff_completer(
         return runoff.RunoffAssessment(
             support=support,
             confidence=confidence,
+            display_summary=rationale,
+            key_findings=[rationale],
             rationale=f"{_FIXTURE_LABEL} {rationale}",
         )
 
@@ -122,6 +126,8 @@ def physical_completer(
         return physical.PhysicalAssessment(
             support=support,
             confidence=confidence,
+            display_summary=rationale,
+            key_findings=[rationale],
             rationale=f"{_FIXTURE_LABEL} {rationale}",
         )
 

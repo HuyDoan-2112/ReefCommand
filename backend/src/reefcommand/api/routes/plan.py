@@ -7,10 +7,14 @@ compatible. Those are part of the contract, not optional extras.
 
 from __future__ import annotations
 
+import os
+from typing import Literal
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from reefcommand.api import state
+from reefcommand.config import get_settings
 from reefcommand.domain.plan import ResponsePlan
 from reefcommand.orchestration.pipeline import state_for_plan
 from reefcommand.orchestration.trace import (
@@ -26,6 +30,7 @@ class RecomputeRequest(BaseModel):
 
     scenario_id: str = state.DEFAULT_SCENARIO_ID
     site_ids: list[str] = Field(default_factory=lambda: list(state.DEFAULT_SITE_IDS))
+    execution_mode: Literal["configured", "live_llm"] = "configured"
 
 
 router = APIRouter(prefix="/plan", tags=["plan"])
@@ -50,6 +55,32 @@ def current_plan() -> ResponsePlan:
 def recompute(request: RecomputeRequest | None = None) -> ResponsePlan:
     """Force a recompute. Returns the new plan and its latency."""
     request = request or RecomputeRequest()
+    if request.execution_mode == "live_llm":
+        settings = get_settings()
+        has_credential = (
+            bool(settings.deepseek_api_key and settings.deepseek_api_key.strip())
+            if settings.llm_provider == "deepseek"
+            else bool(os.getenv("ANTHROPIC_API_KEY", "").strip())
+        )
+        if not has_credential:
+            credential = (
+                "REEFCOMMAND_DEEPSEEK_API_KEY"
+                if settings.llm_provider == "deepseek"
+                else "ANTHROPIC_API_KEY"
+            )
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Live execution requires {credential} for the configured "
+                    f"{settings.llm_provider} provider."
+                ),
+            )
+        return state.recompute(
+            request.scenario_id,
+            request.site_ids,
+            offline=False,
+            demo_data=True,
+        )
     return state.recompute(request.scenario_id, request.site_ids)
 
 

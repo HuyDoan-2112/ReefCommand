@@ -100,6 +100,8 @@ def test_assess_uses_strongest_reading_and_preserves_provenance(site: ReefSite) 
     assert evidence.cause is Cause.THERMAL
     assert evidence.support == pytest.approx(0.75)
     assert evidence.confidence == pytest.approx(0.9)
+    assert "DHW 4.0" in evidence.display_summary
+    assert 1 <= len(evidence.key_findings) <= 3
     assert len(evidence.citations) == 1
     assert evidence.citations[0].provenance is Provenance.CACHE
     assert "Alert Level 1" in evidence.rationale
@@ -132,4 +134,8 @@ def test_assess_returns_no_support_without_a_crw_window(site: ReefSite) -> None:
 
     assert evidence.support == 0.0
     assert evidence.confidence == 0.0
+    assert evidence.display_summary == (
+        "No thermal reading is available for this site and time window."
+    )
+    assert evidence.key_findings == ["No NOAA CRW reading was available"]
     assert evidence.citations == []

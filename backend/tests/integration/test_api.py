@@ -9,6 +9,7 @@ import pytest
 
 from reefcommand.api import state as api_state
 from reefcommand.api.app import create_app
+from reefcommand.config import get_settings
 from reefcommand.ingestion.field_reports import load_demo_updates
 
 SITE_IDS = [
@@ -20,6 +21,72 @@ SITE_IDS = [
     "looe_key",
     "eastern_dry_rocks",
 ]
+
+
+@pytest.mark.asyncio
+async def test_live_recompute_requires_configured_provider_credential(monkeypatch) -> None:
+    monkeypatch.setenv("REEFCOMMAND_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("REEFCOMMAND_DEEPSEEK_API_KEY", "")
+    get_settings.cache_clear()
+
+    def fail_recompute(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("pipeline ran without a live provider credential")
+
+    monkeypatch.setattr(api_state, "recompute", fail_recompute)
+    transport = httpx.ASGITransport(app=create_app())
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/plan/recompute",
+            json={"execution_mode": "live_llm", "site_ids": ["cheeca_rocks"]},
+        )
+
+    assert response.status_code == 409
+    assert "REEFCOMMAND_DEEPSEEK_API_KEY" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_live_recompute_forces_provider_execution(monkeypatch) -> None:
+    monkeypatch.setenv("REEFCOMMAND_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("REEFCOMMAND_DEEPSEEK_API_KEY", "test-key")
+    get_settings.cache_clear()
+    monkeypatch.setattr(api_state, "_current_plan", None)
+    baseline = api_state.current_plan()
+    received: dict[str, object] = {}
+
+    def capture_recompute(
+        scenario_id: str,
+        site_ids: list[str],
+        *,
+        offline: bool | None = None,
+        demo_data: bool | None = None,
+    ) -> object:
+        received.update(
+            scenario_id=scenario_id,
+            site_ids=site_ids,
+            offline=offline,
+            demo_data=demo_data,
+        )
+        return baseline
+
+    monkeypatch.setattr(api_state, "recompute", capture_recompute)
+    transport = httpx.ASGITransport(app=create_app())
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/plan/recompute",
+            json={
+                "scenario_id": "demo_default",
+                "site_ids": ["cheeca_rocks"],
+                "execution_mode": "live_llm",
+            },
+        )
+
+    assert response.status_code == 200
+    assert received == {
+        "scenario_id": "demo_default",
+        "site_ids": ["cheeca_rocks"],
+        "offline": False,
+        "demo_data": True,
+    }
 
 
 @pytest.mark.asyncio

@@ -30,6 +30,8 @@ def _evidence() -> object:
                 cause=Cause.THERMAL,
                 support=0.82,
                 confidence=0.91,
+                display_summary="Thermal support is high.",
+                key_findings=["DHW is elevated."],
                 rationale="High DHW.",
                 computed_at=datetime(2023, 9, 15, tzinfo=UTC),
             ),
@@ -37,6 +39,8 @@ def _evidence() -> object:
                 cause=Cause.DISEASE,
                 support=0.61,
                 confidence=0.73,
+                display_summary="Disease support is elevated.",
+                key_findings=["A lesion pattern was observed."],
                 rationale="Lesion pattern.",
                 computed_at=datetime(2023, 9, 15, tzinfo=UTC),
             ),
@@ -44,6 +48,8 @@ def _evidence() -> object:
                 cause=Cause.RUNOFF,
                 support=0.13,
                 confidence=0.64,
+                display_summary="Runoff support is low.",
+                key_findings=["Rainfall support is low."],
                 rationale="Low rainfall support.",
                 computed_at=datetime(2023, 9, 15, tzinfo=UTC),
             ),
@@ -51,6 +57,8 @@ def _evidence() -> object:
                 cause=Cause.PHYSICAL,
                 support=0.05,
                 confidence=0.78,
+                display_summary="Physical-damage support is low.",
+                key_findings=["No coral breakage was observed."],
                 rationale="No breakage.",
                 computed_at=datetime(2023, 9, 15, tzinfo=UTC),
             ),
@@ -102,6 +110,8 @@ def test_prompt_contains_fused_evidence_and_policy_candidates() -> None:
     assert "intensive_monitoring" in prompt
     assert "support" in prompt
     assert "probability" not in prompt
+    assert "required rationale" in prompt
+    assert "requires_manager_approval" not in prompt
 
 
 def test_decide_returns_validated_approved_action() -> None:
