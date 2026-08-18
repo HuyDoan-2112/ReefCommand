@@ -105,9 +105,7 @@ def assess(site: ReefSite, observations: list[StructuredObservation]) -> CauseEv
     proximity_support = 0.0
     if nearby.records:
         nearest_distance = min(nearby.distances_km)
-        proximity_support = 0.2 * max(
-            0.0, 1.0 - nearest_distance / DEFAULT_SEARCH_RADIUS_KM
-        )
+        proximity_support = 0.2 * max(0.0, 1.0 - nearest_distance / DEFAULT_SEARCH_RADIUS_KM)
 
     support = min(1.0, local_support + proximity_support)
     citations = [_field_citation(observation) for observation in site_observations]
