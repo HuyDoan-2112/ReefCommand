@@ -13,7 +13,7 @@ from reefcommand.domain.enums import Cause, Provenance
 from reefcommand.domain.observation import StructuredObservation
 from reefcommand.domain.provenance import FixtureSet
 from reefcommand.domain.site import ReefSite
-from reefcommand.evidence.disease import DiseaseAssessment, DiseaseAgent
+from reefcommand.evidence.disease import DiseaseAgent, DiseaseAssessment
 from reefcommand.ingestion.field_reports import load_demo_updates, structure
 from reefcommand.tools.agrra import AgrraSctldTool
 from reefcommand.tools.contracts import EvidenceSnapshot, EvidenceWindow

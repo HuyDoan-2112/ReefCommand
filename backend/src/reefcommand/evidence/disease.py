@@ -73,7 +73,9 @@ def _observation_citations(observations: list[StructuredObservation]) -> list[Ev
             EvidenceCitation(
                 source=metadata.source if metadata else "Field observation report",
                 reference=(
-                    metadata.source_url if metadata and metadata.source_url else observation.report_id
+                    metadata.source_url
+                    if metadata and metadata.source_url
+                    else observation.report_id
                 ),
                 observed_at=observation.observed_at,
                 provenance=metadata.kind if metadata else Provenance.SYNTHETIC,
@@ -151,7 +153,8 @@ class DiseaseAgent:
         user = (
             f"Site:\n{json.dumps(site.model_dump(mode='json'), indent=2)}\n\n"
             "Field observations:\n"
-            f"{json.dumps([item.model_dump(mode='json') for item in site_observations], indent=2)}\n\n"
+            f"{json.dumps([item.model_dump(mode='json') for item in site_observations], indent=2)}"
+            "\n\n"
             f"AGRRA tool result:\n{json.dumps(nearby.model_dump(mode='json'), indent=2)}\n\n"
             "Give a 0 to 1 disease support score, a 0 to 1 confidence score, and a short "
             "rationale that names only facts present above."
@@ -164,7 +167,9 @@ class DiseaseAgent:
                 "AGRRA input is a synthetic repository fixture and is not a real reviewed record."
             )
         if result.stale:
-            rationale_parts.append(f"AGRRA data is marked stale: {result.note or 'no reason supplied'}")
+            rationale_parts.append(
+                f"AGRRA data is marked stale: {result.note or 'no reason supplied'}"
+            )
         if not site_observations:
             rationale_parts.append("No field observations were supplied for this site.")
 
