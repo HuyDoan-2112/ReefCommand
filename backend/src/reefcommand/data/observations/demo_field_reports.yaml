@@ -1,0 +1,195 @@
+# Reconstructed demo field reports, one per Mission Iconic Reefs site.
+#
+# These are the INITIAL diver reports for the 2023 Florida Keys marine heatwave
+# replay window. They are synthetic: the wording is written in a diver's voice,
+# but the content of each report is reconstructed from a cited published
+# observation for that site, not from a real submitted report. Every record is
+# labeled synthetic and carries the source it was derived from.
+#
+# The follow-up Cheeca Rocks disease report that drives re-planning lives in
+# demo_evidence_update.yaml. The structured form of every report lives in
+# demo_structured_observations.yaml.
+#
+# Honesty note: Horseshoe Reef has no site-specific published 2023 observation
+# that could be found. Its report is an explicit synthetic placeholder grounded
+# in the documented offshore regional pattern, and its provenance note says so.
+
+metadata:
+  schema_version: 1
+  fixture_id: demo_field_reports
+  description: Reconstructed initial diver reports for the seven sites, 2023 heatwave replay.
+  created_at: 2026-08-18T00:00:00Z
+
+records:
+  - record_id: carysfort-2023-08-05
+    data:
+      report_id: carysfort-2023-08-05
+      site_id: carysfort
+      observed_at: 2023-08-05T10:30:00-04:00
+      observer: Reconstructed demo observer
+      text: >
+        Did a full swim of the site today. Almost everything is bleached, the brain corals and
+        boulder corals stark white top to bottom, even at the deeper stations. I did not see any
+        tissue loss though. The colonies are pale but still look intact. This is the whitest I have
+        seen it out here.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: >
+        Too hot to handle? The impact of the 2023 marine heatwave on Florida Keys coral,
+        Frontiers in Marine Science (2024), DOI 10.3389/fmars.2024.1489273
+      source_url: https://www.frontiersin.org/journals/marine-science/articles/10.3389/fmars.2024.1489273/full
+      observed_at: 2023-08-05
+      note: >
+        SYNTHETIC diver report reconstructed from the cited study. Carysfort is reported as reaching
+        100 percent bleaching yet historically the coolest of the offshore sites, with no
+        bleaching-related mortality documented. Written in a diver's voice for the demo, not a real
+        submitted report.
+
+  - record_id: horseshoe-2023-08-06
+    data:
+      report_id: horseshoe-2023-08-06
+      site_id: horseshoe
+      observed_at: 2023-08-06T11:00:00-04:00
+      observer: Reconstructed demo observer
+      text: >
+        Site is heavily bleached across the shallow spur and groove, most colonies pale to fully
+        white. Not seeing obvious tissue loss yet. This matches what crews are reporting across the
+        offshore Keys sites this month.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: >
+        Synthetic placeholder grounded in the documented offshore 2023 pattern in Too hot to handle?
+        The impact of the 2023 marine heatwave on Florida Keys coral, Frontiers in Marine Science
+        (2024), DOI 10.3389/fmars.2024.1489273
+      source_url: https://www.frontiersin.org/journals/marine-science/articles/10.3389/fmars.2024.1489273/full
+      observed_at: 2023-08-06
+      note: >
+        SYNTHETIC. No site-specific published 2023 observation was found for Horseshoe Reef. This
+        report is a deliberate placeholder, grounded in the study's finding of 100 percent bleaching
+        across the offshore Iconic Reefs sites, not in a Horseshoe-specific source. It should be
+        replaced if a real Horseshoe observation becomes available.
+
+  - record_id: cheeca_rocks-2023-08-08
+    data:
+      report_id: cheeca_rocks-2023-08-08
+      site_id: cheeca_rocks
+      observed_at: 2023-08-08T09:45:00-04:00
+      observer: Reconstructed demo observer
+      text: >
+        Inshore patch reef is in rough shape. Water is hot and nearly everything is bleached, the
+        brain corals especially are bone white. The big Pseudodiploria and Colpophyllia colonies are
+        all pale. No major tissue loss yet, but the bleaching here is as bad as it gets.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: >
+        Too hot to handle? The impact of the 2023 marine heatwave on Florida Keys coral,
+        Frontiers in Marine Science (2024), DOI 10.3389/fmars.2024.1489273
+      source_url: https://www.frontiersin.org/journals/marine-science/articles/10.3389/fmars.2024.1489273/full
+      observed_at: 2023-08-08
+      note: >
+        SYNTHETIC diver report reconstructed from the cited study. Cheeca Rocks reached about 15.6
+        Degree Heating Weeks in August 2023 and 100 percent bleaching, with brain corals
+        (Pseudodiploria strigosa, Colpophyllia natans) the most heavily affected. This is the initial
+        bleaching report. The disease that developed later is a separate report in
+        demo_evidence_update.yaml.
+
+  - record_id: sombrero-2023-07-28
+    data:
+      report_id: sombrero-2023-07-28
+      site_id: sombrero
+      observed_at: 2023-07-28T10:15:00-04:00
+      observer: Reconstructed demo observer
+      text: >
+        Staghorn thickets are mostly bleached, and some branches are already dead with a film of
+        algae over them. The boulder corals are pale but hanging on. Reef looks badly stressed, but I
+        did not see any disease lesions today.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: >
+        NOAA Office of National Marine Sanctuaries, Mission Iconic Reefs Relocates Thousands of
+        Corals Amidst Record Heatwave, August 2023, and Too hot to handle?, Frontiers in Marine
+        Science (2024), DOI 10.3389/fmars.2024.1489273
+      source_url: https://sanctuaries.noaa.gov/news/aug23/florida-corals-relocated-heatwave.html
+      observed_at: 2023-07-28
+      note: >
+        SYNTHETIC diver report reconstructed from the cited sources. The NOAA news release describes
+        Sombrero staghorn as mostly bleached with some segments dead and covered in a film of algae.
+        The Frontiers study reports Sombrero at 100 percent bleaching with minimal disease. The dead
+        staghorn here is recent bleaching mortality, not disease, which is recorded in the structured
+        observation.
+
+  - record_id: newfound_harbor-2023-09-10
+    data:
+      report_id: newfound_harbor-2023-09-10
+      site_id: newfound_harbor
+      observed_at: 2023-09-10T09:30:00-04:00
+      observer: Reconstructed demo observer
+      text: >
+        Came back to check the inshore site and it is grim. The brain corals that bleached back in
+        July are now mostly dead, with big patches of bare skeleton where the tissue has come off.
+        Whatever survived is still pale. This site got hit harder than anywhere else I have been this
+        season.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: >
+        Too hot to handle? The impact of the 2023 marine heatwave on Florida Keys coral,
+        Frontiers in Marine Science (2024), DOI 10.3389/fmars.2024.1489273
+      source_url: https://www.frontiersin.org/journals/marine-science/articles/10.3389/fmars.2024.1489273/full
+      observed_at: 2023-09-10
+      note: >
+        SYNTHETIC diver report reconstructed from the cited study. Newfound Harbor reached 11.9
+        Degree Heating Weeks by July 2023, 100 percent bleaching, and the highest complete mortality
+        among the sites at about 42.9 percent, with Pseudodiploria strigosa at about 88 percent
+        mortality. The tissue loss here follows bleaching and is not attributed to disease.
+
+  - record_id: looe_key-2023-08-02
+    data:
+      report_id: looe_key-2023-08-02
+      site_id: looe_key
+      observed_at: 2023-08-02T10:00:00-04:00
+      observer: Reconstructed demo observer
+      text: >
+        Full bleaching across the site, the big star corals and brain corals all pale to white. Fish
+        are still around and the structure is intact. No tissue loss or disease that I noticed on
+        this dive.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: >
+        Too hot to handle? The impact of the 2023 marine heatwave on Florida Keys coral,
+        Frontiers in Marine Science (2024), DOI 10.3389/fmars.2024.1489273
+      source_url: https://www.frontiersin.org/journals/marine-science/articles/10.3389/fmars.2024.1489273/full
+      observed_at: 2023-08-02
+      note: >
+        SYNTHETIC diver report reconstructed from the cited study. Looe Key is reported at 100 percent
+        bleaching with minimal bleaching mortality. Unusual Orbicella faveolata lesions were noted at
+        this site later in the season, which is why this initial report stays bleaching only.
+
+  - record_id: eastern_dry_rocks-2023-07-25
+    data:
+      report_id: eastern_dry_rocks-2023-07-25
+      site_id: eastern_dry_rocks
+      observed_at: 2023-07-25T09:20:00-04:00
+      observer: Reconstructed demo observer
+      text: >
+        Checked the outplant plots. The two-year-old staghorn outplants are still hanging in there
+        but starting to pale at the branch tips. The wild colonies around them are bleaching too.
+        Early days, but the heat is already showing.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: >
+        NOAA Office of National Marine Sanctuaries, Mission Iconic Reefs Relocates Thousands of
+        Corals Amidst Record Heatwave, August 2023, and Too hot to handle?, Frontiers in Marine
+        Science (2024), DOI 10.3389/fmars.2024.1489273
+      source_url: https://sanctuaries.noaa.gov/news/aug23/florida-corals-relocated-heatwave.html
+      observed_at: 2023-07-25
+      note: >
+        SYNTHETIC diver report reconstructed from the cited sources. The NOAA news release documents a
+        healthy two-year-old staghorn outplant at Eastern Dry Rocks and staghorn showing signs of
+        paling in July 2023. The Frontiers study reports the offshore sites at 100 percent bleaching.
