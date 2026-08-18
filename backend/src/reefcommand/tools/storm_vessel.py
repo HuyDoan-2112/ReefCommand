@@ -46,6 +46,7 @@ class StormHistoryTool(EvidenceTool[list[StormEvent]]):
             ),
         )
 
+
 class VesselActivityTool(EvidenceTool[VesselActivity]):
     """Read synthetic vessel activity in one aligned lookback window."""
 

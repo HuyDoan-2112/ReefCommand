@@ -117,9 +117,7 @@ def test_agents_reject_mismatched_snapshot() -> None:
 
     with pytest.raises(ValueError, match="snapshot site_id"):
         RunoffAgent(
-            FakeCompleter(
-                RunoffAssessment(support=0.0, confidence=0.0, rationale="none")
-            )
+            FakeCompleter(RunoffAssessment(support=0.0, confidence=0.0, rationale="none"))
         ).assess(
             site,
             [],
