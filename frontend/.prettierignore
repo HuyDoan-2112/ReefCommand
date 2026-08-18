@@ -1,0 +1,12 @@
+# Generated from the backend OpenAPI document. Regenerate with:
+#   npm run gen:api:refresh
+# Formatting these would diverge from the generator's own output on the next run.
+openapi.json
+src/types/api.ts
+
+# The visual reference the dashboard is ported from. Kept verbatim so it stays
+# comparable against the React implementation.
+reefcommand.html
+
+.next
+node_modules

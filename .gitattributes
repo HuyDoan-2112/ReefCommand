@@ -10,5 +10,7 @@
 *.xlsx binary
 
 CHANGELOG.md linguist-generated=true
+frontend/openapi.json linguist-generated=true
+frontend/src/types/api.ts linguist-generated=true
 package-lock.json linguist-generated=true -diff
 uv.lock linguist-generated=true -diff
