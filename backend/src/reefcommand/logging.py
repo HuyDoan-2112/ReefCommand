@@ -6,14 +6,41 @@ so the team can honestly answer "is this live right now" during a demo.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
+
+import structlog
+
+_configured = False
 
 
 def configure_logging(level: str = "INFO") -> None:
     """Configure structlog processors and stdlib bridging."""
-    raise NotImplementedError
+    global _configured
+    numeric_level = getattr(logging, level.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError(f"unknown log level {level!r}")
+    logging.basicConfig(level=numeric_level, format="%(message)s", force=True)
+    structlog.configure(
+        processors=[
+            structlog.contextvars.merge_contextvars,
+            structlog.stdlib.filter_by_level,
+            structlog.stdlib.add_logger_name,
+            structlog.stdlib.add_log_level,
+            structlog.processors.TimeStamper(fmt="iso", utc=True),
+            structlog.processors.StackInfoRenderer(),
+            structlog.processors.format_exc_info,
+            structlog.processors.JSONRenderer(),
+        ],
+        wrapper_class=structlog.stdlib.BoundLogger,
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        cache_logger_on_first_use=True,
+    )
+    _configured = True
 
 
 def get_logger(name: str) -> Any:
     """Return a bound structured logger."""
-    raise NotImplementedError
+    if not _configured:
+        configure_logging()
+    return structlog.get_logger(name)

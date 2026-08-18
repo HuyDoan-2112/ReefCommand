@@ -33,6 +33,7 @@ class Settings(BaseSettings):
 
     external_timeout_seconds: float = 3.0
     force_cache: bool = False
+    offline_demo: bool = True
 
 
 @lru_cache
