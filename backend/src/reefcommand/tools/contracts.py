@@ -14,6 +14,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 
 from reefcommand.domain.enums import Provenance
 
+
 class EvidenceWindow(BaseModel):
     """The time period a tool is allowed to inspect."""
 
