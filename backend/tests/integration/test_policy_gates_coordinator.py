@@ -70,11 +70,12 @@ def _action(
 
 
 def _decision(action_id: str) -> CoordinatorDecision:
+    evidence = _evidence()
     return CoordinatorDecision(
         site_id="cheeca_rocks",
         evidence_support_scores={
-            cause: SupportScore(support=0.8 if cause is Cause.THERMAL else 0.1, confidence=0.8)
-            for cause in Cause
+            cause: SupportScore(support=item.support, confidence=item.confidence)
+            for cause, item in evidence.by_cause.items()
         },
         evidence_sufficient=True,
         additional_evidence_needed=False,
@@ -87,18 +88,18 @@ def _decision(action_id: str) -> CoordinatorDecision:
 
 def test_unknown_action_id_is_rejected() -> None:
     with pytest.raises(BusinessRuleError, match="unknown or ineligible"):
-        validate(_decision("invented"), "cheeca_rocks", [_action()])
+        validate(_decision("invented"), _evidence(), [_action()])
 
 
 def test_action_with_unmet_evidence_requirements_is_rejected() -> None:
     with pytest.raises(BusinessRuleError, match="unmet evidence"):
         validate(
             _decision("intensive_monitoring"),
-            "cheeca_rocks",
+            _evidence(),
             [_action(unmet=["Need a field report"])],
         )
 
 
 def test_contraindicated_action_is_rejected() -> None:
     with pytest.raises(BusinessRuleError, match="unknown or ineligible"):
-        validate(_decision("temporary_shading"), "cheeca_rocks", [_action()])
+        validate(_decision("temporary_shading"), _evidence(), [_action()])

@@ -62,13 +62,12 @@ class ApprovedAction(BaseModel):
     rationale: str = Field(min_length=1)
 
 
-class CoordinatorDecision(BaseModel):
-    """The one object allowed to cross from the autonomous stage to the optimizer."""
+class CoordinatorOutput(BaseModel):
+    """Fields the LLM is allowed to decide."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     site_id: str = Field(min_length=1)
-    evidence_support_scores: dict[Cause, SupportScore]
     evidence_sufficient: bool
     additional_evidence_needed: bool
     next_evidence: list[EvidenceRequest] = Field(default_factory=list)
@@ -78,7 +77,7 @@ class CoordinatorDecision(BaseModel):
     )
 
     @model_validator(mode="after")
-    def check_internal_consistency(self) -> CoordinatorDecision:
+    def check_internal_consistency(self) -> CoordinatorOutput:
         """Reject decisions that contradict themselves.
 
         These are schema-level invariants.
@@ -95,3 +94,9 @@ class CoordinatorDecision(BaseModel):
         if len(priorities) != len(set(priorities)):
             raise ValueError("next_evidence priorities must be distinct")
         return self
+
+
+class CoordinatorDecision(CoordinatorOutput):
+    """Validated output plus evidence scores copied from deterministic fusion."""
+
+    evidence_support_scores: dict[Cause, SupportScore]

@@ -17,9 +17,13 @@ and provenance are checked per site rather than assumed.
 
 from __future__ import annotations
 
-from reefcommand.domain.enums import Cause
+from reefcommand.domain.enums import Cause, RequirementKey
 from reefcommand.domain.evidence import FusedEvidence
-from reefcommand.domain.intervention import EligibleAction, InterventionDefinition
+from reefcommand.domain.intervention import (
+    EligibleAction,
+    EvidenceRequirement,
+    InterventionDefinition,
+)
 from reefcommand.domain.observation import StructuredObservation
 from reefcommand.domain.site import ReefSite
 from reefcommand.policy import knowledge_base
@@ -38,38 +42,52 @@ def _supporting_causes(
 
 
 def _requirement_met(
-    requirement: str,
+    requirement: EvidenceRequirement,
     site: ReefSite,
     evidence: FusedEvidence,
     observations: list[StructuredObservation],
+    *,
+    dive_already_scheduled: bool,
 ) -> bool:
-    lowered = requirement.lower()
-    if "divable" in lowered:
+    key = requirement.requirement_key
+    site_observations = [
+        observation for observation in observations if observation.site_id == site.site_id
+    ]
+    if key is RequirementKey.SITE_DIVABLE:
         return True
-    if "lesions or tissue loss" in lowered:
+    if key is RequirementKey.LESION_OR_TISSUE_LOSS_REPORTED:
         return any(
             observation.tissue_loss_observed is True or observation.lesion_description
-            for observation in observations
-            if observation.site_id == site.site_id
+            for observation in site_observations
         )
-    if "dive is already scheduled" in lowered:
-        return False
-    if "turbidity or sediment" in lowered:
+    if key is RequirementKey.DIVE_ALREADY_SCHEDULED:
+        return dive_already_scheduled
+    if key is RequirementKey.TURBIDITY_SEDIMENT_OR_RAINFALL:
         field_signal = any(
             observation.turbidity_note or observation.sediment_note
-            for observation in observations
-            if observation.site_id == site.site_id
+            for observation in site_observations
         )
         return field_signal or evidence.support(Cause.RUNOFF) >= 0.45
-    if "defined restoration or nursery footprint" in lowered:
+    if key is RequirementKey.BROKEN_CORAL_OR_GROUNDING_REPORTED:
+        return (
+            any(observation.broken_coral_observed is True for observation in site_observations)
+            or evidence.support(Cause.PHYSICAL) >= 0.45
+        )
+    if key is RequirementKey.SHADE_DEPTH_AND_AREA_COMPATIBLE:
+        return True
+    if key is RequirementKey.SHADE_CONDITIONS_COMPATIBLE:
+        return True
+    if key is RequirementKey.RESTORATION_FOOTPRINT_DEFINED:
         return site.has_active_restoration
-    return "depth and area" in lowered or "current and wave conditions" in lowered
+    raise ValueError(f"unsupported intervention requirement key {key!r}")
 
 
 def eligible_actions(
     site: ReefSite,
     evidence: FusedEvidence,
     observations: list[StructuredObservation] | None = None,
+    *,
+    scheduled_site_ids: set[str] | None = None,
 ) -> list[EligibleAction]:
     """Return the catalog actions that are policy-eligible for this site right now.
 
@@ -80,6 +98,7 @@ def eligible_actions(
     if evidence.site_id != site.site_id:
         raise ValueError("fused evidence site_id must match the requested site")
     observations = observations or []
+    scheduled_site_ids = scheduled_site_ids or set()
     candidates: list[EligibleAction] = []
     for action in knowledge_base.retrieve():
         supporting_causes = _supporting_causes(action, evidence)
@@ -89,9 +108,15 @@ def eligible_actions(
         if contraindications:
             continue
         unmet = [
-            requirement
+            requirement.description
             for requirement in action.requirements
-            if not _requirement_met(requirement, site, evidence, observations)
+            if not _requirement_met(
+                requirement,
+                site,
+                evidence,
+                observations,
+                dive_already_scheduled=site.site_id in scheduled_site_ids,
+            )
         ]
         candidates.append(
             EligibleAction(

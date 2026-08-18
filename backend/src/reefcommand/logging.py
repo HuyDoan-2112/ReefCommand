@@ -20,7 +20,7 @@ def configure_logging(level: str = "INFO") -> None:
     numeric_level = getattr(logging, level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError(f"unknown log level {level!r}")
-    logging.basicConfig(level=numeric_level, format="%(message)s", force=True)
+    logging.basicConfig(level=numeric_level, format="%(message)s")
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
@@ -40,7 +40,5 @@ def configure_logging(level: str = "INFO") -> None:
 
 
 def get_logger(name: str) -> Any:
-    """Return a bound structured logger."""
-    if not _configured:
-        configure_logging()
+    """Return a logger without mutating application-wide handlers."""
     return structlog.get_logger(name)

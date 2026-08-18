@@ -11,6 +11,7 @@ from reefcommand.coordinator.prompts import build_user_prompt
 from reefcommand.coordinator.schemas import (
     ApprovedAction,
     CoordinatorDecision,
+    CoordinatorOutput,
     EvidenceRequest,
     SupportScore,
 )
@@ -80,18 +81,18 @@ def _scores() -> dict[Cause, SupportScore]:
 
 
 class FakeCompleter:
-    def __init__(self, decision: CoordinatorDecision) -> None:
-        self.decision = decision
+    def __init__(self, output: CoordinatorOutput) -> None:
+        self.output = output
         self.prompts: list[str] = []
 
     def __call__(
         self,
         system: str,
         user: str,
-        schema: type[CoordinatorDecision],
-    ) -> CoordinatorDecision:
+        schema: type[CoordinatorOutput],
+    ) -> CoordinatorOutput:
         self.prompts.append(f"{system}\n{user}")
-        return self.decision
+        return self.output
 
 
 def test_prompt_contains_fused_evidence_and_policy_candidates() -> None:
@@ -104,9 +105,8 @@ def test_prompt_contains_fused_evidence_and_policy_candidates() -> None:
 
 
 def test_decide_returns_validated_approved_action() -> None:
-    decision = CoordinatorDecision(
+    output = CoordinatorOutput(
         site_id="cheeca_rocks",
-        evidence_support_scores=_scores(),
         evidence_sufficient=True,
         additional_evidence_needed=False,
         approved_actions=[
@@ -118,18 +118,18 @@ def test_decide_returns_validated_approved_action() -> None:
         ],
         reasoning_summary="Act on the eligible monitoring action.",
     )
-    completer = FakeCompleter(decision)
+    completer = FakeCompleter(output)
 
     result = decide(_evidence(), [_action()], completer=completer)
 
-    assert result == decision
+    assert result.approved_actions == output.approved_actions
+    assert result.evidence_support_scores == _scores()
     assert "Policy-eligible candidate actions" in completer.prompts[0]
 
 
 def test_decide_can_request_more_evidence() -> None:
-    decision = CoordinatorDecision(
+    output = CoordinatorOutput(
         site_id="cheeca_rocks",
-        evidence_support_scores=_scores(),
         evidence_sufficient=False,
         additional_evidence_needed=True,
         next_evidence=[
@@ -142,7 +142,54 @@ def test_decide_can_request_more_evidence() -> None:
         reasoning_summary="Request lesion imagery before acting.",
     )
 
-    assert decide(_evidence(), [_action()], completer=FakeCompleter(decision)) == decision
+    result = decide(_evidence(), [_action()], completer=FakeCompleter(output))
+    assert result.additional_evidence_needed is True
+    assert result.evidence_support_scores == _scores()
+
+
+def test_decide_retries_business_rule_failure_with_feedback() -> None:
+    invalid = CoordinatorOutput(
+        site_id="cheeca_rocks",
+        evidence_sufficient=True,
+        additional_evidence_needed=False,
+        approved_actions=[
+            ApprovedAction(
+                action_id="invented_action",
+                priority=Priority.HIGH,
+                rationale="Invalid first attempt.",
+            )
+        ],
+        reasoning_summary="Invalid first attempt.",
+    )
+    valid = CoordinatorOutput(
+        site_id="cheeca_rocks",
+        evidence_sufficient=True,
+        additional_evidence_needed=False,
+        approved_actions=[
+            ApprovedAction(
+                action_id="intensive_monitoring",
+                priority=Priority.HIGH,
+                rationale="Corrected to the eligible action.",
+            )
+        ],
+        reasoning_summary="Corrected decision.",
+    )
+    outputs = iter([invalid, valid])
+    prompts: list[str] = []
+
+    def complete(
+        _system: str,
+        user: str,
+        _schema: type[CoordinatorOutput],
+    ) -> CoordinatorOutput:
+        prompts.append(user)
+        return next(outputs)
+
+    result = decide(_evidence(), [_action()], completer=complete)
+
+    assert result.approved_actions[0].action_id == "intensive_monitoring"
+    assert len(prompts) == 2
+    assert "violated a business rule" in prompts[1]
 
 
 def test_validation_rejects_unknown_action() -> None:
@@ -162,7 +209,7 @@ def test_validation_rejects_unknown_action() -> None:
     )
 
     with pytest.raises(BusinessRuleError, match="unknown or ineligible"):
-        validate(decision, "cheeca_rocks", [_action()])
+        validate(decision, _evidence(), [_action()])
 
 
 def test_validation_rejects_unmet_requirement_and_site_mismatch() -> None:
@@ -181,11 +228,34 @@ def test_validation_rejects_unmet_requirement_and_site_mismatch() -> None:
         reasoning_summary="Invalid.",
     )
     with pytest.raises(BusinessRuleError, match="unmet evidence"):
-        validate(unmet_decision, "cheeca_rocks", [_action(unmet=["Need a report"])])
+        validate(unmet_decision, _evidence(), [_action(unmet=["Need a report"])])
 
     with pytest.raises(BusinessRuleError, match="does not match"):
         validate(
             unmet_decision.model_copy(update={"site_id": "sombrero"}),
-            "cheeca_rocks",
+            _evidence(),
             [_action()],
         )
+
+
+def test_validation_rejects_rewritten_fusion_scores() -> None:
+    decision = CoordinatorDecision(
+        site_id="cheeca_rocks",
+        evidence_support_scores={
+            **_scores(),
+            Cause.THERMAL: SupportScore(support=0.99, confidence=0.91),
+        },
+        evidence_sufficient=True,
+        additional_evidence_needed=False,
+        approved_actions=[
+            ApprovedAction(
+                action_id="intensive_monitoring",
+                priority=Priority.HIGH,
+                rationale="Attempted score rewrite.",
+            )
+        ],
+        reasoning_summary="Invalid.",
+    )
+
+    with pytest.raises(BusinessRuleError, match="exactly match"):
+        validate(decision, _evidence(), [_action()])

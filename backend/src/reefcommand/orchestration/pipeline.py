@@ -24,25 +24,20 @@ this one point in the system, and nowhere else.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections import OrderedDict
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache, partial
+from threading import RLock
 from typing import cast
 
 import yaml
-from pydantic import TypeAdapter
 
 from reefcommand.config import DATA_DIR, get_settings
 from reefcommand.coordinator.agent import CoordinatorCompleter
 from reefcommand.coordinator.agent import decide as decide_coordinator
-from reefcommand.coordinator.schemas import (
-    ApprovedAction,
-    CoordinatorDecision,
-    EvidenceRequest,
-    SupportScore,
-)
-from reefcommand.domain.enums import Cause, EvidenceRequestType, Priority, Provenance
+from reefcommand.domain.enums import Provenance
 from reefcommand.domain.evidence import FusedEvidence
 from reefcommand.domain.intervention import EligibleAction
 from reefcommand.domain.observation import StructuredObservation
@@ -55,12 +50,22 @@ from reefcommand.evidence.fusion import fuse
 from reefcommand.ingestion.agrra_sctld import NearbyRecords
 from reefcommand.ingestion.field_reports import load_demo_reports, structure
 from reefcommand.ingestion.noaa_crw import CrwObservation
-from reefcommand.ingestion.rainfall import RainfallSignal
-from reefcommand.ingestion.storm_vessel import StormEvent, VesselActivity
 from reefcommand.llm.client import collect_llm_calls
 from reefcommand.optimizer.model import AllocationProblem, build_problem
 from reefcommand.optimizer.scoring import score_sites
 from reefcommand.optimizer.solver import solve
+from reefcommand.orchestration.demo import (
+    coordinator_completer as offline_coordinator_completer,
+)
+from reefcommand.orchestration.demo import (
+    disease_completer as offline_disease_completer,
+)
+from reefcommand.orchestration.demo import (
+    physical_completer as offline_physical_completer,
+)
+from reefcommand.orchestration.demo import (
+    runoff_completer as offline_runoff_completer,
+)
 from reefcommand.orchestration.trace import ExecutionTrace, TraceExecutor, TraceRecorder, TraceStage
 from reefcommand.policy.engine import eligible_actions
 from reefcommand.tools import (
@@ -91,7 +96,9 @@ class PipelineState:
     trace: ExecutionTrace
 
 
-_STATE_BY_PLAN_ID: dict[str, PipelineState] = {}
+MAX_RETAINED_PLAN_STATES = 32
+_STATE_BY_PLAN_ID: OrderedDict[str, PipelineState] = OrderedDict()
+_STATE_LOCK = RLock()
 
 
 @lru_cache(maxsize=1)
@@ -129,7 +136,11 @@ def load_scenario(scenario_id: str) -> ResourceScenario:
 
 def state_for_plan(plan_id: str) -> PipelineState | None:
     """Return retained pipeline state for a plan, if it was created in-process."""
-    return _STATE_BY_PLAN_ID.get(plan_id)
+    with _STATE_LOCK:
+        state = _STATE_BY_PLAN_ID.get(plan_id)
+        if state is not None:
+            _STATE_BY_PLAN_ID.move_to_end(plan_id)
+        return state
 
 
 def remember_state(
@@ -137,22 +148,24 @@ def remember_state(
     problem: AllocationProblem,
     site_ids: Sequence[str],
     observations: Sequence[StructuredObservation],
-    evidence_by_site: Mapping[str, FusedEvidence] | None = None,
-    offline: bool = True,
-    trace: ExecutionTrace | None = None,
+    evidence_by_site: Mapping[str, FusedEvidence],
+    offline: bool,
+    trace: ExecutionTrace,
 ) -> None:
     """Retain the typed inputs needed for a later in-process replan."""
-    if trace is None:
-        raise ValueError("pipeline state requires an execution trace")
-    _STATE_BY_PLAN_ID[plan.plan_id] = PipelineState(
-        plan=plan,
-        problem=problem,
-        site_ids=tuple(site_ids),
-        observations=tuple(observations),
-        evidence_by_site=dict(evidence_by_site or {}),
-        offline=offline,
-        trace=trace,
-    )
+    with _STATE_LOCK:
+        _STATE_BY_PLAN_ID[plan.plan_id] = PipelineState(
+            plan=plan,
+            problem=problem,
+            site_ids=tuple(site_ids),
+            observations=tuple(observations),
+            evidence_by_site=dict(evidence_by_site),
+            offline=offline,
+            trace=trace,
+        )
+        _STATE_BY_PLAN_ID.move_to_end(plan.plan_id)
+        while len(_STATE_BY_PLAN_ID) > MAX_RETAINED_PLAN_STATES:
+            _STATE_BY_PLAN_ID.popitem(last=False)
 
 
 def _synthetic_crw(site_id: str, observed_on: date) -> list[CrwObservation]:
@@ -221,203 +234,6 @@ def _snapshot(site_id: str, window: EvidenceWindow) -> EvidenceSnapshot:
     )
 
 
-def _disease_completer(
-    observations: Sequence[StructuredObservation],
-    nearby: NearbyRecords,
-) -> Callable[..., disease.DiseaseAssessment]:
-    site_observations = list(observations)
-    has_lesion = any(
-        observation.lesion_description and observation.tissue_loss_observed is True
-        for observation in site_observations
-    )
-
-    def complete(
-        _system: str,
-        _user: str,
-        _schema: type[disease.DiseaseAssessment],
-    ) -> disease.DiseaseAssessment:
-        if has_lesion and nearby.records:
-            support, confidence = 0.82, 0.72
-            rationale = (
-                "Lesion-pattern tissue loss is present and nearby AGRRA context is available."
-            )
-        elif has_lesion:
-            support, confidence = 0.62, 0.58
-            rationale = (
-                "Lesion-pattern tissue loss is present, but no nearby AGRRA context was available."
-            )
-        elif any(observation.tissue_loss_observed is True for observation in site_observations):
-            support, confidence = 0.22, 0.45
-            rationale = (
-                "Tissue loss is reported without a lesion description, so disease support "
-                "remains low."
-            )
-        else:
-            support, confidence = 0.05, 0.42
-            rationale = "No lesion pattern or disease-specific tissue loss was reported."
-        return disease.DiseaseAssessment(
-            support=support,
-            confidence=confidence,
-            rationale=rationale,
-        )
-
-    return complete
-
-
-def _runoff_completer(
-    observations: Sequence[StructuredObservation],
-    snapshot: EvidenceSnapshot,
-) -> Callable[..., runoff.RunoffAssessment]:
-    signal = cast(RainfallSignal, snapshot.result("rainfall").data)
-    field_signal = any(
-        observation.turbidity_note or observation.sediment_note for observation in observations
-    )
-
-    def complete(
-        _system: str,
-        _user: str,
-        _schema: type[runoff.RunoffAssessment],
-    ) -> runoff.RunoffAssessment:
-        if field_signal and signal.total_mm >= 50.0:
-            support, confidence = 0.82, 0.68
-            rationale = "Field turbidity or sediment is paired with a high recent rainfall signal."
-        elif field_signal or signal.total_mm >= 50.0:
-            support, confidence = 0.62, 0.56
-            rationale = (
-                "A runoff indicator is present, but the field and rainfall signals are incomplete."
-            )
-        else:
-            support, confidence = 0.08, 0.40
-            rationale = "No strong turbidity, sediment, or recent rainfall signal was supplied."
-        return runoff.RunoffAssessment(
-            support=support,
-            confidence=confidence,
-            rationale=rationale,
-        )
-
-    return complete
-
-
-def _physical_completer(
-    observations: Sequence[StructuredObservation],
-    snapshot: EvidenceSnapshot,
-) -> Callable[..., physical.PhysicalAssessment]:
-    storms = TypeAdapter(list[StormEvent]).validate_python(snapshot.result("storm_history").data)
-    vessel = cast(VesselActivity, snapshot.result("vessel_activity").data)
-    broken = any(observation.broken_coral_observed is True for observation in observations)
-    grounding = vessel.grounding_reports > 0
-    close_storm = any(getattr(event, "closest_approach_km", 999.0) <= 10.0 for event in storms)
-
-    def complete(
-        _system: str,
-        _user: str,
-        _schema: type[physical.PhysicalAssessment],
-    ) -> physical.PhysicalAssessment:
-        if broken and (grounding or close_storm):
-            support, confidence = 0.86, 0.70
-            rationale = "Broken coral is paired with a nearby storm or grounding signal."
-        elif broken or grounding or close_storm:
-            support, confidence = 0.62, 0.55
-            rationale = (
-                "One physical-damage indicator is present, but the causal context is incomplete."
-            )
-        else:
-            support, confidence = 0.05, 0.40
-            rationale = "No broken coral, grounding, or close storm signal was supplied."
-        return physical.PhysicalAssessment(
-            support=support,
-            confidence=confidence,
-            rationale=rationale,
-        )
-
-    return complete
-
-
-def _request_for(cause: Cause) -> EvidenceRequest:
-    request_types = {
-        Cause.THERMAL: EvidenceRequestType.REPEAT_DIVE_COMPARISON,
-        Cause.DISEASE: EvidenceRequestType.CLOSE_RANGE_LESION_IMAGE,
-        Cause.RUNOFF: EvidenceRequestType.TURBIDITY_READING,
-        Cause.PHYSICAL: EvidenceRequestType.STRUCTURAL_DAMAGE_SURVEY,
-    }
-    return EvidenceRequest(
-        type=request_types[cause],
-        priority=1,
-        rationale=f"Additional {cause.value} evidence would reduce the leading uncertainty.",
-    )
-
-
-def _offline_coordinator(
-    evidence: FusedEvidence,
-    candidates: Sequence[EligibleAction],
-) -> CoordinatorDecision:
-    actionable = [
-        candidate for candidate in candidates if not candidate.unmet_evidence_requirements
-    ]
-    dominant = evidence.dominant_causes[0] if evidence.dominant_causes else Cause.THERMAL
-    if not actionable:
-        return CoordinatorDecision(
-            site_id=evidence.site_id,
-            evidence_support_scores={
-                cause: SupportScore(
-                    support=entry.support,
-                    confidence=entry.confidence,
-                )
-                for cause, entry in evidence.by_cause.items()
-            },
-            evidence_sufficient=False,
-            additional_evidence_needed=True,
-            next_evidence=[_request_for(dominant)],
-            reasoning_summary="No policy candidate has met all of its evidence requirements.",
-        )
-
-    return CoordinatorDecision(
-        site_id=evidence.site_id,
-        evidence_support_scores={
-            cause: SupportScore(
-                support=entry.support,
-                confidence=entry.confidence,
-            )
-            for cause, entry in evidence.by_cause.items()
-        },
-        evidence_sufficient=True,
-        additional_evidence_needed=False,
-        approved_actions=[
-            ApprovedAction(
-                action_id=action.action_id,
-                priority=(
-                    Priority.HIGH if dominant in action.supporting_causes else Priority.MEDIUM
-                ),
-                rationale=(
-                    "Approved by the offline Coordinator fixture because the action is "
-                    "policy-eligible and all listed requirements are met."
-                ),
-            )
-            for action in actionable
-        ],
-        reasoning_summary=(
-            "Offline Coordinator fixture approved only source-backed, requirement-complete "
-            "candidates; live runs use the structured LLM Coordinator boundary."
-        ),
-    )
-
-
-def _offline_coordinator_completer(
-    evidence: FusedEvidence,
-    candidates: Sequence[EligibleAction],
-) -> CoordinatorCompleter:
-    """Adapt the labeled fixture decision to the Coordinator protocol."""
-
-    def complete(
-        _system: str,
-        _user: str,
-        _schema: type[CoordinatorDecision],
-    ) -> CoordinatorDecision:
-        return _offline_coordinator(evidence, candidates)
-
-    return cast(CoordinatorCompleter, complete)
-
-
 def _assess_site(
     site: ReefSite,
     observations: Sequence[StructuredObservation],
@@ -429,9 +245,7 @@ def _assess_site(
     site_observations = [
         observation for observation in observations if observation.site_id == site.site_id
     ]
-    serialized_observations = [
-        observation.model_dump(mode="json") for observation in site_observations
-    ]
+    observation_refs = [observation.report_id for observation in site_observations]
     snapshot = trace.record(
         TraceStage.EVIDENCE_TOOLS,
         TraceExecutor.DETERMINISTIC,
@@ -455,8 +269,8 @@ def _assess_site(
         lambda: thermal.assess(site, list(site_observations), crw_series=crw),
         site_id=site.site_id,
         inputs={
-            "site": site.model_dump(mode="json"),
-            "observations": serialized_observations,
+            "site_ref": site.site_id,
+            "observation_refs": observation_refs,
             "thermal_source_mode": "synthetic_replay" if offline else "noaa_live_or_cache",
         },
         serialize=lambda result: {"evidence": result.model_dump(mode="json")},
@@ -477,15 +291,17 @@ def _assess_site(
                 site,
                 list(observations),
                 snapshot,
-                completer=(_disease_completer(site_observations, nearby) if offline else None),
+                completer=(
+                    offline_disease_completer(site_observations, nearby) if offline else None
+                ),
             ),
             site_id=site.site_id,
             provider=provider,
             model=model,
             inputs={
-                "site": site.model_dump(mode="json"),
-                "observations": serialized_observations,
-                "tool_result": snapshot.result("agrra_sctld").model_dump(mode="json"),
+                "site_ref": site.site_id,
+                "observation_refs": observation_refs,
+                "tool_result_ref": f"{snapshot.snapshot_id}:agrra_sctld",
             },
             serialize=lambda result: {"evidence": result.model_dump(mode="json")},
             rationale=lambda result: result.rationale,
@@ -501,15 +317,17 @@ def _assess_site(
                 site,
                 list(observations),
                 snapshot,
-                completer=(_runoff_completer(site_observations, snapshot) if offline else None),
+                completer=(
+                    offline_runoff_completer(site_observations, snapshot) if offline else None
+                ),
             ),
             site_id=site.site_id,
             provider=provider,
             model=model,
             inputs={
-                "site": site.model_dump(mode="json"),
-                "observations": serialized_observations,
-                "tool_result": snapshot.result("rainfall").model_dump(mode="json"),
+                "site_ref": site.site_id,
+                "observation_refs": observation_refs,
+                "tool_result_ref": f"{snapshot.snapshot_id}:rainfall",
             },
             serialize=lambda result: {"evidence": result.model_dump(mode="json")},
             rationale=lambda result: result.rationale,
@@ -525,16 +343,18 @@ def _assess_site(
                 site,
                 list(observations),
                 snapshot,
-                completer=(_physical_completer(site_observations, snapshot) if offline else None),
+                completer=(
+                    offline_physical_completer(site_observations, snapshot) if offline else None
+                ),
             ),
             site_id=site.site_id,
             provider=provider,
             model=model,
             inputs={
-                "site": site.model_dump(mode="json"),
-                "observations": serialized_observations,
-                "storm_tool_result": snapshot.result("storm_history").model_dump(mode="json"),
-                "vessel_tool_result": snapshot.result("vessel_activity").model_dump(mode="json"),
+                "site_ref": site.site_id,
+                "observation_refs": observation_refs,
+                "storm_tool_result_ref": f"{snapshot.snapshot_id}:storm_history",
+                "vessel_tool_result_ref": f"{snapshot.snapshot_id}:vessel_activity",
             },
             serialize=lambda result: {"evidence": result.model_dump(mode="json")},
             rationale=lambda result: result.rationale,
@@ -553,9 +373,7 @@ def _assess_site(
         TraceExecutor.DETERMINISTIC,
         lambda: fuse(site.site_id, investigator_outputs),
         site_id=site.site_id,
-        inputs={
-            "investigator_outputs": [item.model_dump(mode="json") for item in investigator_outputs]
-        },
+        inputs={"investigator_output_refs": [item.cause.value for item in investigator_outputs]},
         serialize=lambda result: {"fused_evidence": result.model_dump(mode="json")},
         rationale=lambda result: (
             "Deterministically retained independent support scores and identified "
@@ -569,8 +387,8 @@ def _assess_site(
         lambda: eligible_actions(site, evidence, list(observations)),
         site_id=site.site_id,
         inputs={
-            "fused_evidence": evidence.model_dump(mode="json"),
-            "observation_count": len(site_observations),
+            "fused_evidence_ref": f"{site.site_id}:evidence_fusion",
+            "observation_refs": observation_refs,
         },
         serialize=lambda result: {
             "eligible_actions": [item.model_dump(mode="json") for item in result]
@@ -630,7 +448,7 @@ def run(
         )
         evidence_by_site[site.site_id] = evidence
         coordinator_completer: CoordinatorCompleter | None = (
-            _offline_coordinator_completer(evidence, candidates) if offline_mode else None
+            offline_coordinator_completer(evidence, candidates) if offline_mode else None
         )
         with collect_llm_calls() as coordinator_calls:
             decision = trace_recorder.record(
@@ -646,9 +464,9 @@ def run(
                 provider=agent_provider,
                 model=agent_model,
                 inputs={
-                    "fused_evidence": evidence.model_dump(mode="json"),
-                    "eligible_actions": [
-                        candidate.model_dump(mode="json") for candidate in candidates
+                    "fused_evidence_ref": f"{site.site_id}:evidence_fusion",
+                    "eligible_action_refs": [
+                        f"{candidate.site_id}:{candidate.action_id}" for candidate in candidates
                     ],
                 },
                 serialize=lambda result: {"decision": result.model_dump(mode="json")},
@@ -675,11 +493,21 @@ def run(
         TraceExecutor.OPTIMIZER,
         lambda: solve(problem).model_copy(update={"replan_trigger": replan_trigger}),
         inputs={
-            "scenario": scenario.model_dump(mode="json"),
-            "candidate_actions": [action.model_dump(mode="json") for action in approved],
+            "scenario_ref": scenario.scenario_id,
+            "candidate_action_refs": [
+                f"{action.site_id}:{action.action_id}" for action in approved
+            ],
             "site_scores": {score.site_id: score.model_dump(mode="json") for score in scores},
         },
-        serialize=lambda result: {"response_plan": result.model_dump(mode="json")},
+        serialize=lambda result: {
+            "plan_id": result.plan_id,
+            "assignment_refs": [
+                f"{assignment.site_id}:{assignment.action_id}" for assignment in result.assignments
+            ],
+            "deferred_site_ids": [site.site_id for site in result.deferred],
+            "binding_constraints": result.binding_constraints,
+            "total_strategic_value": result.total_strategic_value,
+        },
         rationale=lambda result: (
             f"Selected {len(result.assignments)} feasible assignment(s) and deferred "
             f"{len(result.deferred)} site(s) under the simulated resource constraints."

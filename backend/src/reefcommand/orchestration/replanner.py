@@ -17,7 +17,7 @@ from datetime import UTC, datetime
 from reefcommand.domain.plan import ResponsePlan
 from reefcommand.domain.resources import ResourceScenario
 from reefcommand.optimizer.solver import solve
-from reefcommand.orchestration.events import PlanEvent
+from reefcommand.orchestration.events import NewEvidence, PlanEvent, ResourceChange
 from reefcommand.orchestration.pipeline import (
     load_scenario,
     remember_state,
@@ -36,7 +36,7 @@ def handle(event: PlanEvent, current: ResponsePlan) -> ResponsePlan:
             "submitting a replan event"
         )
 
-    if hasattr(event, "report"):
+    if isinstance(event, NewEvidence):
         from reefcommand.ingestion.field_reports import structure
 
         new_observation = structure(event.report)
@@ -48,7 +48,7 @@ def handle(event: PlanEvent, current: ResponsePlan) -> ResponsePlan:
             replan_trigger=f"new_evidence:{event.report.report_id}",
             offline=state.offline,
         )
-    else:
+    elif isinstance(event, ResourceChange):
         scenario = load_scenario(event.scenario_id)
         trigger = f"resource_change:{event.scenario_id}"
         trace_recorder = TraceRecorder(
@@ -64,11 +64,18 @@ def handle(event: PlanEvent, current: ResponsePlan) -> ResponsePlan:
             ),
             inputs={
                 "source_plan_id": current.plan_id,
-                "scenario": scenario.model_dump(mode="json"),
+                "scenario_ref": scenario.scenario_id,
                 "reused_evidence": True,
                 "reused_policy_candidates": True,
             },
-            serialize=lambda result: {"response_plan": result.model_dump(mode="json")},
+            serialize=lambda result: {
+                "plan_id": result.plan_id,
+                "assignment_refs": [
+                    f"{assignment.site_id}:{assignment.action_id}"
+                    for assignment in result.assignments
+                ],
+                "binding_constraints": result.binding_constraints,
+            },
             rationale=lambda result: (
                 "Only the optimizer reran because a resource change does not invalidate "
                 f"the evidence or policy decisions; {len(result.assignments)} assignment(s) "
@@ -89,6 +96,8 @@ def handle(event: PlanEvent, current: ResponsePlan) -> ResponsePlan:
             state.offline,
             execution_trace,
         )
+    else:
+        raise TypeError(f"unsupported plan event {type(event).__name__}")
 
     latency_ms = max(
         0,
@@ -97,41 +106,64 @@ def handle(event: PlanEvent, current: ResponsePlan) -> ResponsePlan:
     return updated.model_copy(update={"replan_latency_ms": latency_ms})
 
 
-def is_plan_still_feasible(plan: ResponsePlan, scenario_id: str) -> bool:
-    """Check the current plan against current capacity."""
+def is_plan_still_feasible(plan: ResponsePlan, scenario_id: str) -> bool | None:
+    """Check current assignments against a scenario, or return None without state."""
     state = state_for_plan(plan.plan_id)
     if state is None:
-        return False
+        return None
     scenario = load_scenario(scenario_id)
-    if plan.scenario_id != scenario_id:
-        return False
     problem = state.problem.model_copy(update={"scenario": scenario})
     action_by_key = {(action.site_id, action.action_id): action for action in problem.candidates}
     selected = []
+    boat_hours: dict[str, float] = {}
+    team_hours: dict[str, float] = {}
     for assignment in plan.assignments:
         action = action_by_key.get((assignment.site_id, assignment.action_id))
         if action is None:
             return False
         selected.append(action)
-        if assignment.boat_id and not any(
-            boat.boat_id == assignment.boat_id and boat.available for boat in scenario.boats
-        ):
-            return False
-        if assignment.team_id and not any(
-            team.team_id == assignment.team_id and team.available_hours > 0
-            for team in scenario.dive_teams
-        ):
-            return False
+        if action.resources.boats:
+            boat = next(
+                (
+                    boat
+                    for boat in scenario.boats
+                    if boat.boat_id == assignment.boat_id and boat.available
+                ),
+                None,
+            )
+            if boat is None:
+                return False
+            boat_hours[boat.boat_id] = (
+                boat_hours.get(boat.boat_id, 0.0) + action.resources.dive_hours
+            )
+        if action.resources.dive_teams:
+            team = next(
+                (
+                    team
+                    for team in scenario.dive_teams
+                    if team.team_id == assignment.team_id and team.available_hours > 0
+                ),
+                None,
+            )
+            if team is None:
+                return False
+            team_hours[team.team_id] = (
+                team_hours.get(team.team_id, 0.0) + action.resources.dive_hours
+            )
 
-    available_boats = [boat for boat in scenario.boats if boat.available]
-    available_teams = [team for team in scenario.dive_teams if team.available_hours > 0]
     return (
-        sum(action.resources.boats for action in selected) <= len(available_boats)
-        and sum(action.resources.dive_teams for action in selected) <= len(available_teams)
-        and sum(action.resources.dive_hours for action in selected)
-        <= sum(boat.operational_hours for boat in available_boats)
-        and sum(action.resources.dive_hours for action in selected)
-        <= sum(team.available_hours for team in available_teams)
+        all(
+            used <= min(boat.operational_hours, scenario.daylight_hours)
+            for boat_id, used in boat_hours.items()
+            for boat in scenario.boats
+            if boat.boat_id == boat_id
+        )
+        and all(
+            used <= min(team.available_hours, scenario.daylight_hours)
+            for team_id, used in team_hours.items()
+            for team in scenario.dive_teams
+            if team.team_id == team_id
+        )
         and sum(action.resources.shade_units for action in selected)
         <= scenario.inventory.shade_units
         and sum(action.resources.monitoring_kits for action in selected)
@@ -139,7 +171,6 @@ def is_plan_still_feasible(plan: ResponsePlan, scenario_id: str) -> bool:
         and sum(action.resources.sampling_kits for action in selected)
         <= scenario.inventory.sampling_kits
         and sum(action.resources.cost_usd for action in selected) <= scenario.budget_usd
-        and sum(action.resources.dive_hours for action in selected) <= scenario.daylight_hours
     )
 
 

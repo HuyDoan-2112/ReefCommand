@@ -7,10 +7,12 @@ from pathlib import Path
 
 import pytest
 import yaml
+from pydantic import ValidationError
 
 import reefcommand
 from reefcommand.domain.enums import Cause
 from reefcommand.domain.evidence import CauseEvidence
+from reefcommand.domain.intervention import InterventionDefinition
 from reefcommand.domain.observation import StructuredObservation
 from reefcommand.domain.provenance import FixtureSet
 from reefcommand.domain.site import ReefSite
@@ -93,6 +95,43 @@ def test_policy_marks_observation_specific_requirements_as_met() -> None:
     assert by_id["biosecurity_workflow"].unmet_evidence_requirements == [
         "A dive is already scheduled at this site"
     ]
+
+    scheduled = engine.eligible_actions(
+        site,
+        _fused(),
+        [observation],
+        scheduled_site_ids={site.site_id},
+    )
+    assert {candidate.action_id: candidate for candidate in scheduled}[
+        "biosecurity_workflow"
+    ].unmet_evidence_requirements == []
+
+
+def test_physical_damage_requirement_uses_typed_breakage_signal() -> None:
+    site = _site()
+    observation = StructuredObservation(
+        report_id="physical-policy-test",
+        site_id=site.site_id,
+        observed_at=datetime(2023, 9, 15, tzinfo=UTC),
+        broken_coral_observed=True,
+    )
+
+    candidates = engine.eligible_actions(
+        site,
+        _fused(thermal=0.1, disease=0.1, runoff=0.1, physical=0.9),
+        [observation],
+    )
+    by_id = {candidate.action_id: candidate for candidate in candidates}
+
+    assert by_id["physical_damage_assessment"].unmet_evidence_requirements == []
+
+
+def test_unknown_requirement_key_fails_catalog_validation() -> None:
+    valid = knowledge_base.get("intensive_monitoring").model_dump(mode="json")
+    valid["requirements"][0]["requirement_key"] = "unrecognized_requirement"
+
+    with pytest.raises(ValidationError, match="requirement_key"):
+        InterventionDefinition.model_validate(valid)
 
 
 def test_policy_requires_relevant_support_before_retrieving_an_action() -> None:

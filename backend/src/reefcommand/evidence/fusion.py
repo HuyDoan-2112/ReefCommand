@@ -58,8 +58,9 @@ def ambiguity_score(evidence: list[CauseEvidence]) -> float:
     Two causes at 0.68 and 0.65 score high.
     One cause at 0.91 against 0.17 scores low.
     """
-    if len(evidence) < 2:
+    in_play = [item.support for item in evidence if item.support >= DOMINANCE_THRESHOLD]
+    if len(in_play) < 2:
         return 0.0
-    ordered = sorted((item.support for item in evidence), reverse=True)
+    ordered = sorted(in_play, reverse=True)
     gap = ordered[0] - ordered[1]
     return max(0.0, min(1.0, 1.0 - gap / AMBIGUITY_MARGIN))

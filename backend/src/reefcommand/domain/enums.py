@@ -76,6 +76,19 @@ class ActionClass(StrEnum):
     TEMPORARY_SHADING = "temporary_shading"
 
 
+class RequirementKey(StrEnum):
+    """Machine-readable policy requirements supported by the deterministic engine."""
+
+    SITE_DIVABLE = "site_divable"
+    LESION_OR_TISSUE_LOSS_REPORTED = "lesion_or_tissue_loss_reported"
+    DIVE_ALREADY_SCHEDULED = "dive_already_scheduled"
+    TURBIDITY_SEDIMENT_OR_RAINFALL = "turbidity_sediment_or_rainfall"
+    BROKEN_CORAL_OR_GROUNDING_REPORTED = "broken_coral_or_grounding_reported"
+    SHADE_DEPTH_AND_AREA_COMPATIBLE = "shade_depth_and_area_compatible"
+    SHADE_CONDITIONS_COMPATIBLE = "shade_conditions_compatible"
+    RESTORATION_FOOTPRINT_DEFINED = "restoration_footprint_defined"
+
+
 class EvidenceRequestType(StrEnum):
     """Additional observations the Coordinator is allowed to request."""
 

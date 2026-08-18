@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from reefcommand.coordinator.schemas import CoordinatorDecision
 from reefcommand.domain.enums import Cause
+from reefcommand.domain.evidence import FusedEvidence
 from reefcommand.domain.intervention import EligibleAction
 
 
@@ -28,15 +29,21 @@ class BusinessRuleError(ValueError):
 
 def validate(
     decision: CoordinatorDecision,
-    site_id: str,
+    evidence: FusedEvidence,
     eligible: list[EligibleAction],
 ) -> CoordinatorDecision:
     """Return the decision unchanged, or raise BusinessRuleError."""
-    if decision.site_id != site_id:
+    if decision.site_id != evidence.site_id:
         raise BusinessRuleError("Coordinator decision site_id does not match the dispatched site")
 
     if set(decision.evidence_support_scores) != set(Cause):
         raise BusinessRuleError("Coordinator decision must include exactly one score per cause")
+    for cause, fused in evidence.by_cause.items():
+        reported = decision.evidence_support_scores[cause]
+        if reported.support != fused.support or reported.confidence != fused.confidence:
+            raise BusinessRuleError(
+                "Coordinator evidence scores must exactly match deterministic fusion"
+            )
 
     by_id = {action.action_id: action for action in eligible}
     approved_ids = [action.action_id for action in decision.approved_actions]

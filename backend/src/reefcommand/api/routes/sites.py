@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from reefcommand.api.state import current_plan
+from reefcommand.api.state import peek_current_plan
 from reefcommand.orchestration.pipeline import load_sites, state_for_plan
 
 router = APIRouter(prefix="/sites", tags=["sites"])
@@ -17,7 +17,9 @@ router = APIRouter(prefix="/sites", tags=["sites"])
 @router.get("")
 def list_sites() -> list[dict[str, object]]:
     """All sites in the study area with both value scores and current evidence."""
-    plan = current_plan()
+    plan = peek_current_plan()
+    if plan is None:
+        return []
     state = state_for_plan(plan.plan_id)
     if state is None:
         return []
@@ -51,7 +53,9 @@ def site_evidence(site_id: str) -> dict[str, object]:
     """Fused evidence for one site, including per-cause support, confidence, and citations."""
     from fastapi import HTTPException
 
-    plan = current_plan()
+    plan = peek_current_plan()
+    if plan is None:
+        raise HTTPException(status_code=404, detail=f"unknown site {site_id!r}")
     state = state_for_plan(plan.plan_id)
     if state is None or site_id not in state.evidence_by_site:
         raise HTTPException(status_code=404, detail=f"unknown site {site_id!r}")

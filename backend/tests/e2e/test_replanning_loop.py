@@ -11,9 +11,10 @@ from datetime import UTC, datetime
 import pytest
 
 from reefcommand.domain.enums import ActionClass
+from reefcommand.domain.resources import Boat
 from reefcommand.ingestion.field_reports import load_demo_updates
 from reefcommand.orchestration.events import NewEvidence, ResourceChange
-from reefcommand.orchestration.pipeline import run, state_for_plan
+from reefcommand.orchestration.pipeline import load_scenario, run, state_for_plan
 from reefcommand.orchestration.replanner import handle, is_plan_still_feasible
 
 pytestmark = pytest.mark.e2e
@@ -40,6 +41,19 @@ def test_initial_plan_is_produced_within_capacity() -> None:
         assignment.action_class is not ActionClass.BIOSECURITY_WORKFLOW
         for assignment in plan.assignments
     )
+    state = state_for_plan(plan.plan_id)
+    assert state is not None
+    scenario = load_scenario(plan.scenario_id)
+    actions = {(action.site_id, action.action_id): action for action in state.problem.candidates}
+    team_hours: dict[str, float] = {}
+    for assignment in plan.assignments:
+        action = actions[(assignment.site_id, assignment.action_id)]
+        assert assignment.team_id is not None
+        team_hours[assignment.team_id] = (
+            team_hours.get(assignment.team_id, 0.0) + action.resources.dive_hours
+        )
+    limits = {team.team_id: team.available_hours for team in scenario.dive_teams}
+    assert all(hours <= limits[team_id] for team_id, hours in team_hours.items())
 
 
 def test_new_field_report_changes_the_plan() -> None:
@@ -82,6 +96,36 @@ def test_boat_becoming_unavailable_triggers_recompute() -> None:
     assert state.trace.parent_plan_id == initial.plan_id
     assert [step.stage.value for step in state.trace.steps] == ["optimizer"]
     assert state.trace.steps[0].inputs["reused_evidence"] is True
+
+
+def test_missing_process_state_is_unknown_not_infeasible() -> None:
+    plan = run("demo_default", SITE_IDS)
+    unknown = plan.model_copy(update={"plan_id": "not-retained"})
+
+    assert is_plan_still_feasible(unknown, "demo_default") is None
+
+
+def test_different_scenario_with_more_capacity_remains_feasible(monkeypatch) -> None:
+    from reefcommand.orchestration import replanner
+
+    plan = run("demo_default", SITE_IDS)
+    default = load_scenario("demo_default")
+    expanded = default.model_copy(
+        update={
+            "scenario_id": "demo_expanded_capacity",
+            "boats": [
+                *default.boats,
+                Boat(
+                    boat_id="boat_c",
+                    name="Boat C",
+                    operational_hours=default.daylight_hours,
+                ),
+            ],
+        }
+    )
+    monkeypatch.setattr(replanner, "load_scenario", lambda _scenario_id: expanded)
+
+    assert replanner.is_plan_still_feasible(plan, "demo_expanded_capacity") is True
 
 
 def test_plan_response_carries_the_simulated_data_banner() -> None:

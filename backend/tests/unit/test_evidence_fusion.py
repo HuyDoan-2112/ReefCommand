@@ -47,6 +47,17 @@ def test_close_top_scores_are_ambiguous() -> None:
     assert ambiguity_score(scores) == pytest.approx(0.8)
 
 
+def test_quiet_site_is_not_ambiguous() -> None:
+    scores = [
+        _evidence(Cause.THERMAL, 0.10),
+        _evidence(Cause.DISEASE, 0.08),
+        _evidence(Cause.RUNOFF, 0.05),
+        _evidence(Cause.PHYSICAL, 0.02),
+    ]
+
+    assert ambiguity_score(scores) == 0.0
+
+
 def test_fusion_requires_exactly_one_assessment_per_cause() -> None:
     with pytest.raises(ValueError, match="exactly one"):
         fuse("sombrero", _all()[:-1])

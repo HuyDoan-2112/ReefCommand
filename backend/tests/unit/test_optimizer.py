@@ -11,7 +11,15 @@ from reefcommand.domain.site import SiteScores
 from reefcommand.optimizer.model import AllocationProblem, build_problem
 
 
-def _scenario(*, boats: int = 1, boat_hours: float = 6.0) -> ResourceScenario:
+def _scenario(
+    *,
+    boats: int = 1,
+    teams: int = 1,
+    boat_hours: float = 6.0,
+    team_hours: float = 4.7,
+    monitoring_kits: int = 1,
+    daylight_hours: float = 13.0,
+) -> ResourceScenario:
     return ResourceScenario(
         scenario_id="optimizer-test",
         label="Synthetic optimizer test scenario",
@@ -26,15 +34,16 @@ def _scenario(*, boats: int = 1, boat_hours: float = 6.0) -> ResourceScenario:
         ],
         dive_teams=[
             DiveTeam(
-                team_id="team_1",
-                name="Team 1",
+                team_id=f"team_{index + 1}",
+                name=f"Team {index + 1}",
                 diver_count=2,
-                available_hours=4.7,
+                available_hours=team_hours,
             )
+            for index in range(teams)
         ],
-        inventory=Inventory(monitoring_kits=1),
+        inventory=Inventory(monitoring_kits=monitoring_kits),
         budget_usd=5000.0,
-        daylight_hours=13.0,
+        daylight_hours=daylight_hours,
     )
 
 
@@ -100,6 +109,7 @@ def test_solver_selects_highest_value_action_under_capacity() -> None:
     assert plan.assignments[0].team_id == "team_1"
     assert plan.scenario_banner.startswith("Simulated operational capacity")
     assert plan.binding_constraints
+    assert "boat_count" not in plan.deferred[0].reason
 
 
 def test_baseline_uses_candidate_order_and_obeys_capacity() -> None:
@@ -116,3 +126,76 @@ def test_baseline_uses_candidate_order_and_obeys_capacity() -> None:
 
     assert [assignment.site_id for assignment in plan.assignments] == ["site_b"]
     assert plan.total_strategic_value == 0.4
+
+
+def test_assignments_are_keyed_by_site_and_action() -> None:
+    from reefcommand.optimizer.solver import solve
+
+    scenario = _scenario(
+        boats=2,
+        teams=2,
+        monitoring_kits=2,
+    )
+    problem = AllocationProblem(
+        candidates=[
+            _action("site_a", "intensive_monitoring"),
+            _action("site_b", "intensive_monitoring"),
+        ],
+        scenario=scenario,
+        scores={score.site_id: score for score in _scores()},
+    )
+
+    plan = solve(problem)
+
+    assert len(plan.assignments) == 2
+    assert len({assignment.boat_id for assignment in plan.assignments}) == 2
+    assert len({assignment.team_id for assignment in plan.assignments}) == 2
+
+
+def test_daylight_limits_each_parallel_resource_not_the_fleet_total() -> None:
+    from reefcommand.optimizer.solver import solve
+
+    scenario = _scenario(
+        boats=2,
+        teams=2,
+        boat_hours=8.0,
+        team_hours=8.0,
+        monitoring_kits=2,
+        daylight_hours=4.5,
+    )
+    problem = AllocationProblem(
+        candidates=[
+            _action("site_a", "action_a"),
+            _action("site_b", "action_b"),
+        ],
+        scenario=scenario,
+        scores={score.site_id: score for score in _scores()},
+    )
+
+    plan = solve(problem)
+
+    assert len(plan.assignments) == 2
+    assert sum(assignment.estimated_hours for assignment in plan.assignments) == 8.0
+
+
+def test_solver_is_stable_across_identical_runs() -> None:
+    from reefcommand.optimizer.solver import solve
+
+    problem = AllocationProblem(
+        candidates=[_action("site_a", "action_a"), _action("site_b", "action_b")],
+        scenario=_scenario(),
+        scores={
+            "site_a": SiteScores(site_id="site_a", ecological_value=0.5, strategic_value=0.5),
+            "site_b": SiteScores(site_id="site_b", ecological_value=0.5, strategic_value=0.5),
+        },
+    )
+
+    selections = [
+        [
+            (item.site_id, item.action_id, item.boat_id, item.team_id)
+            for item in solve(problem).assignments
+        ]
+        for _ in range(8)
+    ]
+
+    assert all(selection == selections[0] for selection in selections)

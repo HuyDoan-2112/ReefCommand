@@ -7,6 +7,7 @@ import json
 import httpx
 import pytest
 
+from reefcommand.api import state as api_state
 from reefcommand.api.app import create_app
 from reefcommand.ingestion.field_reports import load_demo_updates
 
@@ -19,6 +20,25 @@ SITE_IDS = [
     "looe_key",
     "eastern_dry_rocks",
 ]
+
+
+@pytest.mark.asyncio
+async def test_health_and_sites_do_not_trigger_pipeline_execution(monkeypatch) -> None:
+    monkeypatch.setattr(api_state, "_current_plan", None)
+
+    def fail_run(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("read-only endpoint triggered the planning pipeline")
+
+    monkeypatch.setattr(api_state, "run", fail_run)
+    transport = httpx.ASGITransport(app=create_app())
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        health = await client.get("/health/data-sources")
+        sites = await client.get("/sites")
+
+    assert health.status_code == 200
+    assert health.json()["status"] == "no_plan"
+    assert sites.status_code == 200
+    assert sites.json() == []
 
 
 @pytest.mark.asyncio

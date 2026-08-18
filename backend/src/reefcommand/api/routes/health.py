@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter
 
-from reefcommand.api.state import current_plan
+from reefcommand.api.state import peek_current_plan
 from reefcommand.domain.enums import Provenance
 from reefcommand.orchestration.pipeline import state_for_plan
 
@@ -28,7 +28,13 @@ def health() -> dict[str, str]:
 @router.get("/data-sources")
 def data_sources() -> dict[str, object]:
     """Per-source live-versus-cache status and snapshot age."""
-    plan = current_plan()
+    plan = peek_current_plan()
+    if plan is None:
+        return {
+            "checked_at": datetime.now(UTC).isoformat(),
+            "sources": [],
+            "status": "no_plan",
+        }
     state = state_for_plan(plan.plan_id)
     sources: dict[str, set[Provenance]] = {}
     if state:
