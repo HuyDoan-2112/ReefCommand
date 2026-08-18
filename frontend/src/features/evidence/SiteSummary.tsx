@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Panel, ProvenanceBadge } from '@/components';
 import { useSites } from '@/hooks/useSites';
 
+import { EvidencePanel } from './EvidencePanel';
+
 import styles from './SiteSummary.module.css';
 
 /**
@@ -78,15 +80,7 @@ export function SiteSummary({ siteId }: { siteId: string }) {
         </p>
       ) : null}
 
-      <Panel title="Evidence" hint="built in step 5">
-        <p className={styles.muted}>
-          The four support scores, their confidence, citations, and the Coordinator&apos;s decision
-          appear here next.
-          {site.dominant_causes.length > 0
-            ? ` Currently in play: ${site.dominant_causes.join(', ')}.`
-            : ' No cause is currently in play.'}
-        </p>
-      </Panel>
+      <EvidencePanel siteId={site.site_id} />
     </div>
   );
 }
