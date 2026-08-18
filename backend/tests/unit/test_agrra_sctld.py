@@ -38,6 +38,14 @@ def test_since_filters_out_earlier_records() -> None:
     assert all(record.submitted_on >= date(2023, 9, 9) for record in after.records)
 
 
+def test_until_filters_out_future_records() -> None:
+    before_records = agrra_sctld.find_records_near_site(
+        "cheeca_rocks", 25.0, EARLY, date(2023, 9, 4)
+    )
+
+    assert before_records.records == []
+
+
 def test_record_metadata_is_preserved() -> None:
     nearby = agrra_sctld.find_records_near_site("cheeca_rocks", 25.0, EARLY)
     record = nearby.records[0]
