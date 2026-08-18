@@ -1,18 +1,6 @@
 /**
- * The field reports the backend is able to structure.
- *
- * `POST /observations` does not extract structure from arbitrary prose. The
- * ingestion lane looks up a structuring fixture by `report_id` and returns 422
- * for anything it does not recognise:
- *
- *   "no structuring fixture for report '...'; free-text extraction is not
- *    implemented in the ingestion lane"
- *
- * So the inbox offers the reports that do exist rather than a free text box
- * that would fail on submit. The prose below mirrors the backend fixture so the
- * reader can see what is being submitted. If the fixtures change, this list has
- * to change with them, which is why it is a single named constant rather than
- * being scattered through the component.
+ * Messy synthetic field notes used to demonstrate live LLM structuring.
+ * These IDs deliberately have no deterministic structuring fixture.
  */
 
 export interface DemoReport {
@@ -27,15 +15,39 @@ export interface DemoReport {
 
 export const DEMO_REPORTS: readonly DemoReport[] = [
   {
-    report_id: 'cheeca_rocks-2023-09-15-update',
+    report_id: 'messy-cheeca-2023-09-15',
     site_id: 'cheeca_rocks',
     site_name: 'Cheeca Rocks',
-    observer: 'Reconstructed demo observer',
+    observer: 'Demo dive lead',
     observed_at: '2023-09-15T14:05:00Z',
     text:
-      'Went back to Cheeca Rocks. Since the August bleaching, the brain corals and some of the ' +
-      'big star corals now have spreading patches of tissue loss, with a sharp line between the ' +
-      'living tissue and the bare skeleton.',
-    note: 'Adds lesion-pattern tissue loss, which raises disease support and can change the plan.',
+      'back at cheeca after the aug heat. brain corals + a few big star corals look worse. patches ' +
+      'of tissue are gone and the edge is really sharp, live color straight to bare white skeleton. ' +
+      'seems to have spread since our last swim but i did not estimate a percent.',
+    note: 'Tests lesion morphology, named taxa, progression, and an explicitly missing percentage.',
+  },
+  {
+    report_id: 'messy-looe-2023-09-16',
+    site_id: 'looe_key',
+    site_name: 'Looe Key',
+    observer: 'Demo monitoring diver',
+    observed_at: '2023-09-16T10:20:00Z',
+    text:
+      'looe key visibility was rough today after all that rain. water looked like weak tea on the ' +
+      'north side and there was fine brown stuff sitting in low spots. could still see pale coral ' +
+      'but no one measured turbidity and i cannot say the rain caused it.',
+    note: 'Tests turbidity and sediment extraction without inventing a measurement or causal claim.',
+  },
+  {
+    report_id: 'messy-sombrero-2023-09-17',
+    site_id: 'sombrero',
+    site_name: 'Sombrero Reef',
+    observer: 'Demo survey diver',
+    observed_at: '2023-09-17T15:40:00Z',
+    text:
+      'quick sombrero check after the blow. several branching colonies near the mooring have fresh ' +
+      'white snapped ends and loose pieces below them. did not see an anchor or a grounded boat. ' +
+      'water itself looked clear.',
+    note: 'Tests direct breakage while keeping unreported vessel and storm attribution separate.',
   },
 ] as const;

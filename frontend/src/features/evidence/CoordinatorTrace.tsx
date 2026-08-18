@@ -127,7 +127,7 @@ export function CoordinatorTrace({ siteId }: { siteId: string }) {
 
   if (isPending) {
     return (
-      <Panel title="Execution trace">
+      <Panel title="Coordinator Agent - validated trace">
         <p className={styles.muted}>Loading the trace...</p>
       </Panel>
     );
@@ -135,7 +135,7 @@ export function CoordinatorTrace({ siteId }: { siteId: string }) {
 
   if (error || !trace) {
     return (
-      <Panel title="Execution trace">
+      <Panel title="Coordinator Agent - validated trace">
         <p className={styles.muted}>
           No trace is retained for this plan. Traces are held in process, so a backend restart drops
           them.
@@ -155,14 +155,14 @@ export function CoordinatorTrace({ siteId }: { siteId: string }) {
 
   return (
     <Panel
-      title="Execution trace"
+      title="Coordinator Agent - validated trace"
       hint={
         llmSteps.length > 0
           ? `${llmSteps.length} model call(s), ${totalTokens} tokens, ${totalMs} ms total`
           : `${steps.length} stages, ${totalMs} ms total, no model call`
       }
     >
-      <ol className={styles.list}>
+      <ol className={styles.list} tabIndex={0} aria-label="Coordinator execution stages">
         {steps.map((step) => (
           <StepRow key={`${step.sequence}-${step.stage}`} step={step} />
         ))}
@@ -173,9 +173,8 @@ export function CoordinatorTrace({ siteId }: { siteId: string }) {
           <span aria-hidden="true">▲</span>
           <div>
             <strong>No model was called for this plan.</strong> The pipeline ran in offline demo
-            mode, where the investigators and the Coordinator are deterministic fixtures. Set
-            <code> REEFCOMMAND_OFFLINE_DEMO=false</code> to run them against the configured
-            provider.
+            mode, where the investigators and the Coordinator are deterministic fixtures. Use Run
+            live diagnosis above to call the configured provider.
           </div>
         </div>
       ) : null}

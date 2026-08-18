@@ -255,15 +255,32 @@ The optimizer derives these by re-solving with the smallest capacity relaxations
 It does not require a resource counter to land at exact numeric saturation.
 Each deferred site also receives plain-language trade-off text rather than raw constraint keys.
 
+### `POST /observations/structure`
+
+Send one raw field report to the configured LLM.
+The model returns only observation fields, while report identity, site, timestamp, and provenance are copied by the backend.
+Unknown or unmentioned values remain `null`.
+The response includes provider, model, attempt count, token usage when available, and server-side extraction latency.
+
+This endpoint fails with HTTP 409 when the configured provider credential is unavailable.
+Malformed model output is retried against the Pydantic schema and never reaches the dashboard.
+
+### `POST /observations/structured`
+
+Submit the raw report together with the reviewed `StructuredObservation` returned by `/observations/structure`.
+The backend verifies that report ID, site ID, and observation timestamp match before re-planning.
+It does not call the extraction model again, so the reviewed preview is exactly what enters the evidence pipeline.
+
 ### `POST /observations`
 
-Submit a field report.
-This is the demo's re-planning trigger.
+Submit a named fixture report through the deterministic compatibility path.
+This remains the fixture-backed re-planning trigger used by automated demonstrations.
 
 Request:
 
 ```json
 {
+  "report_id": "cheeca_rocks-2023-09-15-update",
   "site_id": "cheeca_rocks",
   "observed_at": "2026-08-17T14:05:00Z",
   "observer": "Dive Team B",
@@ -276,10 +293,9 @@ Response:
 
 ```json
 {
-  "report_id": "rpt_0007",
-  "accepted_at": "2026-08-17T14:05:01Z",
-  "structured": { "...": "StructuredObservation" },
-  "replan": { "plan_id": "plan_20260817_1405", "latency_ms": 4180 }
+  "report_id": "cheeca_rocks-2023-09-15-update",
+  "plan": { "...": "ResponsePlan" },
+  "replan_latency_ms": 4180
 }
 ```
 

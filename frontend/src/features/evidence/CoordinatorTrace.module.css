@@ -5,9 +5,35 @@
 .list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 10px 0 0;
   display: flex;
   flex-direction: column;
+  max-height: 420px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--ocean-mid) var(--foam);
+  scrollbar-width: thin;
+}
+
+.list:focus-visible {
+  outline: 2px solid var(--ocean-bright);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.list::-webkit-scrollbar-track {
+  background: var(--foam);
+  border-radius: 999px;
+}
+
+.list::-webkit-scrollbar-thumb {
+  background: var(--ocean-mid);
+  border-radius: 999px;
+  border: 2px solid var(--foam);
 }
 
 .item {
@@ -170,4 +196,10 @@
   font-size: 12.5px;
   color: var(--text-secondary);
   line-height: 1.55;
+}
+
+@media (max-width: 680px) {
+  .list {
+    max-height: 360px;
+  }
 }

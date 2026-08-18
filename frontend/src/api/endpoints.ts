@@ -14,12 +14,15 @@ import type {
   FieldReport,
   FusedEvidence,
   ObservationAccepted,
+  ReportStructureResult,
+  RecomputeRequest,
   ResourceChangeRequest,
   ResourceChangeResult,
   ResponsePlan,
   ScenarioView,
   SiteExecutionTrace,
   SiteView,
+  StructuredObservationSubmission,
 } from '@/types';
 
 /** The current response plan. Never starts a planning run of its own. */
@@ -70,15 +73,24 @@ export function submitObservation(report: FieldReport): Promise<ObservationAccep
   return post<ObservationAccepted>('/observations', report);
 }
 
+/** Convert a messy report into a schema-validated observation with the configured LLM. */
+export function structureObservation(report: FieldReport): Promise<ReportStructureResult> {
+  return post<ReportStructureResult>('/observations/structure', report);
+}
+
+/** Use an already reviewed extraction for re-planning without another model call. */
+export function submitStructuredObservation(
+  submission: StructuredObservationSubmission,
+): Promise<ObservationAccepted> {
+  return post<ObservationAccepted>('/observations/structured', submission);
+}
+
 /** Change the capacity scenario, which re-runs the optimizer only. */
 export function changeScenario(body: ResourceChangeRequest): Promise<ResourceChangeResult> {
   return patch<ResourceChangeResult>('/resources/scenario', body);
 }
 
 /** Force a recompute. Useful for the demo and for debugging. */
-export function recomputePlan(body?: {
-  scenario_id?: string;
-  site_ids?: string[];
-}): Promise<ResponsePlan> {
+export function recomputePlan(body?: RecomputeRequest): Promise<ResponsePlan> {
   return post<ResponsePlan>('/plan/recompute', body);
 }

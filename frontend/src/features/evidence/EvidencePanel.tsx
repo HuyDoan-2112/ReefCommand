@@ -1,13 +1,10 @@
 'use client';
 
-import { Panel, ProvenanceBadge, SupportConfidenceBar } from '@/components';
-import { useCurrentPlan } from '@/hooks/usePlan';
+import { SupportConfidenceBar } from '@/components';
 import { useSiteEvidence } from '@/hooks/useSites';
-import { useSiteTrace } from '@/hooks/useTrace';
 import { CAUSES, type CauseEvidence } from '@/types';
 
 import styles from './EvidencePanel.module.css';
-import { evidenceRequestLabel, readCoordinatorDecision } from './coordinatorDecision';
 
 /**
  * The four competing causes for one site, and what the Coordinator decided.
@@ -28,11 +25,13 @@ function Citations({ evidence }: { evidence: CauseEvidence }) {
     return <p className={styles.noCitations}>No citation was attached to this assessment.</p>;
   }
 
+  const visibleCitations = citations.slice(0, 2);
+  const hiddenCount = citations.length - visibleCitations.length;
+
   return (
     <ul className={styles.citationList}>
-      {citations.map((citation, index) => (
+      {visibleCitations.map((citation, index) => (
         <li key={`${citation.source}-${index}`} className={styles.citation}>
-          <ProvenanceBadge provenance={citation.provenance} />
           <span className={styles.citationBody}>
             <span className={styles.citationSource}>{citation.source}</span>
             {citation.reference ? (
@@ -47,176 +46,54 @@ function Citations({ evidence }: { evidence: CauseEvidence }) {
           </span>
         </li>
       ))}
+      {hiddenCount > 0 ? (
+        <li className={styles.moreSources}>+{hiddenCount} more sources in the audit trace</li>
+      ) : null}
     </ul>
   );
 }
 
 export function EvidencePanel({ siteId }: { siteId: string }) {
   const { data: evidence, isPending, error } = useSiteEvidence(siteId);
-  const { data: plan } = useCurrentPlan();
-  const { data: trace } = useSiteTrace(plan?.plan_id ?? null, siteId);
 
   if (isPending) {
-    return (
-      <Panel title="Evidence">
-        <p className={styles.muted}>Loading evidence...</p>
-      </Panel>
-    );
+    return <p className={styles.muted}>Loading the four hypothesis assessments...</p>;
   }
 
   if (error) {
-    return (
-      <Panel title="Evidence">
-        <p className={styles.muted}>No fused evidence for this site yet. {error.message}</p>
-      </Panel>
-    );
+    return <p className={styles.muted}>No fused evidence for this site yet. {error.message}</p>;
   }
 
-  const decision = readCoordinatorDecision(trace);
   const dominant = new Set(evidence.dominant_causes ?? []);
-  const total = CAUSES.reduce((sum, cause) => sum + (evidence.by_cause[cause]?.support ?? 0), 0);
 
   return (
-    <div className={styles.root}>
-      <Panel
-        title="Evidence for each cause"
-        hint={`four independent scores, summing to ${total.toFixed(2)}`}
-      >
-        <div className={styles.causeGrid}>
-          {CAUSES.map((cause) => {
-            const entry = evidence.by_cause[cause];
-            if (!entry) return null;
-            return (
-              <div key={cause} className={styles.causeCard}>
-                <SupportConfidenceBar
-                  cause={cause}
-                  support={entry.support}
-                  confidence={entry.confidence}
-                  isDominant={dominant.has(cause)}
-                  rationale={entry.rationale}
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        <div className={styles.readouts}>
-          <div className={styles.readout}>
-            <span className={styles.readoutLabel}>Ambiguity</span>
-            <span className={styles.readoutValue}>{evidence.ambiguity.toFixed(2)}</span>
-            <span className={styles.readoutNote}>
-              How close the leading causes are. High ambiguity is when two causes imply different
-              responses, which is what the Coordinator resolves by asking for more evidence.
-            </span>
-          </div>
-          <div className={styles.readout}>
-            <span className={styles.readoutLabel}>Lowest confidence</span>
-            <span className={styles.readoutValue}>{evidence.lowest_confidence.toFixed(2)}</span>
-            <span className={styles.readoutNote}>
-              The weakest of the four assessments. A high support score resting on low confidence is
-              not the same finding as one resting on high confidence.
-            </span>
-          </div>
-        </div>
-
-        <p className={styles.disclaimer}>
-          These are support scores, not probabilities. They are not normalized against each other
-          and the four causes are not assumed independent, so more than one can be well supported at
-          once.
-        </p>
-      </Panel>
-
-      <Panel
-        title="What the Coordinator decided"
-        hint={
-          decision
-            ? decision.executor === 'llm'
-              ? `${decision.provider ?? 'model'} ${decision.model ?? ''}`.trim()
-              : 'offline fixture, no model call'
-            : undefined
-        }
-      >
-        {!decision ? (
-          <p className={styles.muted}>
-            No Coordinator decision is available for this site in the current plan&apos;s trace.
-          </p>
-        ) : (
-          <>
-            <div
-              className={
-                decision.additional_evidence_needed ? styles.verdictAsking : styles.verdictActing
-              }
-            >
-              <span className={styles.verdictIcon} aria-hidden="true">
-                {decision.additional_evidence_needed ? '🔍' : '✅'}
-              </span>
-              <div>
-                <div className={styles.verdictTitle}>
-                  {decision.additional_evidence_needed
-                    ? 'Holding for more evidence'
-                    : 'Evidence judged sufficient to act'}
-                </div>
-                <p className={styles.verdictBody}>{decision.reasoning_summary}</p>
-              </div>
-            </div>
-
-            {decision.next_evidence.length > 0 ? (
-              <div className={styles.requests}>
-                <div className={styles.requestsTitle}>Requested before acting</div>
-                {[...decision.next_evidence]
-                  .sort((a, b) => a.priority - b.priority)
-                  .map((request) => (
-                    <div key={`${request.type}-${request.priority}`} className={styles.request}>
-                      <span className={styles.requestPriority}>{request.priority}</span>
-                      <div>
-                        <div className={styles.requestType}>
-                          {evidenceRequestLabel(request.type)}
-                        </div>
-                        <div className={styles.requestWhy}>{request.rationale}</div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            ) : null}
-
-            {decision.approved_actions.length > 0 ? (
-              <div className={styles.approved}>
-                <div className={styles.requestsTitle}>
-                  Approved as worth acting on, subject to capacity
-                </div>
-                {decision.approved_actions.map((action) => (
-                  <div key={action.action_id} className={styles.approvedItem}>
-                    <span className={styles.approvedName}>
-                      {action.action_id.replace(/_/g, ' ')}
-                    </span>
-                    <span className={styles.approvedPriority}>{action.priority}</span>
-                    <span className={styles.approvedWhy}>{action.rationale}</span>
-                  </div>
-                ))}
-                <p className={styles.disclaimer}>
-                  The Coordinator chooses among actions the policy engine already found eligible. It
-                  cannot invent one, and it does not assign boats or teams.
-                </p>
-              </div>
-            ) : null}
-          </>
-        )}
-      </Panel>
-
-      <Panel title="Citations" hint="every score carries its sources">
-        <div className={styles.citationGroups}>
-          {CAUSES.map((cause) => {
-            const entry = evidence.by_cause[cause];
-            if (!entry) return null;
-            return (
-              <div key={cause} className={styles.citationGroup}>
-                <div className={styles.citationGroupTitle}>{cause}</div>
-                <Citations evidence={entry} />
-              </div>
-            );
-          })}
-        </div>
-      </Panel>
-    </div>
+    <section className={styles.root}>
+      <div className={styles.sectionHead}>
+        <h3>Hypothesis investigation - 4 independent modules</h3>
+        <span>Demo evidence uses synthetic inputs, not live measurements</span>
+      </div>
+      <div className={styles.causeGrid}>
+        {CAUSES.map((cause) => {
+          const entry = evidence.by_cause[cause];
+          if (!entry) return null;
+          return (
+            <article key={cause} className={styles.causeCard}>
+              <SupportConfidenceBar
+                cause={cause}
+                support={entry.support}
+                confidence={entry.confidence}
+                isDominant={dominant.has(cause)}
+                displaySummary={entry.display_summary}
+                keyFindings={entry.key_findings}
+              />
+              <Citations evidence={entry} />
+            </article>
+          );
+        })}
+      </div>
+      <p className={styles.disclaimer}>
+        Support scores are not probabilities and are not normalized against each other.
+      </p>
+    </section>
   );
 }

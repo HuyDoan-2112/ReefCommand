@@ -39,7 +39,7 @@ def handle(event: PlanEvent, current: ResponsePlan) -> ResponsePlan:
     if isinstance(event, NewEvidence):
         from reefcommand.ingestion.field_reports import structure
 
-        new_observation = structure(event.report)
+        new_observation = event.observation or structure(event.report)
         observations = [*state.observations, new_observation]
         updated = run(
             current.scenario_id,

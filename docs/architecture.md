@@ -7,7 +7,8 @@ Everything that can be a documented rule stays a documented rule.
 
 | Stage | Implementation | Why |
 | --- | --- | --- |
-| Ingestion | Deterministic adapters | Fetching and caching, nothing to reason about. |
+| Data intake | Deterministic adapters | Fetching, caching, and retaining raw reports, with nothing to reason about. |
+| Report structuring | LLM, schema-constrained | Extracts optional observation fields from messy prose while preserving unknown values and requiring review. |
 | Thermal evidence | Deterministic | Reading DHW and HotSpot and applying documented thresholds is numeric comparison. Do not use an LLM for this. |
 | Disease evidence | LLM plus tools | Field text describes lesions, tissue loss, spatial progression. Requires interpretation. |
 | Runoff evidence | LLM plus tools | Combines diver text, rainfall, turbidity, geographic context. |
@@ -22,7 +23,7 @@ Everything that can be a documented rule stays a documented rule.
 ```text
 NOAA data --------+
                   |
-Diver reports ----+--> Current reef state
+Diver reports ----+--> Schema-validated observation --> Current reef state
                   |
 Reef/site data ---+
                        |

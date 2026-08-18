@@ -33,6 +33,12 @@
   stroke-width: 2.5;
 }
 
+.pinSerious {
+  fill: var(--status-serious);
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+
 .pinDeferred {
   fill: var(--status-warning);
   stroke: #fff;
@@ -52,6 +58,10 @@
   animation: pinPulse 2.2s ease-out infinite;
   transform-box: fill-box;
   transform-origin: center;
+}
+
+.pulseSerious {
+  fill: var(--status-serious);
 }
 
 @keyframes pinPulse {
@@ -75,6 +85,56 @@
   stroke-linejoin: round;
 }
 
+.thermalLayer {
+  pointer-events: none;
+}
+
+.thermalCore {
+  fill: rgba(255, 99, 71, 0.16);
+  stroke: rgba(255, 209, 102, 0.82);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.reportLink {
+  cursor: pointer;
+}
+
+.reportMarker {
+  transition: transform 0.15s ease;
+}
+
+.reportLink:hover .reportMarker {
+  transform-box: fill-box;
+  transform-origin: center;
+  scale: 1.08;
+}
+
+.reportMarkerBase {
+  fill: #fff;
+  stroke: var(--ocean-bright);
+  stroke-width: 2;
+  filter: drop-shadow(0 2px 3px rgba(7, 59, 76, 0.32));
+}
+
+.reportIcon {
+  font-size: 9px;
+  pointer-events: none;
+}
+
+.reportCountBase {
+  fill: var(--coral);
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.reportCount {
+  fill: #fff;
+  font-size: 7.5px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
 .scaleLine {
   stroke: rgba(255, 255, 255, 0.75);
   stroke-width: 1.5;
@@ -86,21 +146,173 @@
   font-weight: 600;
 }
 
+.mapTitleCard {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(7, 59, 76, 0.55);
+}
+
+.mapTitleCard strong {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.mapTitleCard span {
+  margin-top: 2px;
+  color: #bfe3e0;
+  font-size: 10.5px;
+}
+
+.layerControls {
+  position: absolute;
+  left: 18px;
+  top: 68px;
+  z-index: 2;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.layerButton {
+  width: 100%;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 8px;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 7px 10px 7px 12px;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  text-align: left;
+}
+
+.layerButton:hover {
+  border-color: var(--ocean-bright);
+}
+
+.layerName {
+  overflow: hidden;
+  font-size: 10.8px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layerSource {
+  grid-column: 1;
+  color: var(--text-muted);
+  font-size: 8.8px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.toggle {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  width: 33px;
+  height: 19px;
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #c4d2d5;
+  padding: 2px;
+  transition: background 0.15s ease;
+}
+
+.toggle span {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(7, 59, 76, 0.28);
+  transition: transform 0.15s ease;
+}
+
+.toggleOn {
+  background: var(--ocean-mid);
+}
+
+.toggleOn span {
+  transform: translateX(14px);
+}
+
+.layerNote {
+  margin: 0;
+  border-radius: 8px;
+  background: rgba(7, 59, 76, 0.72);
+  padding: 4px 8px;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 8.8px;
+  line-height: 1.4;
+  text-align: right;
+}
+
 /* The Keys arc runs from the upper right to the lower left, so the legend sits
  * in the upper left where there is only open water. Placing it bottom left, as
  * the reference does for a different geography, buries four of the seven
  * southwestern sites. */
 .legend {
   position: absolute;
-  left: 18px;
-  top: 18px;
+  right: 18px;
+  bottom: 18px;
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(6px);
   border-radius: 14px;
   padding: 12px 14px;
   box-shadow: var(--shadow-md);
   font-size: 11.5px;
-  min-width: 208px;
+  width: 240px;
+  max-width: calc(100% - 36px);
+}
+
+@media (max-width: 680px) {
+  .mapTitleCard {
+    left: 12px;
+    top: 12px;
+  }
+
+  .mapTitleCard strong {
+    font-size: 12px;
+  }
+
+  .mapTitleCard span {
+    display: none;
+  }
+
+  .layerControls {
+    position: static;
+    width: 100%;
+    margin-top: var(--space-3);
+  }
+
+  .layerNote {
+    color: var(--text-muted);
+    background: transparent;
+    padding: 0;
+    text-align: left;
+  }
+
+  .legend {
+    position: static;
+    margin-top: var(--space-3);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .pinLabel {
+    font-size: 10px;
+  }
 }
 
 .legendTitle {
@@ -124,6 +336,22 @@
   flex-shrink: 0;
   border: 1.5px solid #fff;
   box-shadow: 0 0 0 1px var(--border-strong);
+}
+
+.legendSwatch.pinUntasked {
+  background: var(--status-good);
+}
+
+.legendSwatch.pinDeferred {
+  background: var(--status-warning);
+}
+
+.legendSwatch.pinSerious {
+  background: var(--status-serious);
+}
+
+.legendSwatch.pinTasked {
+  background: var(--status-critical);
 }
 
 .legendCount {

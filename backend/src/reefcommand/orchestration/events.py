@@ -15,7 +15,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from reefcommand.domain.observation import FieldReport
+from reefcommand.domain.observation import FieldReport, StructuredObservation
 
 
 class NewEvidence(BaseModel):
@@ -26,6 +26,7 @@ class NewEvidence(BaseModel):
 
     received_at: datetime
     report: FieldReport
+    observation: StructuredObservation | None = None
 
 
 class ResourceChange(BaseModel):

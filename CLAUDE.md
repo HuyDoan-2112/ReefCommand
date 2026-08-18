@@ -118,7 +118,8 @@ Use an LLM only where it adds clear value.
 
 | Stage | Implementation | Why |
 | --- | --- | --- |
-| Ingestion | Deterministic | Fetching and caching. Nothing to reason about. |
+| Data intake | Deterministic | Fetching, caching, and retaining raw reports. Nothing to reason about. |
+| Report structuring | LLM, schema-constrained | Converts messy field prose into optional observation fields without diagnosing or inventing missing values. |
 | Thermal evidence | Deterministic | Reading DHW and applying documented thresholds is numeric comparison. Do not use an LLM to compare numbers. |
 | Disease evidence | LLM plus tools | Lesions, tissue loss, affected species, spatial progression, disease-like morphology. Requires interpretation. |
 | Runoff evidence | LLM plus tools | Diver descriptions, rainfall, turbidity, geography, proximity to runoff sources. |

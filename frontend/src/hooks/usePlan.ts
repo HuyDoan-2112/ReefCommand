@@ -16,7 +16,9 @@ import {
   changeScenario,
   fetchCurrentPlan,
   recomputePlan,
+  structureObservation,
   submitObservation,
+  submitStructuredObservation,
 } from '@/api/endpoints';
 import { queryKeys } from '@/hooks/queryKeys';
 import type { ResponsePlan } from '@/types';
@@ -52,6 +54,24 @@ export function useSubmitObservation() {
 
   return useMutation({
     mutationFn: submitObservation,
+    onSuccess: async (result) => {
+      client.setQueryData<ResponsePlan>(queryKeys.currentPlan(), result.plan);
+      await invalidateAfterReplan(client);
+    },
+  });
+}
+
+/** Run only the reviewed, schema-constrained report extraction stage. */
+export function useStructureObservation() {
+  return useMutation({ mutationFn: structureObservation });
+}
+
+/** Submit the reviewed extraction and trigger re-planning without re-extracting it. */
+export function useSubmitStructuredObservation() {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: submitStructuredObservation,
     onSuccess: async (result) => {
       client.setQueryData<ResponsePlan>(queryKeys.currentPlan(), result.plan);
       await invalidateAfterReplan(client);

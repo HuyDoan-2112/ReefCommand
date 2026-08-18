@@ -17,6 +17,7 @@ from typing import Literal
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from reefcommand.domain.enums import Cause, Provenance
+from reefcommand.domain.observation import FieldReport, StructuredObservation
 from reefcommand.domain.plan import Assignment, DeferredSite, ResponsePlan
 from reefcommand.domain.resources import ResourceScenario
 from reefcommand.domain.site import ReefSite, SiteScores
@@ -86,6 +87,31 @@ class ObservationAccepted(BaseModel):
         default=None,
         description="Measured server-side so the dashboard does not include network noise.",
     )
+
+
+class ReportStructureResult(BaseModel):
+    """Validated observation extracted from one raw report by the configured LLM."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    report_id: str
+    observation: StructuredObservation
+    extraction_confidence: float = Field(ge=0.0, le=1.0)
+    provider: str
+    model: str
+    attempt_count: int = Field(ge=1)
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    latency_ms: int = Field(ge=0)
+
+
+class StructuredObservationSubmission(BaseModel):
+    """A raw report and the reviewed extraction to use for re-planning."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    report: FieldReport
+    observation: StructuredObservation
 
 
 class ScenarioView(BaseModel):

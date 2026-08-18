@@ -1,29 +1,30 @@
 'use client';
 
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 
-import { Panel, ProvenanceBadge } from '@/components';
+import { ApiError } from '@/api/client';
+import { Button, ProvenanceBadge } from '@/components';
+import { useCurrentPlan, useRecomputePlan } from '@/hooks/usePlan';
 import { useSites } from '@/hooks/useSites';
+import { useExecutionTrace } from '@/hooks/useTrace';
 
 import { CoordinatorTrace } from './CoordinatorTrace';
 import { EvidencePanel } from './EvidencePanel';
+import { RecommendedInterventions } from './RecommendedInterventions';
 
 import styles from './SiteSummary.module.css';
 
-/**
- * Identity and scores for one site.
- *
- * A partial surface on purpose: the evidence breakdown and the Coordinator's
- * decision arrive in step 5. It exists now so the map pins link somewhere real
- * rather than a 404.
- *
- * Both scores are shown, never blended. `strategic_value` is what the optimizer
- * is wired to; `ecological_value` is the investment-agnostic number for when
- * someone asks what the reef needs regardless of what has been spent there.
- * The prototype-assumption disclaimer travels with them.
- */
+function mutationMessage(error: Error | null): string | null {
+  if (!error) return null;
+  return error instanceof ApiError && error.detail ? error.detail : error.message;
+}
+
 export function SiteSummary({ siteId }: { siteId: string }) {
   const { data: sites, isPending, error } = useSites();
+  const { data: plan } = useCurrentPlan();
+  const recompute = useRecomputePlan();
+  const { data: planTrace } = useExecutionTrace(plan?.plan_id ?? null);
 
   if (isPending) return <p className={styles.muted}>Loading site...</p>;
   if (error) return <p className={styles.muted}>Could not load sites: {error.message}</p>;
@@ -37,53 +38,104 @@ export function SiteSummary({ siteId }: { siteId: string }) {
     );
   }
 
+  const llmSteps = planTrace?.steps.filter((step) => step.executor === 'llm') ?? [];
+  const tokenCount = llmSteps.reduce(
+    (total, step) =>
+      total + (step.token_usage?.input_tokens ?? 0) + (step.token_usage?.output_tokens ?? 0),
+    0,
+  );
+  const provider = llmSteps[0];
+  const isLivePlan = planTrace?.offline === false && llmSteps.length > 0;
+  const liveError = mutationMessage(recompute.error);
+  const siteIds = sites.map((candidate) => candidate.site_id);
+
+  function runLivePipeline() {
+    recompute.mutate({
+      scenario_id: plan?.scenario_id ?? 'demo_default',
+      site_ids: siteIds,
+      execution_mode: 'live_llm',
+    });
+  }
+
   return (
     <div className={styles.root}>
       <header className={styles.header}>
-        <div>
+        <div className={styles.identity}>
+          <div className={styles.eyebrow}>Site intelligence</div>
           <h2 className={styles.name}>{site.name}</h2>
           <div className={styles.coords}>
             {site.latitude.toFixed(4)}&deg; N, {Math.abs(site.longitude).toFixed(4)}&deg; W
             {site.location.zone_name_in_source ? ` (${site.location.zone_name_in_source})` : ''}
           </div>
+          <div className={styles.headerTags}>
+            <ProvenanceBadge
+              provenance={site.location.provenance.kind}
+              title={site.location.provenance.source}
+            />
+            {site.has_active_restoration ? (
+              <span className={styles.tag}>Active restoration</span>
+            ) : null}
+            <span className={isLivePlan ? styles.liveTag : styles.fixtureTag}>
+              {isLivePlan
+                ? `${provider?.provider} ${provider?.model}`
+                : 'Deterministic fixture baseline'}
+            </span>
+          </div>
         </div>
-        <div className={styles.headerTags}>
-          <ProvenanceBadge
-            provenance={site.location.provenance.kind}
-            title={site.location.provenance.source}
-          />
-          {site.has_active_restoration ? (
-            <span className={styles.tag}>Active restoration</span>
+
+        <div className={styles.heroScores}>
+          <div className={styles.heroScore}>
+            <span
+              className={styles.gauge}
+              style={
+                {
+                  '--gauge-value': `${Math.round(site.scores.strategic_value * 100)}%`,
+                } as CSSProperties
+              }
+            >
+              <span>{site.scores.strategic_value.toFixed(2)}</span>
+            </span>
+            <span className={styles.heroScoreLabel}>Strategic value</span>
+          </div>
+          <div className={styles.heroScore}>
+            <span
+              className={styles.gaugeSecondary}
+              style={
+                {
+                  '--gauge-value': `${Math.round(site.scores.ecological_value * 100)}%`,
+                } as CSSProperties
+              }
+            >
+              <span>{site.scores.ecological_value.toFixed(2)}</span>
+            </span>
+            <span className={styles.heroScoreLabel}>Ecological value</span>
+          </div>
+          {site.scores.weights_are_prototype_assumptions ? (
+            <span className={styles.scoreAssumption}>Prototype weighting assumptions</span>
           ) : null}
+        </div>
+
+        <div className={styles.liveControl}>
+          <Button variant="coral" onClick={runLivePipeline} disabled={recompute.isPending}>
+            {recompute.isPending ? 'Running live agents...' : 'Run live diagnosis'}
+          </Button>
+          <span className={styles.liveStatus} aria-live="polite">
+            {recompute.isPending
+              ? `Running the validated pipeline for ${sites.length} sites. This can take a few minutes.`
+              : isLivePlan
+                ? `${llmSteps.length} validated model calls, ${tokenCount.toLocaleString('en-US')} tokens`
+                : 'Click to call the configured LLM. No private chain-of-thought is displayed.'}
+          </span>
+          {liveError ? <span className={styles.liveError}>{liveError}</span> : null}
         </div>
       </header>
 
-      <div className={styles.scoreRow}>
-        <Panel title="Strategic value" hint="drives allocation">
-          <div className={styles.score}>{site.scores.strategic_value.toFixed(2)}</div>
-          <p className={styles.scoreNote}>
-            Ecological value weighted with prior restoration investment. This is the number the
-            optimizer maximises.
-          </p>
-        </Panel>
-        <Panel title="Ecological value" hint="investment agnostic">
-          <div className={styles.score}>{site.scores.ecological_value.toFixed(2)}</div>
-          <p className={styles.scoreNote}>
-            Coral cover and species richness only. What the reef needs, independent of what has
-            already been spent there.
-          </p>
-        </Panel>
-      </div>
-
-      {site.scores.weights_are_prototype_assumptions ? (
-        <p className={styles.disclaimer}>
-          The weights behind both scores are stated prototype assumptions, not scientific claims.
-        </p>
-      ) : null}
-
       <EvidencePanel siteId={site.site_id} />
 
-      <CoordinatorTrace siteId={site.site_id} />
+      <div className={styles.decisionGrid}>
+        <CoordinatorTrace siteId={site.site_id} />
+        <RecommendedInterventions siteId={site.site_id} />
+      </div>
     </div>
   );
 }
