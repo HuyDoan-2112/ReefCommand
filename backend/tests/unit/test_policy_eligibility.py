@@ -120,9 +120,15 @@ def test_contraindication_blocks_shading_on_an_open_site() -> None:
 
 def test_policy_rejects_mismatched_fused_evidence() -> None:
     with pytest.raises(ValueError, match="site_id"):
-        engine.eligible_actions(_site(), fuse("sombrero", [
-            _evidence(Cause.THERMAL, 0.8),
-            _evidence(Cause.DISEASE, 0.7),
-            _evidence(Cause.RUNOFF, 0.1),
-            _evidence(Cause.PHYSICAL, 0.1),
-        ]))
+        engine.eligible_actions(
+            _site(),
+            fuse(
+                "sombrero",
+                [
+                    _evidence(Cause.THERMAL, 0.8),
+                    _evidence(Cause.DISEASE, 0.7),
+                    _evidence(Cause.RUNOFF, 0.1),
+                    _evidence(Cause.PHYSICAL, 0.1),
+                ],
+            ),
+        )
