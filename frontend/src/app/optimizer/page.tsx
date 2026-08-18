@@ -1,5 +1,4 @@
-import { CurrentPlan } from '@/features/plan';
-import { CapacityPanel } from '@/features/resources';
+import { OptimizerDashboard } from '@/features/resources';
 
 import styles from './page.module.css';
 
@@ -12,21 +11,7 @@ import styles from './page.module.css';
 export default function OptimizerPage() {
   return (
     <div className={styles.root}>
-      <CapacityPanel mode="summary" />
-
-      <div className={styles.callout}>
-        <span aria-hidden="true">⚙️</span>
-        <div>
-          The Coordinator has already decided <strong>which</strong> policy-eligible actions are
-          worth taking and <strong>why</strong>. The deterministic optimizer assigns the simulated
-          boats, teams, equipment and budget under the current constraints.
-        </div>
-      </div>
-
-      <div className={styles.optimizerGrid}>
-        <CurrentPlan surface="optimizer" />
-        <CapacityPanel mode="controls" />
-      </div>
+      <OptimizerDashboard />
     </div>
   );
 }

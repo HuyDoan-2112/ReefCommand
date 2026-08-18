@@ -60,8 +60,9 @@ def recompute(
     *,
     offline: bool | None = None,
     demo_data: bool | None = None,
+    publish: bool = True,
 ) -> ResponsePlan:
-    """Create and publish a fresh plan for the requested study area."""
+    """Create a fresh plan, optionally keeping it out of the global map state."""
     global _current_plan
     with _mutation_lock:
         computed = run(
@@ -70,8 +71,9 @@ def recompute(
             offline=offline,
             demo_data=demo_data,
         )
-        with _state_lock:
-            _current_plan = computed
+        if publish:
+            with _state_lock:
+                _current_plan = computed
         return computed
 
 

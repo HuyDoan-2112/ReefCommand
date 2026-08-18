@@ -20,10 +20,19 @@ export interface PanelProps {
   /** Let wide content scroll inside the panel instead of the page. */
   scrollX?: boolean;
   className?: string;
+  bodyClassName?: string;
   children: ReactNode;
 }
 
-export function Panel({ title, hint, actions, scrollX = false, className, children }: PanelProps) {
+export function Panel({
+  title,
+  hint,
+  actions,
+  scrollX = false,
+  className,
+  bodyClassName,
+  children,
+}: PanelProps) {
   return (
     <section className={cx(styles.root, className)}>
       {title !== undefined || actions !== undefined || hint !== undefined ? (
@@ -33,7 +42,7 @@ export function Panel({ title, hint, actions, scrollX = false, className, childr
           {hint !== undefined ? <span className={styles.hint}>{hint}</span> : null}
         </header>
       ) : null}
-      <div className={cx(styles.body, scrollX && styles.scroll)}>{children}</div>
+      <div className={cx(styles.body, scrollX && styles.scroll, bodyClassName)}>{children}</div>
     </section>
   );
 }

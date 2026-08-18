@@ -98,7 +98,11 @@ export function useRecomputePlan() {
 
   return useMutation({
     mutationFn: recomputePlan,
-    onSuccess: async (plan) => {
+    onSuccess: async (plan, request) => {
+      // A live site diagnosis is intentionally scoped to one site. Keep the
+      // global plan cache intact so the Command Map continues to show every
+      // reef while the site page reads the returned single-site trace.
+      if (request?.execution_mode === 'live_llm' && request.site_ids?.length === 1) return;
       client.setQueryData<ResponsePlan>(queryKeys.currentPlan(), plan);
       await invalidateAfterReplan(client);
     },

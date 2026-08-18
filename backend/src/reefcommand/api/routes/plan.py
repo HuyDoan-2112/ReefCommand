@@ -80,6 +80,7 @@ def recompute(request: RecomputeRequest | None = None) -> ResponsePlan:
             request.site_ids,
             offline=False,
             demo_data=True,
+            publish=len(request.site_ids) != 1,
         )
     return state.recompute(request.scenario_id, request.site_ids)
 
