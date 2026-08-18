@@ -44,9 +44,7 @@ def fuse(site_id: str, evidence: list[CauseEvidence]) -> FusedEvidence:
         by_cause[item.cause] = item
 
     ordered = _ordered(evidence)
-    dominant_causes = [
-        item.cause for item in ordered if item.support >= DOMINANCE_THRESHOLD
-    ]
+    dominant_causes = [item.cause for item in ordered if item.support >= DOMINANCE_THRESHOLD]
     return FusedEvidence(
         site_id=site_id,
         by_cause=by_cause,
