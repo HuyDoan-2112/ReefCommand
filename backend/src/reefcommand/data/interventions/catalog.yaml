@@ -55,7 +55,7 @@ interventions:
 
   - action_id: targeted_disease_survey
     action_class: targeted_disease_survey
-    title: Targeted disease survey with lesion photography
+    title: Targeted disease survey with lesion documentation
     applicable_causes: [disease]
     minimum_support: 0.5
     minimum_confidence: 0.5
@@ -82,10 +82,10 @@ interventions:
     notes: >
       Provenance weakness, stated rather than hidden. The census swim survey sheet
       carries no author or date, and it says photographs "are not required". The
-      photography step in this action's title comes from the Strike Team treatment
-      workflow, which is an intervention record rather than a surveillance protocol.
-      If a reviewer challenges the photography requirement, that challenge is
-      correct and the action title should narrow to a census swim survey.
+      lesion documentation in this action's title reflects the diagnostic case
+      definition and the Strike Team treatment workflow, while the census swim
+      survey is the field method. If a reviewer requires photography specifically,
+      that requirement needs a separate cited protocol rather than an assumption here.
 
   - action_id: biosecurity_workflow
     action_class: biosecurity_workflow
