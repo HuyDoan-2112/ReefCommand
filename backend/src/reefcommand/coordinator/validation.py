@@ -53,9 +53,7 @@ def validate(
                 f"Coordinator approved action {action_id!r} with unmet evidence requirements"
             )
         if not candidate.requires_manager_approval:
-            raise BusinessRuleError(
-                f"eligible action {action_id!r} must require manager approval"
-            )
+            raise BusinessRuleError(f"eligible action {action_id!r} must require manager approval")
 
     if decision.additional_evidence_needed and decision.approved_actions:
         raise BusinessRuleError("Coordinator cannot approve actions while requesting more evidence")
