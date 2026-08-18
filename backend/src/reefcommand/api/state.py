@@ -48,7 +48,7 @@ def current_plan() -> ResponsePlan:
         existing = peek_current_plan()
         if existing is not None:
             return existing
-        computed = run(DEFAULT_SCENARIO_ID, DEFAULT_SITE_IDS)
+        computed = run(DEFAULT_SCENARIO_ID, DEFAULT_SITE_IDS, offline=True)
         with _state_lock:
             _current_plan = computed
         return computed
@@ -57,11 +57,19 @@ def current_plan() -> ResponsePlan:
 def recompute(
     scenario_id: str = DEFAULT_SCENARIO_ID,
     site_ids: list[str] | None = None,
+    *,
+    offline: bool | None = None,
+    demo_data: bool | None = None,
 ) -> ResponsePlan:
     """Create and publish a fresh plan for the requested study area."""
     global _current_plan
     with _mutation_lock:
-        computed = run(scenario_id, site_ids or DEFAULT_SITE_IDS)
+        computed = run(
+            scenario_id,
+            site_ids or DEFAULT_SITE_IDS,
+            offline=offline,
+            demo_data=demo_data,
+        )
         with _state_lock:
             _current_plan = computed
         return computed

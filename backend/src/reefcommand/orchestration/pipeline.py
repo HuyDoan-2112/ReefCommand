@@ -4,7 +4,7 @@
        |
     STRUCTURE
        |
-    INVESTIGATE                       (four investigators, run in parallel)
+    INVESTIGATE                       (four independent investigators)
        |
     FUSE EVIDENCE                     (deterministic)
        |
@@ -240,6 +240,7 @@ def _assess_site(
     window: EvidenceWindow,
     *,
     offline: bool,
+    demo_data: bool,
     trace: TraceRecorder,
 ) -> tuple[FusedEvidence, list[EligibleAction]]:
     site_observations = [
@@ -262,7 +263,7 @@ def _assess_site(
         ),
         validation_checks=("pydantic_schema", "site_and_time_alignment"),
     )
-    crw = _synthetic_crw(site.site_id, window.as_of.date()) if offline else None
+    crw = _synthetic_crw(site.site_id, window.as_of.date()) if demo_data else None
     thermal_evidence = trace.record(
         TraceStage.THERMAL_INVESTIGATOR,
         TraceExecutor.DETERMINISTIC,
@@ -271,7 +272,7 @@ def _assess_site(
         inputs={
             "site_ref": site.site_id,
             "observation_refs": observation_refs,
-            "thermal_source_mode": "synthetic_replay" if offline else "noaa_live_or_cache",
+            "thermal_source_mode": "synthetic_replay" if demo_data else "noaa_live_or_cache",
         },
         serialize=lambda result: {"evidence": result.model_dump(mode="json")},
         rationale=lambda result: result.rationale,
@@ -358,7 +359,11 @@ def _assess_site(
             },
             serialize=lambda result: {"evidence": result.model_dump(mode="json")},
             rationale=lambda result: result.rationale,
-            validation_checks=("pydantic_schema", "citations_assembled_from_inputs"),
+            validation_checks=(
+                "pydantic_schema",
+                "citations_assembled_from_inputs",
+                "physical_signal_guardrail",
+            ),
             llm_calls=physical_calls,
         )
 
@@ -408,12 +413,15 @@ def run(
     observations: Sequence[StructuredObservation] | None = None,
     replan_trigger: str | None = None,
     offline: bool | None = None,
+    demo_data: bool | None = None,
 ) -> ResponsePlan:
     """Run the full pipeline and return a response plan.
 
-    The default is the explicitly labeled offline demo mode. Set
-    ``offline=False`` to use the live structured LLM completers while keeping
+    The default is the explicitly labeled offline demo mode.
+    Set ``offline=False`` to use the live structured LLM completers while keeping
     the same tool, fusion, policy, and validation boundaries.
+    Set ``demo_data=True`` independently when a live model should reason over the
+    labeled, presentation-safe evidence fixtures instead of requiring a live NOAA call.
     """
     sites = load_sites(site_ids)
     scenario = load_scenario(scenario_id)
@@ -426,6 +434,7 @@ def run(
         raise ValueError("all observations must belong to a requested site")
     window = _window(structured)
     offline_mode = get_settings().offline_demo if offline is None else offline
+    demo_data_mode = offline_mode if demo_data is None else demo_data
     trace_recorder = TraceRecorder(
         scenario_id,
         offline=offline_mode,
@@ -444,6 +453,7 @@ def run(
             structured,
             window,
             offline=offline_mode,
+            demo_data=demo_data_mode,
             trace=trace_recorder,
         )
         evidence_by_site[site.site_id] = evidence

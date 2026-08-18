@@ -40,12 +40,26 @@ Respond only with the required structured output.
 
 def build_user_prompt(evidence: FusedEvidence, actions: list[EligibleAction]) -> str:
     """Render the per-case prompt from already-computed inputs."""
+    candidate_actions = [
+        {
+            "action_id": action.action_id,
+            "priority": action.priority.value,
+            "supporting_causes": [cause.value for cause in action.supporting_causes],
+            "unmet_evidence_requirements": action.unmet_evidence_requirements,
+            "expected_compatibility": action.expected_compatibility,
+            "provenance": action.provenance,
+        }
+        for action in actions
+    ]
     return (
         "Fused evidence:\n"
         f"{json.dumps(evidence.model_dump(mode='json'), indent=2)}\n\n"
         "Policy-eligible candidate actions:\n"
-        f"{json.dumps([action.model_dump(mode='json') for action in actions], indent=2)}\n\n"
+        f"{json.dumps(candidate_actions, indent=2)}\n\n"
         "If one or more candidates have no unmet requirements and the evidence supports "
         "acting, approve only those exact action_id values. Otherwise request the most "
-        "useful additional evidence from the allowed enum and approve no action."
+        "useful additional evidence from the allowed enum and approve no action.\n\n"
+        "Every approved_actions item must contain exactly action_id, priority, and a required "
+        "rationale explaining why the current evidence supports that action. Do not copy the "
+        "candidate object into approved_actions."
     )

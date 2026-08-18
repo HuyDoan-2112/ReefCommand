@@ -56,6 +56,8 @@ def _no_data_evidence(*, computed_at: datetime, rationale: str) -> CauseEvidence
         cause=cause,
         support=0.0,
         confidence=0.0,
+        display_summary="No thermal reading is available for this site and time window.",
+        key_findings=["No NOAA CRW reading was available"],
         rationale=rationale,
         computed_at=computed_at,
     )
@@ -154,6 +156,14 @@ def assess(
         cause=cause,
         support=support,
         confidence=THERMAL_INPUT_CONFIDENCE,
+        display_summary=(
+            f"{alert_label}: DHW {reading.degree_heating_weeks:.1f} and "
+            f"HotSpot {reading.hotspot_c:.1f} C."
+        ),
+        key_findings=[
+            f"{len(series)} NOAA CRW reading(s) in the observation window",
+            f"Thermal input served from {provenance_label}",
+        ],
         rationale=(
             f"DHW {reading.degree_heating_weeks:.1f} and HotSpot {reading.hotspot_c:.1f} C "
             f"at {alert_label} across {len(series)} NOAA CRW reading(s); "

@@ -9,7 +9,7 @@ from typing import Protocol
 from pydantic import BaseModel, ConfigDict, Field
 
 from reefcommand.domain.enums import Cause, Provenance
-from reefcommand.domain.evidence import CauseEvidence, EvidenceCitation
+from reefcommand.domain.evidence import CauseEvidence, EvidenceCitation, EvidenceFinding
 from reefcommand.domain.observation import StructuredObservation
 from reefcommand.domain.site import ReefSite
 from reefcommand.ingestion.rainfall import RainfallSignal
@@ -27,6 +27,8 @@ class RunoffAssessment(BaseModel):
 
     support: float = Field(ge=0.0, le=1.0, description="Runoff support score, not a probability.")
     confidence: float = Field(ge=0.0, le=1.0)
+    display_summary: str = Field(min_length=1, max_length=180)
+    key_findings: list[EvidenceFinding] = Field(min_length=1, max_length=3)
     rationale: str = Field(min_length=1, description="Evidence-grounded explanation.")
 
 
@@ -122,8 +124,9 @@ class RunoffAgent:
             f"{json.dumps([item.model_dump(mode='json') for item in site_observations], indent=2)}"
             "\n\n"
             f"Rainfall tool result:\n{json.dumps(signal.model_dump(mode='json'), indent=2)}\n\n"
-            "Give a 0 to 1 runoff support score, a 0 to 1 confidence score, and a short "
-            "rationale that names only facts present above."
+            "Give a 0 to 1 runoff support score, a 0 to 1 confidence score, one display_summary "
+            "sentence under 180 characters, 1 to 3 key_findings under 110 characters each, and "
+            "a full audit rationale. Every statement must name only facts present above."
         )
         assessment = self._complete(system, user, RunoffAssessment)
         rationale_parts = [assessment.rationale]
@@ -141,6 +144,8 @@ class RunoffAgent:
             cause=self.cause,
             support=assessment.support,
             confidence=assessment.confidence,
+            display_summary=assessment.display_summary,
+            key_findings=assessment.key_findings,
             rationale=" ".join(rationale_parts),
             citations=_citations(site_observations, result, signal),
             computed_at=datetime.now(UTC),

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
+from pydantic import ValidationError
 
 from reefcommand.domain.enums import Cause
 from reefcommand.domain.evidence import CauseEvidence
@@ -16,6 +17,8 @@ def _evidence(cause: Cause, support: float, confidence: float = 0.8) -> CauseEvi
         cause=cause,
         support=support,
         confidence=confidence,
+        display_summary=f"Fixture summary for {cause.value}.",
+        key_findings=[f"Fixture finding for {cause.value}."],
         rationale=f"fixture {cause.value}",
         computed_at=datetime(2023, 9, 15, tzinfo=UTC),
     )
@@ -70,4 +73,28 @@ def test_fusion_requires_exactly_one_assessment_per_cause() -> None:
                 _evidence(Cause.THERMAL, 0.2),
                 _evidence(Cause.PHYSICAL, 0.1),
             ],
+        )
+
+
+def test_card_copy_rejects_oversized_agent_output() -> None:
+    with pytest.raises(ValidationError, match="display_summary"):
+        CauseEvidence(
+            cause=Cause.THERMAL,
+            support=0.5,
+            confidence=0.5,
+            display_summary="x" * 181,
+            key_findings=["Short finding."],
+            rationale="Full audit rationale.",
+            computed_at=datetime(2023, 9, 15, tzinfo=UTC),
+        )
+
+    with pytest.raises(ValidationError, match="key_findings"):
+        CauseEvidence(
+            cause=Cause.THERMAL,
+            support=0.5,
+            confidence=0.5,
+            display_summary="Short summary.",
+            key_findings=["x" * 111],
+            rationale="Full audit rationale.",
+            computed_at=datetime(2023, 9, 15, tzinfo=UTC),
         )

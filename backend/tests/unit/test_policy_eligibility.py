@@ -31,6 +31,8 @@ def _evidence(cause: Cause, support: float, confidence: float = 0.8) -> CauseEvi
         cause=cause,
         support=support,
         confidence=confidence,
+        display_summary=f"Fixture summary for {cause.value}.",
+        key_findings=[f"Fixture finding for {cause.value}."],
         rationale=f"fixture {cause.value}",
         computed_at=datetime(2023, 9, 15, tzinfo=UTC),
     )

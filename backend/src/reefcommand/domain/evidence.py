@@ -12,10 +12,13 @@ calibrated against expert-labeled cases.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from reefcommand.domain.enums import Cause, Provenance
+
+EvidenceFinding = Annotated[str, Field(min_length=1, max_length=110)]
 
 
 class EvidenceCitation(BaseModel):
@@ -58,7 +61,17 @@ class CauseEvidence(BaseModel):
         le=1.0,
         description="How much the investigator trusts its own support score given input quality.",
     )
-    rationale: str = Field(description="Short explanation shown on the dashboard.")
+    display_summary: str = Field(
+        min_length=1,
+        max_length=180,
+        description="One concise sentence for the hypothesis card.",
+    )
+    key_findings: list[EvidenceFinding] = Field(
+        min_length=1,
+        max_length=3,
+        description="One to three concise evidence points for the hypothesis card.",
+    )
+    rationale: str = Field(description="Full audit rationale retained in the execution trace.")
     citations: list[EvidenceCitation] = Field(default_factory=list)
     computed_at: datetime
 

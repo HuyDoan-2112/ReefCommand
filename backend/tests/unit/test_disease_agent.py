@@ -35,6 +35,8 @@ class FakeDiseaseCompleter:
         return schema(
             support=0.72,
             confidence=0.61,
+            display_summary="Lesion observations and nearby records support disease.",
+            key_findings=["A lesion description was reported.", "Nearby records add context."],
             rationale="The lesion description and nearby records provide disease support.",
         )
 
@@ -68,11 +70,15 @@ def test_agent_returns_model_score_and_agent_owned_citations() -> None:
     assert evidence.cause is Cause.DISEASE
     assert evidence.support == 0.72
     assert evidence.confidence == 0.61
+    assert evidence.display_summary == "Lesion observations and nearby records support disease."
+    assert len(evidence.key_findings) == 2
     assert len(evidence.citations) >= 2
     assert all(citation.provenance is Provenance.SYNTHETIC for citation in evidence.citations)
     assert "synthetic repository fixture" in evidence.rationale
     assert "AGRRA" in completer.user_prompts[0]
     assert "Do not diagnose SCTLD" in completer.system_prompts[0]
+    assert "display_summary" in completer.user_prompts[0]
+    assert "key_findings" in completer.user_prompts[0]
 
 
 def test_agent_rejects_snapshot_for_another_site() -> None:
