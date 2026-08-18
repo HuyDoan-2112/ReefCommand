@@ -1,0 +1,110 @@
+# Curated AGRRA SCTLD Tracking Map snapshot for the demo sites.
+#
+# SYNTHETIC. These are NOT real AGRRA reviewed records. The tracking map is not
+# scraped, and no permitted export was available in this environment, so this
+# file is a clearly labeled placeholder. Every record is provenance synthetic and
+# its review_status says synthetic_example, so nothing here can be mistaken for a
+# real reviewed submission. Replace this with a real permitted AGRRA export before
+# making any real claim about disease proximity.
+#
+# The placements are loosely based on the documented 2023 post-bleaching disease
+# at inshore Florida Keys sites (black band disease and post-bleaching lesions
+# reported at Cheeca Rocks, Newfound Harbor, and Sombrero in the 2023 Frontiers
+# heatwave study), so the demo behaves plausibly. The last record sits far to the
+# north to exercise the radius filter and must fall outside a 25 km search of any
+# study site.
+
+metadata:
+  schema_version: 1
+  fixture_id: agrra_sctld_snapshot
+  description: Synthetic placeholder AGRRA SCTLD records near the demo sites.
+  created_at: 2026-08-18T00:00:00Z
+
+records:
+  - record_id: synthetic-cheeca-2023-09-05
+    data:
+      record_id: synthetic-cheeca-2023-09-05
+      latitude: 24.9100
+      longitude: -80.6220
+      submitted_on: 2023-09-05
+      review_status: synthetic_example
+      reporting_organization: null
+      condition_note: >
+        Placeholder for a reviewed tissue-loss report near Cheeca Rocks, loosely based on the
+        documented 2023 post-bleaching black band disease at this inshore site. Not a real AGRRA
+        record.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: >
+        Synthetic placeholder, loosely based on Too hot to handle?, Frontiers in Marine Science
+        (2024), DOI 10.3389/fmars.2024.1489273, which documents post-bleaching disease at Cheeca Rocks
+      observed_at: 2023-09-05
+      note: >
+        SYNTHETIC. Not a real AGRRA reviewed record. Placeholder for the demo until a permitted export
+        replaces it.
+
+  - record_id: synthetic-newfound-2023-09-08
+    data:
+      record_id: synthetic-newfound-2023-09-08
+      latitude: 24.6200
+      longitude: -81.4000
+      submitted_on: 2023-09-08
+      review_status: synthetic_example
+      reporting_organization: null
+      condition_note: >
+        Placeholder for a reviewed disease report near Newfound Harbor, loosely based on the
+        documented 2023 black band disease at this inshore site. Not a real AGRRA record.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: >
+        Synthetic placeholder, loosely based on Too hot to handle?, Frontiers in Marine Science
+        (2024), DOI 10.3389/fmars.2024.1489273, which documents post-bleaching disease at Newfound
+        Harbor
+      observed_at: 2023-09-08
+      note: >
+        SYNTHETIC. Not a real AGRRA reviewed record. Placeholder for the demo until a permitted export
+        replaces it.
+
+  - record_id: synthetic-sombrero-2023-08-30
+    data:
+      record_id: synthetic-sombrero-2023-08-30
+      latitude: 24.6300
+      longitude: -81.1100
+      submitted_on: 2023-08-30
+      review_status: synthetic_example
+      reporting_organization: null
+      condition_note: >
+        Placeholder for a reviewed report near Sombrero Reef, loosely based on the documented 2023
+        black band disease on two colonies at this offshore site. Not a real AGRRA record.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: >
+        Synthetic placeholder, loosely based on Too hot to handle?, Frontiers in Marine Science
+        (2024), DOI 10.3389/fmars.2024.1489273, which documents minimal black band disease at Sombrero
+      observed_at: 2023-08-30
+      note: >
+        SYNTHETIC. Not a real AGRRA reviewed record. Placeholder for the demo until a permitted export
+        replaces it.
+
+  - record_id: synthetic-far-north-2023-09-01
+    data:
+      record_id: synthetic-far-north-2023-09-01
+      latitude: 25.6800
+      longitude: -80.1000
+      submitted_on: 2023-09-01
+      review_status: synthetic_example
+      reporting_organization: null
+      condition_note: >
+        Placeholder record far to the north, present only to exercise the radius filter. It must fall
+        outside a 25 km search of any study site.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: Synthetic placeholder for radius-filter testing.
+      observed_at: 2023-09-01
+      note: >
+        SYNTHETIC. Not a real AGRRA reviewed record. Present only to confirm the distance filter
+        excludes distant records.
