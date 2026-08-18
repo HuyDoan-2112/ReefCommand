@@ -1,0 +1,191 @@
+# Structured form of every demo field report, keyed by report_id.
+#
+# This is the "structuring fixtures" half of DATA-06. The data lane does not run
+# an LLM in ingestion, so the OBSERVE to STRUCTURE step for the demo is a
+# deterministic lookup: field_reports.structure(report) returns the record here
+# whose report_id matches. Because the reports were reconstructed from published
+# observations, the structured values are known rather than guessed.
+#
+# Absence of a field means "not reported", never "reported as zero". Anything the
+# reconstruction was unsure about is written into extraction_notes rather than
+# invented as a number.
+
+metadata:
+  schema_version: 1
+  fixture_id: demo_structured_observations
+  description: Deterministic structured form of the eight demo reports, 2023 heatwave replay.
+  created_at: 2026-08-18T00:00:00Z
+
+records:
+  - record_id: carysfort-2023-08-05
+    data:
+      report_id: carysfort-2023-08-05
+      site_id: carysfort
+      observed_at: 2023-08-05T10:30:00-04:00
+      bleaching_pct: 100.0
+      tissue_loss_observed: false
+      broken_coral_observed: false
+      affected_taxa: [brain corals, boulder corals]
+      compared_to_previous_dive: The whitest the observer reports seeing at the site.
+      extraction_notes: >
+        Fully white colonies recorded as bleaching rather than paling. No tissue loss reported.
+    provenance:
+      kind: synthetic
+      source: Structured form of demo report carysfort-2023-08-05
+      observed_at: 2023-08-05
+      note: >
+        SYNTHETIC. Deterministic structuring of the reconstructed report in demo_field_reports.yaml,
+        which cites the 2023 Frontiers heatwave study. Not a real observation.
+
+  - record_id: horseshoe-2023-08-06
+    data:
+      report_id: horseshoe-2023-08-06
+      site_id: horseshoe
+      observed_at: 2023-08-06T11:00:00-04:00
+      bleaching_pct: 95.0
+      tissue_loss_observed: false
+      broken_coral_observed: false
+      extraction_notes: >
+        Synthetic placeholder. The bleaching magnitude reflects the documented offshore regional
+        pattern, not a Horseshoe-specific measurement, so no taxa breakdown is asserted.
+    provenance:
+      kind: synthetic
+      source: Structured form of demo report horseshoe-2023-08-06
+      observed_at: 2023-08-06
+      note: >
+        SYNTHETIC placeholder. No site-specific 2023 observation exists for Horseshoe Reef; the value
+        reflects the regional offshore pattern only. See demo_field_reports.yaml.
+
+  - record_id: cheeca_rocks-2023-08-08
+    data:
+      report_id: cheeca_rocks-2023-08-08
+      site_id: cheeca_rocks
+      observed_at: 2023-08-08T09:45:00-04:00
+      bleaching_pct: 100.0
+      tissue_loss_observed: false
+      broken_coral_observed: false
+      affected_taxa: [Pseudodiploria strigosa, Colpophyllia natans]
+      extraction_notes: >
+        Initial bleaching report. No disease reported yet. The post-bleaching tissue loss appears in
+        the later update, report cheeca_rocks-2023-09-15-update.
+    provenance:
+      kind: synthetic
+      source: Structured form of demo report cheeca_rocks-2023-08-08
+      observed_at: 2023-08-08
+      note: >
+        SYNTHETIC. Deterministic structuring of the reconstructed report in demo_field_reports.yaml,
+        which cites Cheeca Rocks at about 15.6 DHW and 100 percent bleaching in the 2023 study.
+
+  - record_id: sombrero-2023-07-28
+    data:
+      report_id: sombrero-2023-07-28
+      site_id: sombrero
+      observed_at: 2023-07-28T10:15:00-04:00
+      bleaching_pct: 90.0
+      tissue_loss_observed: false
+      broken_coral_observed: false
+      affected_taxa: [Acropora cervicornis]
+      compared_to_previous_dive: Staghorn was not bleached on prior visits; now mostly bleached.
+      extraction_notes: >
+        Some staghorn branches are recently dead with an algal film. That is bleaching mortality, not
+        disease, and the observer reports no lesions, so tissue_loss_observed is left false and the
+        death is recorded here instead of as disease tissue loss.
+    provenance:
+      kind: synthetic
+      source: Structured form of demo report sombrero-2023-07-28
+      observed_at: 2023-07-28
+      note: >
+        SYNTHETIC. Deterministic structuring of the reconstructed report in demo_field_reports.yaml,
+        which cites the NOAA sanctuaries release and the 2023 Frontiers study.
+
+  - record_id: newfound_harbor-2023-09-10
+    data:
+      report_id: newfound_harbor-2023-09-10
+      site_id: newfound_harbor
+      observed_at: 2023-09-10T09:30:00-04:00
+      bleaching_pct: 80.0
+      tissue_loss_observed: true
+      broken_coral_observed: false
+      affected_taxa: [Pseudodiploria strigosa]
+      compared_to_previous_dive: >
+        Brain corals that bleached in July are now mostly dead, with bare skeleton where tissue has
+        come off.
+      extraction_notes: >
+        Extensive recent mortality following bleaching. No disease lesion margin is described, so the
+        tissue loss is attributed to bleaching rather than disease.
+    provenance:
+      kind: synthetic
+      source: Structured form of demo report newfound_harbor-2023-09-10
+      observed_at: 2023-09-10
+      note: >
+        SYNTHETIC. Deterministic structuring of the reconstructed report in demo_field_reports.yaml,
+        which cites Newfound Harbor at 11.9 DHW and about 42.9 percent complete mortality in 2023.
+
+  - record_id: looe_key-2023-08-02
+    data:
+      report_id: looe_key-2023-08-02
+      site_id: looe_key
+      observed_at: 2023-08-02T10:00:00-04:00
+      bleaching_pct: 100.0
+      tissue_loss_observed: false
+      broken_coral_observed: false
+      affected_taxa: [Orbicella faveolata, brain corals]
+      extraction_notes: >
+        Bleaching only on this dive. Orbicella faveolata lesions were reported at this site later in
+        the season and are not part of this initial report.
+    provenance:
+      kind: synthetic
+      source: Structured form of demo report looe_key-2023-08-02
+      observed_at: 2023-08-02
+      note: >
+        SYNTHETIC. Deterministic structuring of the reconstructed report in demo_field_reports.yaml,
+        which cites Looe Key at 100 percent bleaching with minimal mortality in the 2023 study.
+
+  - record_id: eastern_dry_rocks-2023-07-25
+    data:
+      report_id: eastern_dry_rocks-2023-07-25
+      site_id: eastern_dry_rocks
+      observed_at: 2023-07-25T09:20:00-04:00
+      paling_pct: 30.0
+      bleaching_pct: 70.0
+      tissue_loss_observed: false
+      broken_coral_observed: false
+      affected_taxa: [Acropora cervicornis]
+      compared_to_previous_dive: Outplants were healthy on the prior visit; now paling at the tips.
+      extraction_notes: >
+        Early thermal stress. Staghorn outplants paling at branch tips while wild colonies bleach.
+    provenance:
+      kind: synthetic
+      source: Structured form of demo report eastern_dry_rocks-2023-07-25
+      observed_at: 2023-07-25
+      note: >
+        SYNTHETIC. Deterministic structuring of the reconstructed report in demo_field_reports.yaml,
+        which cites the NOAA sanctuaries release documenting staghorn paling at Eastern Dry Rocks.
+
+  - record_id: cheeca_rocks-2023-09-15-update
+    data:
+      report_id: cheeca_rocks-2023-09-15-update
+      site_id: cheeca_rocks
+      observed_at: 2023-09-15T09:40:00-04:00
+      bleaching_pct: 60.0
+      tissue_loss_observed: true
+      broken_coral_observed: false
+      lesion_description: >
+        Focal to coalescing areas of denuded skeleton with a distinct margin between living tissue
+        and bare white skeleton, advancing across affected colonies.
+      affected_taxa: [Orbicella faveolata, Pseudodiploria strigosa]
+      spatial_progression: Several colonies have lost additional tissue since the previous dive.
+      compared_to_previous_dive: >
+        In August these colonies were bleached but intact; now they show active tissue loss.
+      extraction_notes: >
+        Observer describes disease-like tissue loss following bleaching. This is not a confirmed SCTLD
+        diagnosis. The cause is to be assessed against AGRRA reviewed records and the lesion detail
+        together, since proximity alone never confirms SCTLD.
+    provenance:
+      kind: synthetic
+      source: Structured form of demo report cheeca_rocks-2023-09-15-update
+      observed_at: 2023-09-15
+      note: >
+        SYNTHETIC. Deterministic structuring of the reconstructed update in demo_evidence_update.yaml.
+        Lesion wording follows the NOAA Coral Disease and Health Consortium tissue-loss description.
+        No SCTLD diagnosis is asserted.

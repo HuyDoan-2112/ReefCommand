@@ -1,0 +1,49 @@
+# Reconstructed follow-up reports that drive the re-planning demo.
+#
+# This is the new evidence that changes the plan after the initial pass. A diver
+# returns to Cheeca Rocks weeks after the August bleaching and now sees active
+# tissue loss with disease-like lesions on the bleached colonies. This lifts the
+# disease support score at Cheeca Rocks, which is what makes the Coordinator
+# reconsider and the optimizer possibly reallocate toward a targeted disease
+# assessment.
+#
+# The report describes what was seen. It does not diagnose SCTLD. Geographic
+# proximity to reviewed AGRRA records and the lesion detail feed the disease
+# support score together, and proximity alone never confirms SCTLD. That
+# interpretation belongs to the disease investigator, not to this fixture.
+
+metadata:
+  schema_version: 1
+  fixture_id: demo_evidence_update
+  description: Reconstructed Cheeca Rocks post-bleaching disease report for the re-planning demo.
+  created_at: 2026-08-18T00:00:00Z
+
+records:
+  - record_id: cheeca_rocks-2023-09-15-update
+    data:
+      report_id: cheeca_rocks-2023-09-15-update
+      site_id: cheeca_rocks
+      observed_at: 2023-09-15T09:40:00-04:00
+      observer: Reconstructed demo observer
+      text: >
+        Went back to Cheeca Rocks. Since the August bleaching, the brain corals and some of the big
+        star corals now have spreading patches of tissue loss, with a clear margin between the living
+        tissue and bare white skeleton. Several colonies have lost more tissue since my last dive.
+        This looks like disease taking hold on the bleached colonies, not just bleaching anymore.
+      provenance: synthetic
+    provenance:
+      kind: synthetic
+      source: >
+        Too hot to handle? The impact of the 2023 marine heatwave on Florida Keys coral,
+        Frontiers in Marine Science (2024), DOI 10.3389/fmars.2024.1489273, for the Cheeca Rocks
+        post-bleaching disease finding, and NOAA Coral Disease and Health Consortium, Stony Coral
+        Tissue Loss Disease, for lesion vocabulary
+      source_url: https://www.frontiersin.org/journals/marine-science/articles/10.3389/fmars.2024.1489273/full
+      observed_at: 2023-09-15
+      note: >
+        SYNTHETIC diver report reconstructed from the cited sources. The Frontiers study reports that
+        after bleaching, Cheeca Rocks showed about 5.7 percent black band disease in August and
+        unusual Orbicella faveolata lesions affecting about 35 percent of tagged colonies. The lesion
+        wording (focal to coalescing areas of denuded skeleton with a distinct advancing margin)
+        follows the NOAA Coral Disease and Health Consortium description of tissue-loss lesions. This
+        report deliberately does not claim a confirmed SCTLD diagnosis.
