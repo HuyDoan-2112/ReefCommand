@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ReefCommand — AI Decision Support for Reef Managers</title>
+<title>ReefCommand - AI Decision Support for Reef Managers</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23073B4C'/%3E%3Cpath d='M10 55 Q 30 40 50 55 T 90 55' stroke='%234ECDC4' stroke-width='8' fill='none' stroke-linecap='round'/%3E%3Cpath d='M10 70 Q 30 55 50 70 T 90 70' stroke='%23FF7F6B' stroke-width='6' fill='none' stroke-linecap='round' opacity='0.8'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -35,10 +35,10 @@
     --radius-lg:24px;
 
     /* ---- Data-viz tokens (validated: dataviz skill, method-derived) ---- */
-    --series-1:#2a78d6; /* boats — blue */
-    --series-2:#eb6834; /* budget — orange */
-    --series-3:#1baf7a; /* equipment — aqua */
-    --series-4:#eda100; /* dive teams — yellow */
+    --series-1:#2a78d6; /* boats - blue */
+    --series-2:#eb6834; /* budget - orange */
+    --series-3:#1baf7a; /* equipment - aqua */
+    --series-4:#eda100; /* dive teams - yellow */
     --status-good:#0ca30c;
     --status-warning:#c98500; /* stepped darker than doc default (#fab219) for 3:1 text contrast on light surface, same hue family */
     --status-serious:#ec835a;
@@ -498,7 +498,7 @@
         <h1 id="topbar-title">Command Map</h1>
         <div class="sub" id="topbar-sub">Live view of reef health across Maui Nui, updated 6 minutes ago</div>
       </div>
-      <div class="ask-bar">🌊 <span>Ask ReefCommand — “which reefs need us this week?”</span><button class="go">Ask</button></div>
+      <div class="ask-bar">🌊 <span>Ask ReefCommand - “which reefs need us this week?”</span><button class="go">Ask</button></div>
       <button class="icon-btn">🔔<span class="dot"></span></button>
       <button class="icon-btn">⚙️</button>
     </header>
@@ -595,10 +595,10 @@
 
             <div class="map-legend">
               <div class="lg-title">Reef status</div>
-              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-good)"></span> Healthy — no action needed</div>
-              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-warning)"></span> Watch — monitor closely</div>
-              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-serious)"></span> Serious — response advised</div>
-              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-critical)"></span> Critical — act this week</div>
+              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-good)"></span> Healthy - no action needed</div>
+              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-warning)"></span> Watch - monitor closely</div>
+              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-serious)"></span> Serious - response advised</div>
+              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-critical)"></span> Critical - act this week</div>
             </div>
           </div>
 
@@ -621,7 +621,7 @@
                 <div class="queue-body">
                   <div class="queue-top"><span class="site-name">Puakō Reef</span><span class="badge serious"><span class="sw"></span>Serious</span></div>
                   <div class="queue-meta">DHW 5.5 · 4 new reports · Big Island</div>
-                  <div class="queue-insight"><b>Coordinator:</b> Physical damage supported — anchor scarring reported near mooring buoy 3.</div>
+                  <div class="queue-insight"><b>Coordinator:</b> Physical damage supported - anchor scarring reported near mooring buoy 3.</div>
                 </div>
               </div>
               <div class="queue-card" onclick="openSite('wailea')">
@@ -629,7 +629,7 @@
                 <div class="queue-body">
                   <div class="queue-top"><span class="site-name">Wailea Reef</span><span class="badge serious"><span class="sw"></span>Serious</span></div>
                   <div class="queue-meta">DHW 6.1 · 7 new reports · Maui</div>
-                  <div class="queue-insight"><b>Coordinator:</b> Evidence conflicting between disease and thermal — requesting close-up tissue photos.</div>
+                  <div class="queue-insight"><b>Coordinator:</b> Evidence conflicting between disease and thermal - requesting close-up tissue photos.</div>
                 </div>
               </div>
               <div class="queue-card" onclick="openSite('hanauma')">
@@ -637,7 +637,7 @@
                 <div class="queue-body">
                   <div class="queue-top"><span class="site-name">Hanauma Bay</span><span class="badge warning"><span class="sw"></span>Watch</span></div>
                   <div class="queue-meta">DHW 2.9 · 9 new reports · Oahu</div>
-                  <div class="queue-insight"><b>Coordinator:</b> Runoff signature supported — turbidity spike after Sunday rainfall.</div>
+                  <div class="queue-insight"><b>Coordinator:</b> Runoff signature supported - turbidity spike after Sunday rainfall.</div>
                 </div>
               </div>
               <div class="queue-card" onclick="openSite('honolua')">
@@ -645,7 +645,7 @@
                 <div class="queue-body">
                   <div class="queue-top"><span class="site-name">Honolua Bay</span><span class="badge warning"><span class="sw"></span>Watch</span></div>
                   <div class="queue-meta">DHW 3.4 · 5 new reports · Maui</div>
-                  <div class="queue-insight"><b>Coordinator:</b> Early thermal signal only — below action threshold, continue monitoring.</div>
+                  <div class="queue-insight"><b>Coordinator:</b> Early thermal signal only - below action threshold, continue monitoring.</div>
                 </div>
               </div>
             </div>
@@ -681,7 +681,7 @@
           <button class="btn btn-coral" onclick="switchView('view-optimizer')">🛥️ Add to Resource Plan</button>
         </div>
 
-        <div class="panel-head" style="border:none; padding:0 0 10px;"><h3>🧠 Hypothesis Investigation — 4 parallel modules</h3><span class="hint">run by ingestion + reasoning agents</span></div>
+        <div class="panel-head" style="border:none; padding:0 0 10px;"><h3>🧠 Hypothesis Investigation - 4 parallel modules</h3><span class="hint">run by ingestion + reasoning agents</span></div>
         <div class="hyp-grid">
           <div class="hyp-card">
             <div class="hyp-top"><span class="hyp-icon">🌡️</span><span class="hyp-title">Thermal Stress</span><span class="badge critical"><span class="sw"></span>Supported</span></div>
@@ -727,16 +727,16 @@
 
         <div class="cols split-60-40">
           <div class="panel">
-            <div class="panel-head"><h3>🤖 Coordinator Agent — reasoning trace</h3><span class="hint">last run 6 min ago</span></div>
+            <div class="panel-head"><h3>🤖 Coordinator Agent - reasoning trace</h3><span class="hint">last run 6 min ago</span></div>
             <div class="panel-body">
               <div class="coord-log">
                 <div class="log-item"><div class="log-dot"></div><div><div class="log-text">Ingestion LLM parsed <b>3 new diver reports</b> into structured observations (tissue color, depth, visibility).</div><div class="log-time">08:14 AM</div></div></div>
                 <div class="log-item"><div class="log-dot"></div><div><div class="log-text">Four hypothesis modules evaluated evidence in parallel against NOAA DHW feed + 14 field reports.</div><div class="log-time">08:15 AM</div></div></div>
                 <div class="log-item"><div class="log-dot"></div><div><div class="log-text">Thermal stress hypothesis cleared confidence threshold (91%); disease, runoff ruled out.</div><div class="log-time">08:15 AM</div></div></div>
-                <div class="log-item"><div class="log-dot"></div><div><div class="log-text">Matched cause against source-grounded intervention knowledge base — 3 candidate actions retrieved.</div><div class="log-time">08:16 AM</div></div></div>
-                <div class="log-item"><div class="log-dot flag"></div><div><div class="log-text">Physical damage module below confidence threshold — flagged for optional follow-up, not blocking.</div><div class="log-time">08:16 AM</div></div></div>
+                <div class="log-item"><div class="log-dot"></div><div><div class="log-text">Matched cause against source-grounded intervention knowledge base - 3 candidate actions retrieved.</div><div class="log-time">08:16 AM</div></div></div>
+                <div class="log-item"><div class="log-dot flag"></div><div><div class="log-text">Physical damage module below confidence threshold - flagged for optional follow-up, not blocking.</div><div class="log-time">08:16 AM</div></div></div>
               </div>
-              <div class="uncertainty-box">⚠️ <div><b>No blocking uncertainty.</b> Confidence is high enough to recommend action. The coordinator only pauses for more field data when hypotheses conflict — see <a class="linklike" onclick="openSite('wailea')">Wailea Reef</a> for an example.</div></div>
+              <div class="uncertainty-box">⚠️ <div><b>No blocking uncertainty.</b> Confidence is high enough to recommend action. The coordinator only pauses for more field data when hypotheses conflict - see <a class="linklike" onclick="openSite('wailea')">Wailea Reef</a> for an example.</div></div>
             </div>
           </div>
 
@@ -767,7 +767,7 @@
                   <span class="source-chip">DAR Coral Rescue SOP v3</span>
                 </div>
               </div>
-              <div class="callout" style="margin-top:6px;">🔒 Interventions are pulled from a source-grounded knowledge base mapped to supported causes only — the agent cannot invent a treatment.</div>
+              <div class="callout" style="margin-top:6px;">🔒 Interventions are pulled from a source-grounded knowledge base mapped to supported causes only - the agent cannot invent a treatment.</div>
             </div>
           </div>
         </div>
@@ -799,7 +799,7 @@
           </div>
         </div>
 
-        <div class="callout" style="margin-bottom:20px;">⚙️ <div>The coordinator has already decided <b>which</b> sites need intervention and <b>why</b>. This deterministic optimizer decides <b>who goes where</b> — assigning your real boats, teams, equipment and budget to maximize expected conservation value under today's constraints.</div>
+        <div class="callout" style="margin-bottom:20px;">⚙️ <div>The coordinator has already decided <b>which</b> sites need intervention and <b>why</b>. This deterministic optimizer decides <b>who goes where</b> - assigning your real boats, teams, equipment and budget to maximize expected conservation value under today's constraints.</div>
         </div>
 
         <div class="cols split-70-30">
@@ -840,27 +840,27 @@
                 <span class="queue-rank" style="width:22px;height:22px;font-size:11px;">4</span>
                 <span class="site-cell">Wailea Reef<span class="region">Maui · Serious</span></span>
                 <span class="chip">❓ Pending data</span>
-                <span>—</span>
-                <span>—</span>
-                <span>—</span>
+                <span>-</span>
+                <span>-</span>
+                <span>-</span>
                 <span><div class="value-bar-track"><div class="value-bar-fill" style="width:52%"></div></div></span>
               </div>
               <div class="plan-row" id="plan-row-5" style="opacity:0.4;">
                 <span class="queue-rank" style="width:22px;height:22px;font-size:11px;">5</span>
                 <span class="site-cell">Honolua Bay<span class="region">Maui · Watch</span></span>
                 <span class="chip">🌡️ Thermal (early)</span>
-                <span>—</span>
-                <span>—</span>
-                <span>—</span>
+                <span>-</span>
+                <span>-</span>
+                <span>-</span>
                 <span><div class="value-bar-track"><div class="value-bar-fill" style="width:38%"></div></div></span>
               </div>
               <div class="plan-row" id="plan-row-6" style="opacity:0.4; border-bottom:none;">
                 <span class="queue-rank" style="width:22px;height:22px;font-size:11px;">6</span>
                 <span class="site-cell">Kealakekua Bay<span class="region">Big Island · Healthy</span></span>
                 <span class="chip">✅ Monitoring only</span>
-                <span>—</span>
-                <span>—</span>
-                <span>—</span>
+                <span>-</span>
+                <span>-</span>
+                <span>-</span>
                 <span><div class="value-bar-track"><div class="value-bar-fill" style="width:12%"></div></div></span>
               </div>
             </div>
@@ -928,12 +928,12 @@
             <div class="panel-body">
               <div class="report-list">
                 <div class="report-item active" onclick="selectReport(this,'molokini')">
-                  <div class="r-top"><span class="r-source">📱</span><span class="r-who">Mia T. — dive shop app</span><span class="r-time">7 min ago</span></div>
+                  <div class="r-top"><span class="r-source">📱</span><span class="r-who">Mia T. - dive shop app</span><span class="r-time">7 min ago</span></div>
                   <div class="r-snip">"went down to 40ft at molokini backwall today, so much of the coral looks totally white/bleached compared to last month, way more than usual :("</div>
                   <span class="status-pill auto">Auto-structured</span>
                 </div>
                 <div class="report-item" onclick="selectReport(this,'puako')">
-                  <div class="r-top"><span class="r-source">✉️</span><span class="r-who">James O. — email</span><span class="r-time">41 min ago</span></div>
+                  <div class="r-top"><span class="r-source">✉️</span><span class="r-who">James O. - email</span><span class="r-time">41 min ago</span></div>
                   <div class="r-snip">"Hey, saw some scraping on the reef near mooring buoy 3 at Puako, looked like a boat anchor dragged across it. Sending photos separately."</div>
                   <span class="status-pill auto">Auto-structured</span>
                 </div>
@@ -948,7 +948,7 @@
                   <span class="status-pill auto">Auto-structured</span>
                 </div>
                 <div class="report-item" onclick="selectReport(this,'honolua')">
-                  <div class="r-top"><span class="r-source">📱</span><span class="r-who">Alex P. — dive shop app</span><span class="r-time">3h ago</span></div>
+                  <div class="r-top"><span class="r-source">📱</span><span class="r-who">Alex P. - dive shop app</span><span class="r-time">3h ago</span></div>
                   <div class="r-snip">"Honolua looking mostly ok, maybe very slight paling on the shallow table corals but nothing dramatic yet."</div>
                   <span class="status-pill auto">Auto-structured</span>
                 </div>
@@ -1053,7 +1053,7 @@
     // demo: only Molokini has full canned extraction; others reuse layout with a note
     if(key !== 'molokini'){
       document.getElementById('extract-raw').textContent = el.querySelector('.r-snip').textContent;
-      document.getElementById('extract-title').textContent = '🧬 Structured by Ingestion LLM — ' + sites[key].name;
+      document.getElementById('extract-title').textContent = '🧬 Structured by Ingestion LLM - ' + sites[key].name;
     } else {
       document.getElementById('extract-title').textContent = '🧬 Structured by Ingestion LLM';
       document.getElementById('extract-raw').textContent = '"went down to 40ft at molokini backwall today, so much of the coral looks totally white/bleached compared to last month, way more than usual :("';
