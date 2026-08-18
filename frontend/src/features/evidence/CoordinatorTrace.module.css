@@ -1,0 +1,173 @@
+/* Timestamped stage log, following the reference's reasoning-trace panel.
+ * The content is the real trace, so stage names, timings and rationales all
+ * come from the backend rather than being written here. */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  gap: var(--space-3);
+  padding: 11px 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ocean-mid);
+  margin-top: 6px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 4px var(--foam);
+}
+
+/* An LLM stage is visually distinct from a deterministic one, so a reader can
+ * see at a glance where a model was actually involved. */
+.dotLlm {
+  background: var(--provenance-simulated);
+  box-shadow: 0 0 0 4px var(--provenance-simulated-bg);
+}
+
+.dotFixture {
+  background: var(--status-warning);
+  box-shadow: 0 0 0 4px var(--provenance-synthetic-bg);
+}
+
+.dotFailed {
+  background: var(--status-critical);
+  box-shadow: 0 0 0 4px rgba(208, 59, 59, 0.15);
+}
+
+.body {
+  min-width: 0;
+  flex: 1;
+}
+
+.headline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.stage {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.executor {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--foam);
+  color: var(--ocean-deep-2);
+  border: 1px solid rgba(17, 138, 178, 0.25);
+}
+
+.executorLlm {
+  background: var(--provenance-simulated-bg);
+  color: var(--provenance-simulated);
+  border-color: rgba(99, 83, 201, 0.35);
+}
+
+.executorFixture {
+  background: var(--provenance-synthetic-bg);
+  color: var(--provenance-synthetic);
+  border-color: rgba(201, 133, 0, 0.4);
+}
+
+.failed {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--status-critical-text);
+  background: rgba(208, 59, 59, 0.12);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.rationale {
+  margin: 4px 0 0;
+  font-size: 11.8px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.errorText {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  color: var(--status-critical-text);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 5px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.retry {
+  color: var(--status-warning-text);
+  font-weight: 600;
+}
+
+.checks {
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
+.notice {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  margin-top: var(--space-4);
+  background: var(--provenance-synthetic-bg);
+  border: 1px dashed rgba(201, 133, 0, 0.45);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 11.8px;
+  line-height: 1.55;
+  color: var(--provenance-synthetic);
+}
+
+.notice code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.footnote {
+  margin: var(--space-4) 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  max-width: 80ch;
+}
+
+.muted {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}

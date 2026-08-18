@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Panel, ProvenanceBadge } from '@/components';
 import { useSites } from '@/hooks/useSites';
 
+import { CoordinatorTrace } from './CoordinatorTrace';
 import { EvidencePanel } from './EvidencePanel';
 
 import styles from './SiteSummary.module.css';
@@ -81,6 +82,8 @@ export function SiteSummary({ siteId }: { siteId: string }) {
       ) : null}
 
       <EvidencePanel siteId={site.site_id} />
+
+      <CoordinatorTrace siteId={site.site_id} />
     </div>
   );
 }
