@@ -63,9 +63,7 @@ def _requirement_met(
         return field_signal or evidence.support(Cause.RUNOFF) >= 0.45
     if "defined restoration or nursery footprint" in lowered:
         return site.has_active_restoration
-    if "depth and area" in lowered or "current and wave conditions" in lowered:
-        return True
-    return False
+    return "depth and area" in lowered or "current and wave conditions" in lowered
 
 
 def eligible_actions(

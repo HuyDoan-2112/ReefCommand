@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-import reefcommand
 import yaml
 
+import reefcommand
 from reefcommand.domain.enums import Cause
 from reefcommand.domain.evidence import CauseEvidence
 from reefcommand.domain.observation import StructuredObservation
