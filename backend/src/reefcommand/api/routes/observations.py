@@ -7,12 +7,23 @@ dashboard measure and display responsiveness.
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+
+from reefcommand.api import state
+from reefcommand.domain.observation import FieldReport
 
 router = APIRouter(prefix="/observations", tags=["observations"])
 
 
 @router.post("")
-def submit_observation() -> dict[str, object]:
+def submit_observation(report: FieldReport) -> dict[str, object]:
     """Accept a field report, structure it, and trigger re-planning."""
-    raise NotImplementedError
+    try:
+        plan = state.apply_observation(report)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {
+        "report_id": report.report_id,
+        "plan": plan.model_dump(mode="json"),
+        "replan_latency_ms": plan.replan_latency_ms,
+    }

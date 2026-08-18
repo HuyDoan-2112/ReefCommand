@@ -13,6 +13,8 @@ Both of those are already decided by the time the prompt is built.
 
 from __future__ import annotations
 
+import json
+
 from reefcommand.domain.evidence import FusedEvidence
 from reefcommand.domain.intervention import EligibleAction
 
@@ -38,4 +40,12 @@ Respond only with the required structured output.
 
 def build_user_prompt(evidence: FusedEvidence, actions: list[EligibleAction]) -> str:
     """Render the per-case prompt from already-computed inputs."""
-    raise NotImplementedError
+    return (
+        "Fused evidence:\n"
+        f"{json.dumps(evidence.model_dump(mode='json'), indent=2)}\n\n"
+        "Policy-eligible candidate actions:\n"
+        f"{json.dumps([action.model_dump(mode='json') for action in actions], indent=2)}\n\n"
+        "If one or more candidates have no unmet requirements and the evidence supports "
+        "acting, approve only those exact action_id values. Otherwise request the most "
+        "useful additional evidence from the allowed enum and approve no action."
+    )

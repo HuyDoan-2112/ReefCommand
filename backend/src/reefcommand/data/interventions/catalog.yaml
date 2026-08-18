@@ -26,7 +26,8 @@ interventions:
     minimum_support: 0.3
     minimum_confidence: 0.3
     requirements:
-      - "Site is divable in current conditions"
+      - requirement_key: site_divable
+        description: "Site is divable in current conditions"
     contraindications: []
     resources:
       boats: 1
@@ -60,7 +61,8 @@ interventions:
     minimum_support: 0.5
     minimum_confidence: 0.5
     requirements:
-      - "A field report describes lesions or tissue loss"
+      - requirement_key: lesion_or_tissue_loss_reported
+        description: "A field report describes lesions or tissue loss"
     contraindications: []
     resources:
       boats: 1
@@ -94,7 +96,8 @@ interventions:
     minimum_support: 0.5
     minimum_confidence: 0.4
     requirements:
-      - "A dive is already scheduled at this site"
+      - requirement_key: dive_already_scheduled
+        description: "A dive is already scheduled at this site"
     contraindications:
       - "Disinfectant contact time cannot be met between consecutive dives"
     resources:
@@ -123,7 +126,8 @@ interventions:
     minimum_support: 0.45
     minimum_confidence: 0.4
     requirements:
-      - "Turbidity or sediment was reported, or rainfall exceeded the threshold"
+      - requirement_key: turbidity_sediment_or_rainfall
+        description: "Turbidity or sediment was reported, or rainfall exceeded the threshold"
     contraindications: []
     resources:
       boats: 1
@@ -157,7 +161,8 @@ interventions:
     minimum_support: 0.45
     minimum_confidence: 0.4
     requirements:
-      - "Broken coral or a grounding was reported"
+      - requirement_key: broken_coral_or_grounding_reported
+        description: "Broken coral or a grounding was reported"
     contraindications: []
     resources:
       boats: 1
@@ -188,9 +193,12 @@ interventions:
     minimum_support: 0.7
     minimum_confidence: 0.6
     requirements:
-      - "Site depth and area are within the shade unit's working envelope"
-      - "Current and wave conditions allow deployment for the intended duration"
-      - "The target area is a defined restoration or nursery footprint"
+      - requirement_key: shade_depth_and_area_compatible
+        description: "Site depth and area are within the shade unit's working envelope"
+      - requirement_key: shade_conditions_compatible
+        description: "Current and wave conditions allow deployment for the intended duration"
+      - requirement_key: restoration_footprint_defined
+        description: "The target area is a defined restoration or nursery footprint"
     contraindications:
       - "Open reef area too large for the available units to cover meaningfully"
       - "Deployment window shorter than the expected thermal stress period"

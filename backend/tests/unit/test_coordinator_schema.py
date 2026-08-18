@@ -13,6 +13,7 @@ from pydantic import ValidationError
 from reefcommand.coordinator.schemas import (
     ApprovedAction,
     CoordinatorDecision,
+    CoordinatorOutput,
     EvidenceRequest,
     SupportScore,
 )
@@ -111,3 +112,23 @@ def test_extra_fields_are_rejected() -> None:
 def test_approved_action_requires_a_rationale() -> None:
     with pytest.raises(ValidationError):
         ApprovedAction(action_id="intensive_monitoring", priority=Priority.HIGH, rationale="")
+
+
+def test_llm_output_schema_excludes_fusion_scores() -> None:
+    with pytest.raises(ValidationError, match="evidence_support_scores"):
+        CoordinatorOutput.model_validate(
+            {
+                "site_id": "sombrero",
+                "evidence_support_scores": _scores(),
+                "evidence_sufficient": False,
+                "additional_evidence_needed": True,
+                "next_evidence": [
+                    {
+                        "type": EvidenceRequestType.CLOSE_RANGE_LESION_IMAGE,
+                        "priority": 1,
+                        "rationale": "Resolve ambiguity.",
+                    }
+                ],
+                "reasoning_summary": "Need evidence.",
+            }
+        )

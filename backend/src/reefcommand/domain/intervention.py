@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from reefcommand.domain.enums import ActionClass, Cause
+from reefcommand.domain.enums import ActionClass, Cause, Priority, RequirementKey
 
 
 class ResourceRequirement(BaseModel):
@@ -42,6 +42,15 @@ class ResourceRequirement(BaseModel):
     cost_usd: float = Field(default=0.0, ge=0.0)
 
 
+class EvidenceRequirement(BaseModel):
+    """A policy condition with stable dispatch semantics and dashboard copy."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    requirement_key: RequirementKey
+    description: str = Field(min_length=1)
+
+
 class InterventionDefinition(BaseModel):
     """One candidate action in the knowledge base."""
 
@@ -59,8 +68,11 @@ class InterventionDefinition(BaseModel):
         description="Support score below which this action is not eligible.",
     )
     minimum_confidence: float = Field(ge=0.0, le=1.0)
-    requirements: list[str] = Field(
-        description="Site or situation conditions that must hold. Checked deterministically."
+    requirements: list[EvidenceRequirement] = Field(
+        description=(
+            "Typed site or situation conditions that must hold. The engine dispatches "
+            "on requirement_key and never parses the description."
+        )
     )
     contraindications: list[str] = Field(
         description="Conditions under which this action must not be offered."
@@ -100,6 +112,7 @@ class EligibleAction(BaseModel):
     resources: ResourceRequirement
     expected_compatibility: float = Field(ge=0.0, le=1.0)
     provenance: str
+    priority: Priority = Priority.MEDIUM
     requires_manager_approval: bool = Field(
         default=True, description="Always true. The system is decision support."
     )

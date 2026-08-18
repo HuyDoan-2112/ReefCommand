@@ -39,8 +39,10 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationErro
 
 from reefcommand.config import CACHE_DIR, Settings, get_settings
 from reefcommand.domain.enums import Provenance
+from reefcommand.logging import get_logger
 
 _UNSAFE_FILENAME_CHARS = re.compile(r"[^A-Za-z0-9._-]+")
+_logger = get_logger(__name__)
 
 
 class CacheError(Exception):
@@ -179,6 +181,13 @@ def fetch_with_fallback[T](
     if settings.force_cache:
         entry = read(key, directory)
         if entry is not None:
+            _logger.info(
+                "external_data_served",
+                key=key,
+                provenance=Provenance.CACHE.value,
+                source_url=entry.source_url,
+                reason="force_cache",
+            )
             return from_payload(entry.payload), Provenance.CACHE
         raise CacheMissError(f"force_cache is set but no snapshot exists for {key!r}")
 
@@ -187,6 +196,14 @@ def fetch_with_fallback[T](
     except Exception as exc:
         entry = read(key, directory)
         if entry is not None:
+            _logger.warning(
+                "external_data_served",
+                key=key,
+                provenance=Provenance.CACHE.value,
+                source_url=entry.source_url,
+                reason="live_fetch_failed",
+                error_type=type(exc).__name__,
+            )
             return from_payload(entry.payload), Provenance.CACHE
         raise CacheMissError(f"live call for {key!r} failed and no cached snapshot exists") from exc
 
@@ -198,5 +215,12 @@ def fetch_with_fallback[T](
             payload=to_payload(value),
         ),
         directory,
+    )
+    _logger.info(
+        "external_data_served",
+        key=key,
+        provenance=Provenance.LIVE.value,
+        source_url=source_url,
+        reason="live_fetch_succeeded",
     )
     return value, Provenance.LIVE

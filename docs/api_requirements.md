@@ -35,6 +35,8 @@ Liveness. Returns `{"status": "ok"}`.
 ### `GET /health/data-sources`
 
 Per external source: whether the last value came from a live call or cache, and the snapshot age.
+This endpoint never starts a planning run.
+Before the first plan is published it returns `status: "no_plan"` with an empty source list.
 
 ```json
 {
@@ -249,6 +251,9 @@ The current response plan.
 `scenario_banner` rides on the plan itself rather than being looked up separately, so it cannot be dropped in the UI.
 
 `binding_constraints` is what lets the dashboard explain a trade-off rather than just presenting a result.
+The optimizer derives these by re-solving with the smallest capacity relaxations that improve the objective.
+It does not require a resource counter to land at exact numeric saturation.
+Each deferred site also receives plain-language trade-off text rather than raw constraint keys.
 
 ### `POST /observations`
 
@@ -305,6 +310,30 @@ This is demo beat five.
 
 Force a recompute. Returns the new plan and its latency.
 Useful for the demo and for debugging; not part of the normal loop.
+
+### `GET /plan/{plan_id}/trace`
+
+Returns the ordered, structured execution trace for one completed plan.
+The response carries a unique `trace_id`, plan ID, and success status.
+Each step identifies its site, stage, executor, timing, redacted inputs, validated output, concise rationale, and validation checks.
+Live LLM steps also carry provider, model, attempt count, and provider-reported token usage when available.
+
+The trace includes evidence tools, four investigators, deterministic fusion, policy eligibility, the Coordinator decision, and the optimizer result.
+A resource-only replan contains only an optimizer step and links to its parent plan because unchanged investigators must not rerun.
+
+The trace never exposes API keys, authorization headers, raw prompts, or private token-by-token model reasoning.
+Large inputs are referenced by stable site, report, snapshot, scenario, and action IDs instead of being copied into every stage.
+
+### `GET /plan/failed-traces/{trace_id}`
+
+Returns a bounded failed-run trace after an exception reports its trace ID.
+The failed step contains status, error type, a redacted error message, timing, and the inputs available at that boundary.
+Only the eight most recent failed traces and the 32 most recent completed plan states are retained by the in-process prototype.
+
+### `GET /plan/{plan_id}/trace/{site_id}`
+
+Returns the site-specific stages from the same trace plus plan-wide stages such as the optimizer.
+This is the dashboard-facing view for explaining one site's evidence and resulting allocation.
 
 ### `GET /evaluation`
 
