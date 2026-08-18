@@ -73,19 +73,27 @@ def _snapshot() -> tuple[SctldRecord, ...]:
     )
 
 
-def find_records_near_site(site_id: str, radius_km: float, since: date) -> NearbyRecords:
+def find_records_near_site(
+    site_id: str,
+    radius_km: float,
+    since: date,
+    until: date | None = None,
+) -> NearbyRecords:
     """Return reviewed records within a radius of a site, from the curated snapshot.
 
     Records are filtered by submission date and great-circle distance, and their
-    source metadata is preserved. Distances are returned alongside so a caller can
-    weigh proximity, but this function never decides that a record confirms SCTLD
-    at the site.
+    source metadata is preserved. When supplied, ``until`` closes the date range
+    so a time-aligned snapshot cannot read future records. Distances are returned
+    alongside so a caller can weigh proximity, but this function never decides
+    that a record confirms SCTLD at the site.
     """
     lat, lon = site_coordinates(site_id)
     kept: list[SctldRecord] = []
     distances: list[float] = []
     for record in _snapshot():
         if record.submitted_on < since:
+            continue
+        if until is not None and record.submitted_on > until:
             continue
         distance = haversine_km(lat, lon, record.latitude, record.longitude)
         if distance <= radius_km:
