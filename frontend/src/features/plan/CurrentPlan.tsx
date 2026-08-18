@@ -5,6 +5,8 @@ import { useCurrentPlan } from '@/hooks/usePlan';
 import { cx } from '@/lib/cx';
 import type { Assignment, DeferredSite, Priority, ResponsePlan } from '@/types';
 
+import { SiteMap } from './SiteMap';
+
 import styles from './CurrentPlan.module.css';
 
 /**
@@ -186,6 +188,10 @@ function PlanBody({ plan }: { plan: ResponsePlan }) {
           decoration="💵"
         />
       </div>
+
+      <Panel title="Study area" hint="pins plotted at real coordinates">
+        <SiteMap />
+      </Panel>
 
       <Panel
         title="Assignments"
