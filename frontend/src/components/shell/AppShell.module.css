@@ -1,0 +1,175 @@
+/* The two-column application frame: a fixed sidebar and a scrolling main column.
+ *
+ * Ported from reefcommand.html. Desktop only, as agreed: this is a presentation
+ * dashboard shown on a large screen, so there are no narrow breakpoints.
+ */
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 236px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, var(--ocean-deep) 0%, var(--ocean-deep-2) 70%, #0d5d75 100%);
+  color: var(--text-on-dark);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 120px;
+  background:
+    radial-gradient(120px 40px at 20% 100%, rgba(78, 205, 196, 0.18), transparent 60%),
+    radial-gradient(160px 50px at 80% 100%, rgba(255, 127, 107, 0.12), transparent 60%);
+  pointer-events: none;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 20px 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.brandMark {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 30% 25%, #1cb4d6, #073b4c 75%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.brandName {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.2px;
+  line-height: 1.15;
+}
+
+.brandTag {
+  font-size: 10.5px;
+  color: var(--text-on-dark-muted);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nav {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.navSectionLabel {
+  padding: 16px 16px 4px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #6fa8a3;
+  font-weight: 600;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #cfe9e7;
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.navItemActive {
+  background: rgba(78, 205, 196, 0.16);
+  color: #fff;
+  border-color: rgba(78, 205, 196, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(78, 205, 196, 0.15);
+}
+
+.navIcon {
+  width: 20px;
+  text-align: center;
+  font-size: 15px;
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  padding: 16px;
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(251, 249, 244, 0.88);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.topbarTitle {
+  font-size: 19px;
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.topbarSub {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.topbarTitleWrap {
+  margin-right: auto;
+  min-width: 0;
+}
+
+.content {
+  padding: 24px 28px 48px;
+  flex: 1;
+}

@@ -86,21 +86,26 @@
   --priority-low: #2f6f4f;
 
   /* ---- Provenance ----
+   * The badge backgrounds are opaque, not translucent tints. A translucent
+   * background composites against whatever is behind it, and the badge became
+   * unreadable on the dark site header. These are the exact colours the old
+   * tints produced over white, so light surfaces are unchanged.
+   *
    * Colour is the secondary cue only. Every provenance badge also carries a
    * distinct glyph and its own word, because these four must stay
    * distinguishable for a reader who does not see hue the way the palette
    * assumes.
    */
   --provenance-live: #2f6f4f;
-  --provenance-live-bg: rgba(47, 111, 79, 0.12);
+  --provenance-live-bg: #e6eeea;
   --provenance-cache: #4a6f8a;
-  --provenance-cache-bg: rgba(74, 111, 138, 0.12);
+  --provenance-cache-bg: #e9eef1;
   /* Stepped darker than the reference's #6b5bd2, which measured 4.42:1 on its
    * own badge tint and missed the 4.5:1 floor for text this size. Same hue. */
   --provenance-simulated: #6353c9;
-  --provenance-simulated-bg: rgba(107, 91, 210, 0.12);
+  --provenance-simulated-bg: #edebfa;
   --provenance-synthetic: #8a5c00;
-  --provenance-synthetic-bg: rgba(201, 133, 0, 0.14);
+  --provenance-synthetic-bg: #f7eedb;
 
   /* ---- Evidence ----
    * support and confidence are two different quantities and never share a

@@ -26,6 +26,12 @@ var/
 wheels/
 *.egg-info/
 .installed.cfg
+
+# The Python build-artifact patterns above are unanchored, so a bare "lib/"
+# matches any directory named lib at any depth. That silently swallowed the
+# dashboard's own source directory. Re-include it explicitly.
+!frontend/src/lib/
+
 *.egg
 MANIFEST
 

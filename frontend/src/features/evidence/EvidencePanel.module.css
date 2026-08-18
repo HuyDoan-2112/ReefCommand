@@ -1,0 +1,261 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.causeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.causeCard {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 15px;
+}
+
+.readouts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: var(--space-5);
+}
+
+.readout {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0 var(--space-2);
+  align-items: baseline;
+  background: var(--foam);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.readoutLabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--ocean-deep-2);
+}
+
+.readoutValue {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.readoutNote {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+.disclaimer {
+  margin: var(--space-4) 0 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  max-width: 80ch;
+}
+
+.verdictAsking,
+.verdictActing {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  border-radius: 14px;
+  padding: 14px 16px;
+  line-height: 1.55;
+}
+
+.verdictAsking {
+  background: var(--foam);
+  border: 1px solid rgba(17, 138, 178, 0.3);
+}
+
+.verdictActing {
+  background: rgba(12, 163, 12, 0.08);
+  border: 1px solid rgba(12, 163, 12, 0.28);
+}
+
+.verdictIcon {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.verdictTitle {
+  font-weight: 700;
+  font-size: 13.5px;
+  margin-bottom: 3px;
+}
+
+.verdictBody {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.requests,
+.approved {
+  margin-top: var(--space-4);
+}
+
+.requestsTitle {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.request {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.request:last-child {
+  border-bottom: none;
+}
+
+.requestPriority {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--coral);
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.requestType {
+  font-weight: 700;
+  font-size: 12.5px;
+}
+
+.requestWhy {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.approvedItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--space-3);
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.approvedItem:last-of-type {
+  border-bottom: none;
+}
+
+.approvedName {
+  font-weight: 700;
+  font-size: 12.5px;
+  text-transform: capitalize;
+}
+
+.approvedPriority {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--ocean-deep-2);
+  background: var(--foam);
+  border-radius: 6px;
+  padding: 2px 8px;
+  align-self: start;
+}
+
+.approvedWhy {
+  grid-column: 1 / -1;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.citationGroups {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-5);
+}
+
+.citationGroupTitle {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--ocean-deep-2);
+  margin-bottom: var(--space-2);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.citationList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.citation {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.citationBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.citationSource {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.citationRef {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.citationMeta {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.noCitations {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.muted {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
