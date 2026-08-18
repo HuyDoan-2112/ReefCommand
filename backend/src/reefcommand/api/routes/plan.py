@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from reefcommand.api import state
+from reefcommand.domain.plan import ResponsePlan
 from reefcommand.orchestration.pipeline import state_for_plan
 from reefcommand.orchestration.trace import (
     ExecutionTrace,
@@ -39,17 +40,17 @@ def failed_execution_trace(trace_id: str) -> ExecutionTrace:
     return trace
 
 
-@router.get("/current")
-def current_plan() -> dict[str, object]:
+@router.get("/current", response_model=ResponsePlan)
+def current_plan() -> ResponsePlan:
     """The current response plan."""
-    return state.current_plan().model_dump(mode="json")
+    return state.current_plan()
 
 
-@router.post("/recompute")
-def recompute(request: RecomputeRequest | None = None) -> dict[str, object]:
+@router.post("/recompute", response_model=ResponsePlan)
+def recompute(request: RecomputeRequest | None = None) -> ResponsePlan:
     """Force a recompute. Returns the new plan and its latency."""
     request = request or RecomputeRequest()
-    return state.recompute(request.scenario_id, request.site_ids).model_dump(mode="json")
+    return state.recompute(request.scenario_id, request.site_ids)
 
 
 @router.get("/{plan_id}/trace", response_model=ExecutionTrace)
