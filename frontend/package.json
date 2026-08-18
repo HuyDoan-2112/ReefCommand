@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "gen:api": "openapi-typescript ./openapi.json -o ./src/types/api.ts",
     "gen:api:refresh": "node scripts/refresh-openapi.mjs && npm run gen:api",
+    "check:contract": "node scripts/check-contract.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\""
   },
