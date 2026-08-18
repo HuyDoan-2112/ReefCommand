@@ -879,6 +879,78 @@
         "title": "RecomputeRequest",
         "type": "object"
       },
+      "ReportStructureResult": {
+        "additionalProperties": false,
+        "description": "Validated observation extracted from one raw report by the configured LLM.",
+        "properties": {
+          "attempt_count": {
+            "minimum": 1,
+            "title": "Attempt Count",
+            "type": "integer"
+          },
+          "extraction_confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Extraction Confidence",
+            "type": "number"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "latency_ms": {
+            "minimum": 0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "observation": {
+            "$ref": "#/components/schemas/StructuredObservation"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "report_id": {
+            "title": "Report Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report_id",
+          "observation",
+          "extraction_confidence",
+          "provider",
+          "model",
+          "attempt_count",
+          "latency_ms"
+        ],
+        "title": "ReportStructureResult",
+        "type": "object"
+      },
       "ResourceChangeRequest": {
         "description": "Resource scenario selected for the next planning window.",
         "properties": {
@@ -1444,6 +1516,183 @@
         "title": "SiteView",
         "type": "object"
       },
+      "StructuredObservation": {
+        "description": "Structured signals extracted from one field report.\n\nEvery field is optional because a real report rarely mentions everything.\nAbsence means \"not reported\", never \"reported as zero\".",
+        "properties": {
+          "affected_taxa": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Affected Taxa",
+            "type": "array"
+          },
+          "bleaching_pct": {
+            "anyOf": [
+              {
+                "maximum": 100,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bleaching Pct"
+          },
+          "broken_coral_observed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Broken Coral Observed"
+          },
+          "compared_to_previous_dive": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compared To Previous Dive"
+          },
+          "extraction_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the extractor was unsure about. Surfaced, not swallowed.",
+            "title": "Extraction Notes"
+          },
+          "lesion_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lesion Description"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "paling_pct": {
+            "anyOf": [
+              {
+                "maximum": 100,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paling Pct"
+          },
+          "provenance_metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProvenanceMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Record-level source and retrieval metadata from the fixture envelope."
+          },
+          "report_id": {
+            "title": "Report Id",
+            "type": "string"
+          },
+          "sediment_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sediment Note"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "string"
+          },
+          "spatial_progression": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "For example 'spreading westward since last dive'.",
+            "title": "Spatial Progression"
+          },
+          "tissue_loss_observed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tissue Loss Observed"
+          },
+          "turbidity_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turbidity Note"
+          }
+        },
+        "required": [
+          "report_id",
+          "site_id",
+          "observed_at"
+        ],
+        "title": "StructuredObservation",
+        "type": "object"
+      },
+      "StructuredObservationSubmission": {
+        "additionalProperties": false,
+        "description": "A raw report and the reviewed extraction to use for re-planning.",
+        "properties": {
+          "observation": {
+            "$ref": "#/components/schemas/StructuredObservation"
+          },
+          "report": {
+            "$ref": "#/components/schemas/FieldReport"
+          }
+        },
+        "required": [
+          "report",
+          "observation"
+        ],
+        "title": "StructuredObservationSubmission",
+        "type": "object"
+      },
       "TokenUsage": {
         "additionalProperties": false,
         "description": "Provider-reported token usage accumulated across validation retries.",
@@ -1786,6 +2035,90 @@
           }
         },
         "summary": "Submit Observation",
+        "tags": [
+          "observations"
+        ]
+      }
+    },
+    "/observations/structure": {
+      "post": {
+        "description": "Use the configured LLM to convert messy report text into a validated observation.",
+        "operationId": "structure_report_observations_structure_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldReport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportStructureResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Structure Report",
+        "tags": [
+          "observations"
+        ]
+      }
+    },
+    "/observations/structured": {
+      "post": {
+        "description": "Accept a reviewed structured observation and trigger re-planning without another LLM call.",
+        "operationId": "submit_structured_observation_observations_structured_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StructuredObservationSubmission"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObservationAccepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Structured Observation",
         "tags": [
           "observations"
         ]

@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from threading import Lock, RLock
 
-from reefcommand.domain.observation import FieldReport
+from reefcommand.domain.observation import FieldReport, StructuredObservation
 from reefcommand.domain.plan import ResponsePlan
 from reefcommand.orchestration.events import NewEvidence, ResourceChange
 from reefcommand.orchestration.pipeline import load_scenario, run
@@ -81,6 +81,32 @@ def apply_observation(report: FieldReport) -> ResponsePlan:
     with _mutation_lock:
         computed = handle(
             NewEvidence(received_at=datetime.now(UTC), report=report),
+            current_plan(),
+        )
+        with _state_lock:
+            _current_plan = computed
+        return computed
+
+
+def apply_structured_observation(
+    report: FieldReport,
+    observation: StructuredObservation,
+) -> ResponsePlan:
+    """Publish a plan from a reviewed LLM-structured field report."""
+    global _current_plan
+    if (
+        observation.report_id != report.report_id
+        or observation.site_id != report.site_id
+        or observation.observed_at != report.observed_at
+    ):
+        raise ValueError("structured observation identity must match its raw report")
+    with _mutation_lock:
+        computed = handle(
+            NewEvidence(
+                received_at=datetime.now(UTC),
+                report=report,
+                observation=observation,
+            ),
             current_plan(),
         )
         with _state_lock:

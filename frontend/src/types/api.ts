@@ -64,6 +64,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/observations/structure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Structure Report
+         * @description Use the configured LLM to convert messy report text into a validated observation.
+         */
+        post: operations["structure_report_observations_structure_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/observations/structured": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Structured Observation
+         * @description Accept a reviewed structured observation and trigger re-planning without another LLM call.
+         */
+        post: operations["submit_structured_observation_observations_structured_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/plan/current": {
         parameters: {
             query?: never;
@@ -685,6 +725,29 @@ export interface components {
             site_ids?: string[];
         };
         /**
+         * ReportStructureResult
+         * @description Validated observation extracted from one raw report by the configured LLM.
+         */
+        ReportStructureResult: {
+            /** Attempt Count */
+            attempt_count: number;
+            /** Extraction Confidence */
+            extraction_confidence: number;
+            /** Input Tokens */
+            input_tokens?: number | null;
+            /** Latency Ms */
+            latency_ms: number;
+            /** Model */
+            model: string;
+            observation: components["schemas"]["StructuredObservation"];
+            /** Output Tokens */
+            output_tokens?: number | null;
+            /** Provider */
+            provider: string;
+            /** Report Id */
+            report_id: string;
+        };
+        /**
          * ResourceChangeRequest
          * @description Resource scenario selected for the next planning window.
          */
@@ -965,6 +1028,62 @@ export interface components {
             site_id: string;
         };
         /**
+         * StructuredObservation
+         * @description Structured signals extracted from one field report.
+         *
+         *     Every field is optional because a real report rarely mentions everything.
+         *     Absence means "not reported", never "reported as zero".
+         */
+        StructuredObservation: {
+            /** Affected Taxa */
+            affected_taxa?: string[];
+            /** Bleaching Pct */
+            bleaching_pct?: number | null;
+            /** Broken Coral Observed */
+            broken_coral_observed?: boolean | null;
+            /** Compared To Previous Dive */
+            compared_to_previous_dive?: string | null;
+            /**
+             * Extraction Notes
+             * @description What the extractor was unsure about. Surfaced, not swallowed.
+             */
+            extraction_notes?: string | null;
+            /** Lesion Description */
+            lesion_description?: string | null;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Paling Pct */
+            paling_pct?: number | null;
+            /** @description Record-level source and retrieval metadata from the fixture envelope. */
+            provenance_metadata?: components["schemas"]["ProvenanceMetadata"] | null;
+            /** Report Id */
+            report_id: string;
+            /** Sediment Note */
+            sediment_note?: string | null;
+            /** Site Id */
+            site_id: string;
+            /**
+             * Spatial Progression
+             * @description For example 'spreading westward since last dive'.
+             */
+            spatial_progression?: string | null;
+            /** Tissue Loss Observed */
+            tissue_loss_observed?: boolean | null;
+            /** Turbidity Note */
+            turbidity_note?: string | null;
+        };
+        /**
+         * StructuredObservationSubmission
+         * @description A raw report and the reviewed extraction to use for re-planning.
+         */
+        StructuredObservationSubmission: {
+            observation: components["schemas"]["StructuredObservation"];
+            report: components["schemas"]["FieldReport"];
+        };
+        /**
          * TokenUsage
          * @description Provider-reported token usage accumulated across validation retries.
          */
@@ -1112,6 +1231,72 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["FieldReport"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservationAccepted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    structure_report_observations_structure_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldReport"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportStructureResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_structured_observation_observations_structured_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StructuredObservationSubmission"];
             };
         };
         responses: {

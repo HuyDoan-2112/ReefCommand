@@ -14,6 +14,7 @@ import type {
   FieldReport,
   FusedEvidence,
   ObservationAccepted,
+  ReportStructureResult,
   RecomputeRequest,
   ResourceChangeRequest,
   ResourceChangeResult,
@@ -21,6 +22,7 @@ import type {
   ScenarioView,
   SiteExecutionTrace,
   SiteView,
+  StructuredObservationSubmission,
 } from '@/types';
 
 /** The current response plan. Never starts a planning run of its own. */
@@ -69,6 +71,18 @@ export function fetchSiteTrace(planId: string, siteId: string): Promise<SiteExec
 /** Submit a field report. This is the primary re-planning trigger. */
 export function submitObservation(report: FieldReport): Promise<ObservationAccepted> {
   return post<ObservationAccepted>('/observations', report);
+}
+
+/** Convert a messy report into a schema-validated observation with the configured LLM. */
+export function structureObservation(report: FieldReport): Promise<ReportStructureResult> {
+  return post<ReportStructureResult>('/observations/structure', report);
+}
+
+/** Use an already reviewed extraction for re-planning without another model call. */
+export function submitStructuredObservation(
+  submission: StructuredObservationSubmission,
+): Promise<ObservationAccepted> {
+  return post<ObservationAccepted>('/observations/structured', submission);
 }
 
 /** Change the capacity scenario, which re-runs the optimizer only. */

@@ -65,6 +65,9 @@ export type ResourceChangeResult = Schemas['ResourceChangeResult'];
 export type ResourceChangeRequest = Schemas['ResourceChangeRequest'];
 
 export type FieldReport = Schemas['FieldReport'];
+export type StructuredObservation = Schemas['StructuredObservation'];
+export type ReportStructureResult = Schemas['ReportStructureResult'];
+export type StructuredObservationSubmission = Schemas['StructuredObservationSubmission'];
 export type ObservationAccepted = Schemas['ObservationAccepted'];
 export type RecomputeRequest = Schemas['RecomputeRequest'];
 

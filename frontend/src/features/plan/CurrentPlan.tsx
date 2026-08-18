@@ -4,8 +4,16 @@ import Link from 'next/link';
 
 import { Panel, ProvenanceBadge, SimulatedDataBanner, StatTile } from '@/components';
 import { useCurrentPlan } from '@/hooks/usePlan';
+import { useSiteEvidenceBatch, useSites } from '@/hooks/useSites';
 import { cx } from '@/lib/cx';
-import type { Assignment, DeferredSite, Priority, ResponsePlan } from '@/types';
+import type {
+  Assignment,
+  DeferredSite,
+  FusedEvidence,
+  Priority,
+  ResponsePlan,
+  SiteView,
+} from '@/types';
 
 import { SiteMap } from './SiteMap';
 
@@ -150,8 +158,56 @@ function DeferredRow({ site }: { site: DeferredSite }) {
   );
 }
 
+const STUDY_AREA_LABEL = 'Florida Keys';
+
+function reportCount(evidence: FusedEvidence | undefined): number {
+  if (!evidence) return 0;
+  const references = Object.values(evidence.by_cause).flatMap((cause) =>
+    (cause?.citations ?? [])
+      .filter((citation) => citation.source.toLowerCase().includes('structured form'))
+      .map((citation) => citation.reference ?? citation.source),
+  );
+  return new Set(references).size;
+}
+
+function thermalSummary(evidence: FusedEvidence | undefined): string {
+  return evidence?.by_cause.thermal?.display_summary ?? 'Thermal evidence is loading';
+}
+
+function causeSummary(
+  assignment: Assignment | null,
+  site: SiteView | undefined,
+  evidence: FusedEvidence | undefined,
+): string {
+  if (assignment) return assignment.evidence_summary;
+  const causes = site?.dominant_causes ?? [];
+  const summaries = causes
+    .map((cause) => evidence?.by_cause[cause]?.display_summary)
+    .filter((summary): summary is string => Boolean(summary));
+  return summaries.length > 0 ? summaries.join(' ') : 'No dominant cause is currently supported.';
+}
+
+function statusLabel(priority: Priority | null): string {
+  if (priority === 'high') return 'Critical';
+  if (priority === 'medium') return 'Serious';
+  return 'Watch';
+}
+
 function PriorityQueue({ plan }: { plan: ResponsePlan }) {
   const deferred = plan.deferred ?? [];
+  const { data: sites } = useSites();
+  const siteIds = sites?.map((site) => site.site_id) ?? [];
+  const evidenceQueries = useSiteEvidenceBatch(siteIds);
+  const sitesById = new Map((sites ?? []).map((site) => [site.site_id, site]));
+  const evidenceBySite = new Map(
+    siteIds.map((siteId, index) => [siteId, evidenceQueries[index]?.data] as const),
+  );
+
+  function renderCardMeta(siteId: string) {
+    const evidence = evidenceBySite.get(siteId);
+    const count = reportCount(evidence);
+    return `${thermalSummary(evidence)} · ${count} synthetic report${count === 1 ? '' : 's'} · ${STUDY_AREA_LABEL}`;
+  }
 
   return (
     <Panel title="Priority queue" hint="current plan order" className={styles.queuePanel}>
@@ -170,12 +226,22 @@ function PriorityQueue({ plan }: { plan: ResponsePlan }) {
                   className={styles.queuePriority}
                   style={{ color: PRIORITY_COLOR[assignment.priority] }}
                 >
-                  {PRIORITY_LABEL[assignment.priority]}
+                  {statusLabel(assignment.priority)}
                 </span>
               </span>
+              <span className={styles.queueMeta}>{renderCardMeta(assignment.site_id)}</span>
               <span className={styles.queueAction}>{assignment.action_id.replace(/_/g, ' ')}</span>
-              <span className={styles.queueReason}>{assignment.evidence_summary}</span>
-              <span className={styles.queueApproval}>Manager approval required</span>
+              <span className={styles.queueReason}>
+                Coordinator:{' '}
+                {causeSummary(
+                  assignment,
+                  sitesById.get(assignment.site_id),
+                  evidenceBySite.get(assignment.site_id),
+                )}
+              </span>
+              {assignment.requires_manager_approval ? (
+                <span className={styles.queueApproval}>Manager approval required</span>
+              ) : null}
             </span>
           </Link>
         ))}
@@ -192,7 +258,17 @@ function PriorityQueue({ plan }: { plan: ResponsePlan }) {
             <span className={styles.queueBody}>
               <span className={styles.queueHead}>
                 <strong>{site.site_name}</strong>
-                <span className={styles.queueDeferred}>Deferred</span>
+                <span className={styles.queueDeferred}>{statusLabel(null)}</span>
+              </span>
+              <span className={styles.queueMeta}>{renderCardMeta(site.site_id)}</span>
+              <span className={styles.queueAction}>
+                {site.fallback_action_id
+                  ? site.fallback_action_id.replace(/_/g, ' ')
+                  : 'monitoring'}
+              </span>
+              <span className={styles.queueReason}>
+                Coordinator:{' '}
+                {causeSummary(null, sitesById.get(site.site_id), evidenceBySite.get(site.site_id))}
               </span>
               <span className={styles.queueReason}>{site.reason}</span>
             </span>
@@ -247,13 +323,9 @@ function PlanBody({ plan, surface }: { plan: ResponsePlan; surface: 'command' | 
           </div>
 
           <div className={styles.commandGrid}>
-            <Panel
-              title="Florida Keys study area"
-              hint="site pins use reported coordinates"
-              className={styles.mapPanel}
-            >
+            <div className={styles.mapPanel}>
               <SiteMap />
-            </Panel>
+            </div>
             <PriorityQueue plan={plan} />
           </div>
         </>
