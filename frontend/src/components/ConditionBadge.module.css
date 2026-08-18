@@ -1,0 +1,57 @@
+/* The condition scale: how bad a site's situation is.
+ *
+ * Separate from ProvenanceBadge, which answers a different question. This one
+ * also pairs its colour with a word, so severity never rests on hue alone.
+ */
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.swatch {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.good {
+  background: rgba(12, 163, 12, 0.12);
+  color: var(--status-good-text);
+}
+.good .swatch {
+  background: var(--status-good);
+}
+
+.warning {
+  background: rgba(201, 133, 0, 0.14);
+  color: var(--status-warning-text);
+}
+.warning .swatch {
+  background: var(--status-warning);
+}
+
+.serious {
+  background: rgba(236, 131, 90, 0.16);
+  color: var(--status-serious-text);
+}
+.serious .swatch {
+  background: var(--status-serious);
+}
+
+.critical {
+  background: rgba(208, 59, 59, 0.13);
+  color: var(--status-critical-text);
+}
+.critical .swatch {
+  background: var(--status-critical);
+}

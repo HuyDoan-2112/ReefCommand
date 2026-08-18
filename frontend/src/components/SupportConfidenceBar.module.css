@@ -1,0 +1,109 @@
+/* One cause: its support score and, beneath it, the confidence in that score.
+ *
+ * The reference draws a single bar per cause. That cannot express this data:
+ * support 0.8 at confidence 0.3 is a different situation from support 0.8 at
+ * confidence 0.9, and a manager has to see which one they are looking at. So
+ * the card carries two tracks, weighted so support reads first.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.icon {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.label {
+  font-weight: 700;
+  font-size: 13px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Marks a cause as currently in play. Deliberately a word and a border rather
+ * than a colour alone. */
+.dominant {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--ocean-deep-2);
+  background: var(--foam);
+  border: 1px solid rgba(17, 138, 178, 0.25);
+  border-radius: 6px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.metric {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 var(--space-2);
+  align-items: baseline;
+}
+
+.metricLabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+
+.metricValue {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.track {
+  grid-column: 1 / -1;
+  height: 8px;
+  border-radius: 5px;
+  background: var(--gridline);
+  overflow: hidden;
+  margin-top: var(--space-1);
+}
+
+.fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.25s ease;
+}
+
+.fillSupport {
+  background: var(--support-fill);
+}
+
+/* Confidence is a hatched, quieter treatment so the two tracks are never read
+ * as the same quantity, and stay distinguishable without relying on hue. */
+.trackConfidence {
+  height: 6px;
+}
+
+.fillConfidence {
+  background-color: var(--confidence-fill);
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55) 0 3px,
+    transparent 3px 6px
+  );
+}
+
+.rationale {
+  font-size: 11.3px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: var(--space-1) 0 0;
+}
