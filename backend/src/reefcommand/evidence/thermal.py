@@ -24,7 +24,7 @@ from reefcommand.domain.enums import AlertLevel, Cause
 from reefcommand.domain.evidence import CauseEvidence, EvidenceCitation
 from reefcommand.domain.observation import StructuredObservation
 from reefcommand.domain.site import ReefSite
-from reefcommand.ingestion.noaa_crw import CrwObservation, SOURCE_URL, fetch_site_series
+from reefcommand.ingestion.noaa_crw import SOURCE_URL, CrwObservation, fetch_site_series
 
 cause: Cause = Cause.THERMAL
 
