@@ -9,6 +9,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DATA_DIR = Path(__file__).parent / "data"
@@ -30,10 +31,12 @@ class Settings(BaseSettings):
     api_port: int = 8000
 
     llm_provider: Literal["anthropic", "deepseek"] = "anthropic"
-    llm_model: str = "claude-sonnet-4-5"
-    llm_timeout_seconds: float = 30.0
+    llm_model: str = "claude-sonnet-5"
+    llm_timeout_seconds: float = Field(default=30.0, gt=0.0)
+    llm_max_tokens: int = Field(default=4096, ge=256)
+    llm_retry_backoff_seconds: float = Field(default=0.5, ge=0.0)
     deepseek_api_key: str | None = None
-    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_base_url: str = "https://api.deepseek.com/beta"
 
     external_timeout_seconds: float = 3.0
     force_cache: bool = False

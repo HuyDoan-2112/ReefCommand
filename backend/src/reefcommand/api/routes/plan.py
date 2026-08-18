@@ -12,7 +12,12 @@ from pydantic import BaseModel, Field
 
 from reefcommand.api import state
 from reefcommand.orchestration.pipeline import state_for_plan
-from reefcommand.orchestration.trace import ExecutionTrace, SiteExecutionTrace, for_site
+from reefcommand.orchestration.trace import (
+    ExecutionTrace,
+    SiteExecutionTrace,
+    failed_trace_for_id,
+    for_site,
+)
 
 
 class RecomputeRequest(BaseModel):
@@ -23,6 +28,15 @@ class RecomputeRequest(BaseModel):
 
 
 router = APIRouter(prefix="/plan", tags=["plan"])
+
+
+@router.get("/failed-traces/{trace_id}", response_model=ExecutionTrace)
+def failed_execution_trace(trace_id: str) -> ExecutionTrace:
+    """Return a bounded failed-run trace when its id was reported with an error."""
+    trace = failed_trace_for_id(trace_id)
+    if trace is None:
+        raise HTTPException(status_code=404, detail=f"unknown failed trace {trace_id!r}")
+    return trace
 
 
 @router.get("/current")

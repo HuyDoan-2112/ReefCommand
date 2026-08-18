@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import pytest
+
 from reefcommand.llm.client import LlmCallMetrics
 from reefcommand.orchestration.trace import (
     TraceExecutor,
     TraceRecorder,
     TraceStage,
+    TraceStatus,
+    failed_trace_for_id,
     for_site,
 )
 
@@ -58,3 +62,36 @@ def test_live_agent_trace_records_redacted_metrics_and_site_view() -> None:
         TraceStage.DISEASE_INVESTIGATOR,
         TraceStage.OPTIMIZER,
     ]
+
+
+def test_failed_stage_is_retained_with_a_trace_id() -> None:
+    recorder = TraceRecorder("demo_default", offline=True)
+
+    with pytest.raises(RuntimeError) as raised:
+        recorder.record(
+            TraceStage.OPTIMIZER,
+            TraceExecutor.OPTIMIZER,
+            lambda: (_ for _ in ()).throw(RuntimeError("solver failed")),
+            inputs={"scenario_ref": "demo_default"},
+            serialize=lambda result: result,
+        )
+    assert any(recorder.trace_id in note for note in raised.value.__notes__)
+
+    trace = failed_trace_for_id(recorder.trace_id)
+    assert trace is not None
+    assert trace.status is TraceStatus.FAILED
+    assert trace.plan_id is None
+    assert trace.steps[-1].status is TraceStatus.FAILED
+    assert trace.steps[-1].error_type == "RuntimeError"
+
+
+def test_pipeline_state_retention_is_bounded(monkeypatch) -> None:
+    from reefcommand.orchestration import pipeline
+
+    monkeypatch.setattr(pipeline, "MAX_RETAINED_PLAN_STATES", 2)
+    plans = [pipeline.run("demo_default", ["cheeca_rocks"]) for _ in range(3)]
+
+    assert pipeline.state_for_plan(plans[0].plan_id) is None
+    assert pipeline.state_for_plan(plans[1].plan_id) is not None
+    assert pipeline.state_for_plan(plans[2].plan_id) is not None
+    assert len(pipeline._STATE_BY_PLAN_ID) <= 2

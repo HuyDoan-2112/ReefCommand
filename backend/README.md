@@ -51,6 +51,7 @@ Copy-Item ..\.env.example .env
 REEFCOMMAND_LLM_PROVIDER=deepseek
 REEFCOMMAND_LLM_MODEL=deepseek-v4-flash
 REEFCOMMAND_DEEPSEEK_API_KEY=your-key-here
+REEFCOMMAND_DEEPSEEK_BASE_URL=https://api.deepseek.com/beta
 REEFCOMMAND_OFFLINE_DEMO=false
 ```
 
@@ -66,7 +67,10 @@ Then run the existing API or pipeline after the smoke test succeeds:
 uv run uvicorn reefcommand.api.app:app --reload
 ```
 
-The DeepSeek adapter uses JSON mode, then validates the returned object against the same Pydantic schema used by Anthropic.
+The DeepSeek adapter uses the official Beta endpoint required for strict function calls and validates arguments against the same Pydantic model used by Anthropic.
+It explicitly selects non-thinking mode because DeepSeek V4 thinking mode does not accept forced `tool_choice`.
+The `deepseek-v4-flash` example is an official DeepSeek API model identifier, not a local alias.
+Transient transport errors, HTTP 429 responses, and server errors retry with bounded backoff.
 Do not commit `.env` or paste the API key into chat, issues, logs, or pull requests.
 
 ## Inspecting agent execution
