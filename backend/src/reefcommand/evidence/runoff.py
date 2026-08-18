@@ -48,7 +48,7 @@ def assess(site: ReefSite, observations: list[StructuredObservation]) -> CauseEv
         observed_at=observed_at,
         provenance=rainfall.provenance,
     )
-    field_summary = ", ".join(field_signals) if field_signals else "no field turbidity or sediment note"
+    field_summary = ", ".join(field_signals) if field_signals else "no turbidity or sediment note"
     return CauseEvidence(
         cause=cause,
         support=support,
