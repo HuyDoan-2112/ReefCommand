@@ -6,5 +6,17 @@ from reefcommand.tools.contracts import (
     EvidenceWindow,
     ToolResult,
 )
+from reefcommand.tools.agrra import AgrraSctldTool
+from reefcommand.tools.rainfall import RainfallTool
+from reefcommand.tools.storm_vessel import StormHistoryTool, VesselActivityTool
 
-__all__ = ["EvidenceSnapshot", "EvidenceTool", "EvidenceWindow", "ToolResult"]
+__all__ = [
+    "AgrraSctldTool",
+    "EvidenceSnapshot",
+    "EvidenceTool",
+    "EvidenceWindow",
+    "RainfallTool",
+    "StormHistoryTool",
+    "ToolResult",
+    "VesselActivityTool",
+]
