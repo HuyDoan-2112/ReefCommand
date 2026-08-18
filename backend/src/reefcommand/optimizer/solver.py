@@ -58,11 +58,7 @@ def _capacity_limits(problem: AllocationProblem) -> dict[str, float]:
 def _binding_constraints(problem: AllocationProblem, selected: list[EligibleAction]) -> list[str]:
     used = _capacity_used(selected)
     limits = _capacity_limits(problem)
-    return [
-        name
-        for name, limit in limits.items()
-        if limit > 0 and abs(used[name] - limit) < 1e-6
-    ]
+    return [name for name, limit in limits.items() if limit > 0 and abs(used[name] - limit) < 1e-6]
 
 
 def _assign_resources(
@@ -116,8 +112,7 @@ def _plan_from_selected(
             estimated_hours=action.resources.dive_hours,
             estimated_cost_usd=action.resources.cost_usd,
             evidence_summary=(
-                "Supporting causes: "
-                + ", ".join(cause.value for cause in action.supporting_causes)
+                "Supporting causes: " + ", ".join(cause.value for cause in action.supporting_causes)
             ),
             remaining_uncertainty=(
                 "Support scores are not probabilities; manager approval remains required."
@@ -143,8 +138,7 @@ def _plan_from_selected(
                 None,
             ),
             reason=(
-                "Intervention deferred because "
-                + ", ".join(binding)
+                "Intervention deferred because " + ", ".join(binding)
                 if binding
                 else "Intervention was not selected by the allocation objective."
             ),
@@ -205,10 +199,7 @@ def solve(problem: AllocationProblem) -> ResponsePlan:
         <= len(boats)
     )
     model.Add(
-        sum(
-            selected[index] * action.resources.dive_teams
-            for index, action in enumerate(candidates)
-        )
+        sum(selected[index] * action.resources.dive_teams for index, action in enumerate(candidates))
         <= len(teams)
     )
     model.Add(
@@ -268,10 +259,7 @@ def solve(problem: AllocationProblem) -> ResponsePlan:
     objective_terms = []
     for index, action in enumerate(candidates):
         score = problem.scores[action.site_id].strategic_value
-        objective_terms.append(
-            selected[index]
-            * int(score * action.expected_compatibility * _SCALE)
-        )
+        objective_terms.append(selected[index] * int(score * action.expected_compatibility * _SCALE))
     model.Maximize(sum(objective_terms))
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = SOLVER_TIME_LIMIT_SECONDS
@@ -279,9 +267,7 @@ def solve(problem: AllocationProblem) -> ResponsePlan:
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         raise RuntimeError(f"allocation solver failed with status {solver.StatusName(status)}")
 
-    chosen = [
-        index for index, variable in enumerate(selected) if solver.Value(variable)
-    ]
+    chosen = [index for index, variable in enumerate(selected) if solver.Value(variable)]
     selected_actions = [candidates[index] for index in chosen]
     assignment_ids: dict[str, tuple[str | None, str | None]] = {}
     for index in chosen:
