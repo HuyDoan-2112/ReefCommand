@@ -33,6 +33,20 @@ class Provenance(StrEnum):
     SYNTHETIC = "synthetic"
 
 
+class MonitoringProgram(StrEnum):
+    """Which monitoring programme produced an ecological measurement.
+
+    These are not interchangeable. CREMP uses fixed, permanently staked transects
+    with photo point counts. NCRMP uses stratified random sampling with linear
+    point intercept. A cover value from one is not a like-for-like substitute for
+    a cover value from the other, which is why the programme is a required field
+    on every measurement and travels to the dashboard rather than living in a note.
+    """
+
+    CREMP = "CREMP"
+    NCRMP = "NCRMP"
+
+
 class AlertLevel(StrEnum):
     """NOAA Coral Reef Watch bleaching alert levels.
 
