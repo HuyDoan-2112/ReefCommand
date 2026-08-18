@@ -1,34 +1,114 @@
 /* Design tokens and global styles.
  *
- * Keep tokens here. Feature styles reference them rather than hard-coding values,
- * so contrast and spacing stay consistent across surfaces.
+ * Ported from frontend/reefcommand.html, which is the visual reference for the
+ * dashboard. Keep tokens here. Feature styles reference them rather than
+ * hard-coding values, so contrast and spacing stay consistent across surfaces.
+ *
+ * The palette commits to a single light theme, as the reference does. Every
+ * surface paints its own background explicitly rather than inheriting, so
+ * nothing borrows a colour from the host page.
  */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+
+  /* ---- Brand chrome ---- */
+  --ocean-deep: #073b4c;
+  --ocean-deep-2: #0a4e63;
+  --ocean-mid: #118ab2;
+  --ocean-bright: #1cb4d6;
+  --seafoam: #4ecdc4;
+  --coral: #ff7f6b;
+  --coral-deep: #e85d4a;
+  --sunshine: #ffd166;
+  --sand: #fbf9f4;
+  --foam: #eaf6f6;
+  --card: #ffffff;
+
+  --text-primary: #0e2a32;
+  --text-secondary: #4e6b72;
+  --text-muted: #8aa0a6;
+  --text-on-dark: #eaf6f6;
+  --text-on-dark-muted: #9fd8d3;
+
+  --border: rgba(7, 59, 76, 0.1);
+  --border-strong: rgba(7, 59, 76, 0.18);
+
+  --shadow-sm: 0 1px 2px rgba(7, 59, 76, 0.06), 0 1px 1px rgba(7, 59, 76, 0.04);
+  --shadow-md: 0 6px 20px rgba(7, 59, 76, 0.1);
+  --shadow-lg: 0 16px 40px rgba(7, 59, 76, 0.16);
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
 
-  --radius-sm: 4px;
-  --radius-md: 8px;
-
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-poppins), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
+  /* ---- Data-viz series ----
+   * Categorical hues for resource categories. Not for the four causes: those
+   * are never coloured as members of one distribution.
+   */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+
+  /* ---- Condition scale ----
+   * status-warning is stepped darker than a naive yellow so it clears 3:1
+   * against the light surface. Same hue family, usable as text.
+   */
+  --status-good: #0ca30c;
+  --status-warning: #c98500;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+
+  --status-good-text: #0a7a0a;
+  --status-warning-text: #8a5c00;
+  --status-serious-text: #a4471f;
+  --status-critical-text: #a02121;
+
+  --surface-1: #fcfcfb;
+  --gridline: #e1e0d9;
+
+  /* ---- Priority ---- */
   --priority-high: #b4231f;
   --priority-medium: #b8791a;
   --priority-low: #2f6f4f;
 
-  --provenance-simulated: #6b5bd2;
-  --provenance-synthetic: #6b5bd2;
-  --provenance-cache: #4a6f8a;
+  /* ---- Provenance ----
+   * Colour is the secondary cue only. Every provenance badge also carries a
+   * distinct glyph and its own word, because these four must stay
+   * distinguishable for a reader who does not see hue the way the palette
+   * assumes.
+   */
   --provenance-live: #2f6f4f;
+  --provenance-live-bg: rgba(47, 111, 79, 0.12);
+  --provenance-cache: #4a6f8a;
+  --provenance-cache-bg: rgba(74, 111, 138, 0.12);
+  /* Stepped darker than the reference's #6b5bd2, which measured 4.42:1 on its
+   * own badge tint and missed the 4.5:1 floor for text this size. Same hue. */
+  --provenance-simulated: #6353c9;
+  --provenance-simulated-bg: rgba(107, 91, 210, 0.12);
+  --provenance-synthetic: #8a5c00;
+  --provenance-synthetic-bg: rgba(201, 133, 0, 0.14);
+
+  /* ---- Evidence ----
+   * support and confidence are two different quantities and never share a
+   * scale or a colour. Confidence is deliberately quieter: it qualifies the
+   * support reading rather than competing with it.
+   */
+  --support-fill: #118ab2;
+  --confidence-fill: #8aa0a6;
 }
 
 * {
@@ -36,8 +116,7 @@
 }
 
 html,
-body,
-#root {
+body {
   height: 100%;
 }
 
@@ -45,21 +124,67 @@ body {
   margin: 0;
   font-family: var(--font-sans);
   line-height: 1.5;
+  background: var(--sand);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
 }
 
-.page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--space-8) var(--space-6);
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
 }
 
-.page__subtitle {
-  max-width: 60ch;
-  opacity: 0.8;
+button {
+  font-family: inherit;
 }
 
+::selection {
+  background: var(--seafoam);
+  color: var(--ocean-deep);
+}
+
+/* The reference has no visible focus states. Every interactive element needs
+ * one that survives on both the light surfaces and the dark sidebar. */
 :focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--ocean-bright);
   outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+}
+
+/* Visually hidden but announced by screen readers. Used where a colour or a
+ * glyph carries meaning that also needs a word. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
