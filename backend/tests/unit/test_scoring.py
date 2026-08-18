@@ -57,12 +57,8 @@ def test_scores_preserve_input_order_and_site_ids(sites) -> None:
 
 def test_scores_are_normalized_to_the_scored_set(sites) -> None:
     sample = [
-        _with_values(
-            sites[0], coral_cover_pct=0.0, species_richness=0, restoration_value=0.0
-        ),
-        _with_values(
-            sites[1], coral_cover_pct=100.0, species_richness=100, restoration_value=1.0
-        ),
+        _with_values(sites[0], coral_cover_pct=0.0, species_richness=0, restoration_value=0.0),
+        _with_values(sites[1], coral_cover_pct=100.0, species_richness=100, restoration_value=1.0),
     ]
 
     scores = score_sites(sample)
@@ -76,12 +72,8 @@ def test_scores_are_normalized_to_the_scored_set(sites) -> None:
 def test_restoration_investment_does_not_change_ecological_value(sites) -> None:
     """Two sites with identical ecology score identically on ecological_value."""
     sample = [
-        _with_values(
-            sites[0], coral_cover_pct=20.0, species_richness=10, restoration_value=0.0
-        ),
-        _with_values(
-            sites[1], coral_cover_pct=20.0, species_richness=10, restoration_value=1.0
-        ),
+        _with_values(sites[0], coral_cover_pct=20.0, species_richness=10, restoration_value=0.0),
+        _with_values(sites[1], coral_cover_pct=20.0, species_richness=10, restoration_value=1.0),
     ]
 
     scores = score_sites(sample)
@@ -92,12 +84,8 @@ def test_restoration_investment_does_not_change_ecological_value(sites) -> None:
 
 def test_restoration_investment_raises_strategic_value(sites) -> None:
     sample = [
-        _with_values(
-            sites[0], coral_cover_pct=20.0, species_richness=10, restoration_value=0.0
-        ),
-        _with_values(
-            sites[1], coral_cover_pct=20.0, species_richness=10, restoration_value=1.0
-        ),
+        _with_values(sites[0], coral_cover_pct=20.0, species_richness=10, restoration_value=0.0),
+        _with_values(sites[1], coral_cover_pct=20.0, species_richness=10, restoration_value=1.0),
     ]
 
     scores = score_sites(sample)

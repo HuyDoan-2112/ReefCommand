@@ -54,9 +54,7 @@ def score_sites(sites: list[ReefSite]) -> list[SiteScores]:
 
     coral_cover = _normalize([site.measurements.coral_cover_pct for site in sites])
     species_richness = _normalize([float(site.measurements.species_richness) for site in sites])
-    restoration = _normalize(
-        [site.restoration_investment.value for site in sites]
-    )
+    restoration = _normalize([site.restoration_investment.value for site in sites])
 
     ecological_weight_cover = ECOLOGICAL_WEIGHTS["coral_cover"]
     ecological_weight_richness = ECOLOGICAL_WEIGHTS["species_richness"]
