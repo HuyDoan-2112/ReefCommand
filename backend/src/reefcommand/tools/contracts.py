@@ -8,14 +8,11 @@ use it.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Generic, Protocol, TypeVar
+from typing import Protocol
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from reefcommand.domain.enums import Provenance
-
-PayloadT = TypeVar("PayloadT")
-
 
 class EvidenceWindow(BaseModel):
     """The time period a tool is allowed to inspect."""
@@ -35,7 +32,7 @@ class EvidenceWindow(BaseModel):
         return self
 
 
-class ToolResult(BaseModel, Generic[PayloadT]):
+class ToolResult[PayloadT](BaseModel):
     """One typed tool response with enough metadata to assess relevance."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -66,7 +63,7 @@ class ToolResult(BaseModel, Generic[PayloadT]):
         return self
 
 
-class EvidenceTool(Protocol[PayloadT]):
+class EvidenceTool[PayloadT](Protocol):
     """Transport-independent interface implemented by a site evidence tool."""
 
     tool_name: str
