@@ -198,10 +198,10 @@ def solve(problem: AllocationProblem) -> ResponsePlan:
         sum(selected[index] * action.resources.boats for index, action in enumerate(candidates))
         <= len(boats)
     )
-    model.Add(
-        sum(selected[index] * action.resources.dive_teams for index, action in enumerate(candidates))
-        <= len(teams)
+    team_count_used = sum(
+        selected[index] * action.resources.dive_teams for index, action in enumerate(candidates)
     )
+    model.Add(team_count_used <= len(teams))
     model.Add(
         sum(
             selected[index] * int(action.resources.shade_units)
@@ -259,7 +259,8 @@ def solve(problem: AllocationProblem) -> ResponsePlan:
     objective_terms = []
     for index, action in enumerate(candidates):
         score = problem.scores[action.site_id].strategic_value
-        objective_terms.append(selected[index] * int(score * action.expected_compatibility * _SCALE))
+        objective_value = int(score * action.expected_compatibility * _SCALE)
+        objective_terms.append(selected[index] * objective_value)
     model.Maximize(sum(objective_terms))
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = SOLVER_TIME_LIMIT_SECONDS
