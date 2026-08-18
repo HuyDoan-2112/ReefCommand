@@ -46,12 +46,48 @@ class DiveTeam(BaseModel):
     certifications: list[str] = Field(default_factory=list)
 
 
+class EquipmentItem(BaseModel):
+    """A named piece of simulated equipment held in the inventory."""
+
+    model_config = ConfigDict(frozen=True)
+
+    equipment_id: str
+    name: str
+    category: Literal["shade", "monitoring", "sampling"]
+    available_units: int = Field(ge=0)
+    unit_label: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+
+
 class Inventory(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     shade_units: int = Field(default=0, ge=0)
     monitoring_kits: int = Field(default=0, ge=0)
     sampling_kits: int = Field(default=0, ge=0)
+    equipment: list[EquipmentItem] = Field(
+        default_factory=list,
+        description="Named equipment details backing the category totals above.",
+    )
+
+    @model_validator(mode="after")
+    def equipment_totals_match_categories(self) -> Inventory:
+        """Prevent named equipment details from drifting from solver totals."""
+        if not self.equipment:
+            return self
+        actual = {"shade": 0, "monitoring": 0, "sampling": 0}
+        for item in self.equipment:
+            actual[item.category] += item.available_units
+        expected = {
+            "shade": self.shade_units,
+            "monitoring": self.monitoring_kits,
+            "sampling": self.sampling_kits,
+        }
+        if actual != expected:
+            raise ValueError(
+                "named equipment totals must match shade_units, monitoring_kits and sampling_kits"
+            )
+        return self
 
 
 class ResourceScenario(BaseModel):

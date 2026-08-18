@@ -173,6 +173,7 @@ export function ReportForm() {
         <Panel
           title="Structured by Ingestion LLM"
           hint={structure.data ? 'raw text → observation' : 'select a report to begin'}
+          bodyClassName={styles.structuredBody}
         >
           <div className={styles.detailHeader}>
             <div>

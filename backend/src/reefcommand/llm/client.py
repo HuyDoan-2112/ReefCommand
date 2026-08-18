@@ -160,7 +160,10 @@ def _complete_deepseek[T: BaseModel](
 
     schema_definition = _deepseek_strict_schema(schema)
     prompt = user
-    owned_client = client or httpx.Client(timeout=settings.llm_timeout_seconds)
+    owned_client = client or httpx.Client(
+        timeout=settings.llm_timeout_seconds,
+        trust_env=settings.deepseek_trust_env,
+    )
     endpoint = f"{settings.deepseek_base_url.rstrip('/')}/chat/completions"
     total_input_tokens: int | None = None
     total_output_tokens: int | None = None

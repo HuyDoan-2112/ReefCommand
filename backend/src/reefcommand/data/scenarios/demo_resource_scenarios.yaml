@@ -57,6 +57,25 @@ records:
         shade_units: 4
         monitoring_kits: 3
         sampling_kits: 2
+        equipment:
+          - equipment_id: temporary_shade_structure
+            name: Temporary shade structure
+            category: shade
+            available_units: 4
+            unit_label: structure
+            description: Deployable shade frame for a defined nursery or restoration footprint.
+          - equipment_id: benthic_monitoring_kit
+            name: Benthic monitoring kit
+            category: monitoring
+            available_units: 3
+            unit_label: kit
+            description: Transect tape, quadrat, slate and camera kit for reef condition surveys.
+          - equipment_id: water_sampling_kit
+            name: Water sampling kit
+            category: sampling
+            available_units: 2
+            unit_label: kit
+            description: Niskin bottle and turbidity-profile kit for runoff investigations.
       budget_usd: 6000.0
       daylight_hours: 13.0
     provenance:
@@ -125,6 +144,25 @@ records:
         shade_units: 4
         monitoring_kits: 3
         sampling_kits: 2
+        equipment:
+          - equipment_id: temporary_shade_structure
+            name: Temporary shade structure
+            category: shade
+            available_units: 4
+            unit_label: structure
+            description: Deployable shade frame for a defined nursery or restoration footprint.
+          - equipment_id: benthic_monitoring_kit
+            name: Benthic monitoring kit
+            category: monitoring
+            available_units: 3
+            unit_label: kit
+            description: Transect tape, quadrat, slate and camera kit for reef condition surveys.
+          - equipment_id: water_sampling_kit
+            name: Water sampling kit
+            category: sampling
+            available_units: 2
+            unit_label: kit
+            description: Niskin bottle and turbidity-profile kit for runoff investigations.
       budget_usd: 6000.0
       daylight_hours: 13.0
     provenance:

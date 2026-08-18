@@ -31,6 +31,10 @@ class Assignment(BaseModel):
     priority: Priority
     estimated_hours: float = Field(ge=0.0)
     estimated_cost_usd: float = Field(ge=0.0)
+    equipment: list[str] = Field(
+        default_factory=list,
+        description="Named equipment allocated to this action from the scenario inventory.",
+    )
 
     evidence_summary: str = Field(description="What evidence supported this decision.")
     remaining_uncertainty: str = Field(description="What we still do not know.")

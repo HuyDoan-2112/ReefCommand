@@ -75,6 +75,26 @@ def _objective_value(problem: AllocationProblem, index: int) -> int:
     return primary * _TIE_SCALE + len(problem.candidates) - index
 
 
+def _equipment_for_action(problem: AllocationProblem, action: EligibleAction) -> list[str]:
+    """Resolve the action's kit requirements to named scenario equipment."""
+    required = {
+        "shade": action.resources.shade_units,
+        "monitoring": action.resources.monitoring_kits,
+        "sampling": action.resources.sampling_kits,
+    }
+    equipment: list[str] = []
+    for category, units in required.items():
+        if units <= 0:
+            continue
+        item = next(
+            (item for item in problem.scenario.inventory.equipment if item.category == category),
+            None,
+        )
+        label = item.name if item is not None else f"{category} equipment"
+        equipment.append(f"{label} x{units}" if units > 1 else label)
+    return equipment
+
+
 def _build_model(
     problem: AllocationProblem,
     *,
@@ -292,6 +312,7 @@ def _plan_from_result(
                 priority=action.priority,
                 estimated_hours=action.resources.dive_hours,
                 estimated_cost_usd=action.resources.cost_usd,
+                equipment=_equipment_for_action(problem, action),
                 evidence_summary=(
                     "Supporting causes: "
                     + ", ".join(cause.value for cause in action.supporting_causes)

@@ -40,6 +40,14 @@
             "title": "Compatibility Rationale",
             "type": "string"
           },
+          "equipment": {
+            "description": "Named equipment allocated to this action from the scenario inventory.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Equipment",
+            "type": "array"
+          },
           "estimated_cost_usd": {
             "minimum": 0,
             "title": "Estimated Cost Usd",
@@ -395,6 +403,53 @@
         "title": "EcologicalMeasurements",
         "type": "object"
       },
+      "EquipmentItem": {
+        "description": "A named piece of simulated equipment held in the inventory.",
+        "properties": {
+          "available_units": {
+            "minimum": 0,
+            "title": "Available Units",
+            "type": "integer"
+          },
+          "category": {
+            "enum": [
+              "shade",
+              "monitoring",
+              "sampling"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "equipment_id": {
+            "title": "Equipment Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "unit_label": {
+            "minLength": 1,
+            "title": "Unit Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "equipment_id",
+          "name",
+          "category",
+          "available_units",
+          "unit_label",
+          "description"
+        ],
+        "title": "EquipmentItem",
+        "type": "object"
+      },
       "EvidenceCitation": {
         "description": "Where one piece of supporting evidence came from.\n\nSource metadata is preserved rather than discarded after a lookup.\nFor AGRRA records this means submission date, review status, and the\nreporting organization survive into the dashboard.",
         "properties": {
@@ -695,6 +750,14 @@
       },
       "Inventory": {
         "properties": {
+          "equipment": {
+            "description": "Named equipment details backing the category totals above.",
+            "items": {
+              "$ref": "#/components/schemas/EquipmentItem"
+            },
+            "title": "Equipment",
+            "type": "array"
+          },
           "monitoring_kits": {
             "default": 0,
             "minimum": 0,

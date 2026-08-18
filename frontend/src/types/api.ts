@@ -296,6 +296,11 @@ export interface components {
              * @description Why this action was considered compatible, with its knowledge-base provenance.
              */
             compatibility_rationale: string;
+            /**
+             * Equipment
+             * @description Named equipment allocated to this action from the scenario inventory.
+             */
+            equipment?: string[];
             /** Estimated Cost Usd */
             estimated_cost_usd: number;
             /** Estimated Hours */
@@ -480,6 +485,27 @@ export interface components {
             species_richness: number;
         };
         /**
+         * EquipmentItem
+         * @description A named piece of simulated equipment held in the inventory.
+         */
+        EquipmentItem: {
+            /** Available Units */
+            available_units: number;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "shade" | "monitoring" | "sampling";
+            /** Description */
+            description: string;
+            /** Equipment Id */
+            equipment_id: string;
+            /** Name */
+            name: string;
+            /** Unit Label */
+            unit_label: string;
+        };
+        /**
          * EvidenceCitation
          * @description Where one piece of supporting evidence came from.
          *
@@ -623,6 +649,11 @@ export interface components {
         };
         /** Inventory */
         Inventory: {
+            /**
+             * Equipment
+             * @description Named equipment details backing the category totals above.
+             */
+            equipment?: components["schemas"]["EquipmentItem"][];
             /**
              * Monitoring Kits
              * @default 0

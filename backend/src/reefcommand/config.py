@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     llm_retry_backoff_seconds: float = Field(default=0.5, ge=0.0)
     deepseek_api_key: str | None = None
     deepseek_base_url: str = "https://api.deepseek.com/beta"
+    deepseek_trust_env: bool = Field(
+        default=False,
+        description=(
+            "Whether the DeepSeek HTTP client should inherit HTTP(S)_PROXY settings. "
+            "Disabled by default so a stale local proxy cannot block the API."
+        ),
+    )
 
     external_timeout_seconds: float = 3.0
     force_cache: bool = False

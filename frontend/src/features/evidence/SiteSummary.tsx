@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
+import { useState } from 'react';
 
 import { ApiError } from '@/api/client';
 import { Button, ProvenanceBadge } from '@/components';
 import { useCurrentPlan, useRecomputePlan } from '@/hooks/usePlan';
 import { useSites } from '@/hooks/useSites';
 import { useExecutionTrace } from '@/hooks/useTrace';
+import type { ResponsePlan } from '@/types';
 
 import { CoordinatorTrace } from './CoordinatorTrace';
 import { EvidencePanel } from './EvidencePanel';
@@ -23,8 +25,9 @@ function mutationMessage(error: Error | null): string | null {
 export function SiteSummary({ siteId }: { siteId: string }) {
   const { data: sites, isPending, error } = useSites();
   const { data: plan } = useCurrentPlan();
+  const [livePlan, setLivePlan] = useState<ResponsePlan | null>(null);
   const recompute = useRecomputePlan();
-  const { data: planTrace } = useExecutionTrace(plan?.plan_id ?? null);
+  const { data: planTrace } = useExecutionTrace(livePlan?.plan_id ?? plan?.plan_id ?? null);
 
   if (isPending) return <p className={styles.muted}>Loading site...</p>;
   if (error) return <p className={styles.muted}>Could not load sites: {error.message}</p>;
@@ -47,14 +50,17 @@ export function SiteSummary({ siteId }: { siteId: string }) {
   const provider = llmSteps[0];
   const isLivePlan = planTrace?.offline === false && llmSteps.length > 0;
   const liveError = mutationMessage(recompute.error);
-  const siteIds = sites.map((candidate) => candidate.site_id);
-
   function runLivePipeline() {
-    recompute.mutate({
-      scenario_id: plan?.scenario_id ?? 'demo_default',
-      site_ids: siteIds,
-      execution_mode: 'live_llm',
-    });
+    recompute.mutate(
+      {
+        scenario_id: plan?.scenario_id ?? 'demo_default',
+        site_ids: [siteId],
+        execution_mode: 'live_llm',
+      },
+      {
+        onSuccess: setLivePlan,
+      },
+    );
   }
 
   return (
@@ -117,11 +123,11 @@ export function SiteSummary({ siteId }: { siteId: string }) {
 
         <div className={styles.liveControl}>
           <Button variant="coral" onClick={runLivePipeline} disabled={recompute.isPending}>
-            {recompute.isPending ? 'Running live agents...' : 'Run live diagnosis'}
+            {recompute.isPending ? 'Running live agents...' : 'Run live diagnosis for this site'}
           </Button>
           <span className={styles.liveStatus} aria-live="polite">
             {recompute.isPending
-              ? `Running the validated pipeline for ${sites.length} sites. This can take a few minutes.`
+              ? `Running the validated pipeline for ${site.name}.`
               : isLivePlan
                 ? `${llmSteps.length} validated model calls, ${tokenCount.toLocaleString('en-US')} tokens`
                 : 'Click to call the configured LLM. No private chain-of-thought is displayed.'}
@@ -133,7 +139,7 @@ export function SiteSummary({ siteId }: { siteId: string }) {
       <EvidencePanel siteId={site.site_id} />
 
       <div className={styles.decisionGrid}>
-        <CoordinatorTrace siteId={site.site_id} />
+        <CoordinatorTrace siteId={site.site_id} planId={livePlan?.plan_id} />
         <RecommendedInterventions siteId={site.site_id} />
       </div>
     </div>

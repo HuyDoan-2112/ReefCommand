@@ -59,12 +59,14 @@ async def test_live_recompute_forces_provider_execution(monkeypatch) -> None:
         *,
         offline: bool | None = None,
         demo_data: bool | None = None,
+        publish: bool = True,
     ) -> object:
         received.update(
             scenario_id=scenario_id,
             site_ids=site_ids,
             offline=offline,
             demo_data=demo_data,
+            publish=publish,
         )
         return baseline
 
@@ -86,6 +88,7 @@ async def test_live_recompute_forces_provider_execution(monkeypatch) -> None:
         "site_ids": ["cheeca_rocks"],
         "offline": False,
         "demo_data": True,
+        "publish": False,
     }
 
 
