@@ -13,7 +13,7 @@ import pytest
 from reefcommand.domain.enums import ActionClass
 from reefcommand.ingestion.field_reports import load_demo_updates
 from reefcommand.orchestration.events import NewEvidence, ResourceChange
-from reefcommand.orchestration.pipeline import run
+from reefcommand.orchestration.pipeline import run, state_for_plan
 from reefcommand.orchestration.replanner import handle, is_plan_still_feasible
 
 pytestmark = pytest.mark.e2e
@@ -77,6 +77,11 @@ def test_boat_becoming_unavailable_triggers_recompute() -> None:
     assert revised.scenario_id == "demo_boat_b_unavailable"
     assert revised.replan_trigger == "resource_change:demo_boat_b_unavailable"
     assert all(assignment.boat_id == "boat_a" for assignment in revised.assignments)
+    state = state_for_plan(revised.plan_id)
+    assert state is not None
+    assert state.trace.parent_plan_id == initial.plan_id
+    assert [step.stage.value for step in state.trace.steps] == ["optimizer"]
+    assert state.trace.steps[0].inputs["reused_evidence"] is True
 
 
 def test_plan_response_carries_the_simulated_data_banner() -> None:

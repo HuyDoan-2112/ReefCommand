@@ -24,6 +24,7 @@ from reefcommand.orchestration.pipeline import (
     run,
     state_for_plan,
 )
+from reefcommand.orchestration.trace import TraceExecutor, TraceRecorder, TraceStage
 
 
 def handle(event: PlanEvent, current: ResponsePlan) -> ResponsePlan:
@@ -49,9 +50,35 @@ def handle(event: PlanEvent, current: ResponsePlan) -> ResponsePlan:
         )
     else:
         scenario = load_scenario(event.scenario_id)
-        updated = _solve_resource_only(current, state.problem, scenario)
-        updated = updated.model_copy(
-            update={"replan_trigger": f"resource_change:{event.scenario_id}"}
+        trigger = f"resource_change:{event.scenario_id}"
+        trace_recorder = TraceRecorder(
+            event.scenario_id,
+            offline=state.offline,
+            trigger=trigger,
+        )
+        updated = trace_recorder.record(
+            TraceStage.OPTIMIZER,
+            TraceExecutor.OPTIMIZER,
+            lambda: _solve_resource_only(current, state.problem, scenario).model_copy(
+                update={"replan_trigger": trigger}
+            ),
+            inputs={
+                "source_plan_id": current.plan_id,
+                "scenario": scenario.model_dump(mode="json"),
+                "reused_evidence": True,
+                "reused_policy_candidates": True,
+            },
+            serialize=lambda result: {"response_plan": result.model_dump(mode="json")},
+            rationale=lambda result: (
+                "Only the optimizer reran because a resource change does not invalidate "
+                f"the evidence or policy decisions; {len(result.assignments)} assignment(s) "
+                "remain feasible."
+            ),
+            validation_checks=("or_tools_solution", "resource_constraints"),
+        )
+        execution_trace = trace_recorder.finalize(
+            updated.plan_id,
+            parent_plan_id=current.plan_id,
         )
         remember_state(
             updated,
@@ -60,6 +87,7 @@ def handle(event: PlanEvent, current: ResponsePlan) -> ResponsePlan:
             state.observations,
             state.evidence_by_site,
             state.offline,
+            execution_trace,
         )
 
     latency_ms = max(

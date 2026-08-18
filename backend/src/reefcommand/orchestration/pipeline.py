@@ -27,7 +27,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
-from functools import lru_cache
+from functools import lru_cache, partial
 from typing import cast
 
 import yaml
@@ -57,9 +57,11 @@ from reefcommand.ingestion.field_reports import load_demo_reports, structure
 from reefcommand.ingestion.noaa_crw import CrwObservation
 from reefcommand.ingestion.rainfall import RainfallSignal
 from reefcommand.ingestion.storm_vessel import StormEvent, VesselActivity
+from reefcommand.llm.client import collect_llm_calls
 from reefcommand.optimizer.model import AllocationProblem, build_problem
 from reefcommand.optimizer.scoring import score_sites
 from reefcommand.optimizer.solver import solve
+from reefcommand.orchestration.trace import ExecutionTrace, TraceExecutor, TraceRecorder, TraceStage
 from reefcommand.policy.engine import eligible_actions
 from reefcommand.tools import (
     AgrraSctldTool,
@@ -86,6 +88,7 @@ class PipelineState:
     observations: tuple[StructuredObservation, ...]
     evidence_by_site: dict[str, FusedEvidence]
     offline: bool
+    trace: ExecutionTrace
 
 
 _STATE_BY_PLAN_ID: dict[str, PipelineState] = {}
@@ -136,8 +139,11 @@ def remember_state(
     observations: Sequence[StructuredObservation],
     evidence_by_site: Mapping[str, FusedEvidence] | None = None,
     offline: bool = True,
+    trace: ExecutionTrace | None = None,
 ) -> None:
     """Retain the typed inputs needed for a later in-process replan."""
+    if trace is None:
+        raise ValueError("pipeline state requires an execution trace")
     _STATE_BY_PLAN_ID[plan.plan_id] = PipelineState(
         plan=plan,
         problem=problem,
@@ -145,6 +151,7 @@ def remember_state(
         observations=tuple(observations),
         evidence_by_site=dict(evidence_by_site or {}),
         offline=offline,
+        trace=trace,
     )
 
 
@@ -417,39 +424,163 @@ def _assess_site(
     window: EvidenceWindow,
     *,
     offline: bool,
+    trace: TraceRecorder,
 ) -> tuple[FusedEvidence, list[EligibleAction]]:
     site_observations = [
         observation for observation in observations if observation.site_id == site.site_id
     ]
-    snapshot = _snapshot(site.site_id, window)
+    serialized_observations = [
+        observation.model_dump(mode="json") for observation in site_observations
+    ]
+    snapshot = trace.record(
+        TraceStage.EVIDENCE_TOOLS,
+        TraceExecutor.DETERMINISTIC,
+        lambda: _snapshot(site.site_id, window),
+        site_id=site.site_id,
+        inputs={
+            "site_id": site.site_id,
+            "window": window.model_dump(mode="json"),
+        },
+        serialize=lambda result: {"snapshot": result.model_dump(mode="json")},
+        rationale=lambda result: (
+            "Collected one immutable, time-aligned evidence snapshot from "
+            f"{len(result.results)} tools."
+        ),
+        validation_checks=("pydantic_schema", "site_and_time_alignment"),
+    )
     crw = _synthetic_crw(site.site_id, window.as_of.date()) if offline else None
-    thermal_evidence = thermal.assess(site, list(site_observations), crw_series=crw)
+    thermal_evidence = trace.record(
+        TraceStage.THERMAL_INVESTIGATOR,
+        TraceExecutor.DETERMINISTIC,
+        lambda: thermal.assess(site, list(site_observations), crw_series=crw),
+        site_id=site.site_id,
+        inputs={
+            "site": site.model_dump(mode="json"),
+            "observations": serialized_observations,
+            "thermal_source_mode": "synthetic_replay" if offline else "noaa_live_or_cache",
+        },
+        serialize=lambda result: {"evidence": result.model_dump(mode="json")},
+        rationale=lambda result: result.rationale,
+        validation_checks=("documented_dhw_thresholds", "pydantic_schema"),
+    )
     nearby = NearbyRecords.model_validate(snapshot.result("agrra_sctld").data)
-    evidence = fuse(
-        site.site_id,
-        [
-            thermal_evidence,
-            disease.assess(
+    executor = TraceExecutor.FIXTURE if offline else TraceExecutor.LLM
+    settings = get_settings()
+    provider = None if offline else settings.llm_provider
+    model = None if offline else settings.llm_model
+
+    with collect_llm_calls() as disease_calls:
+        disease_evidence = trace.record(
+            TraceStage.DISEASE_INVESTIGATOR,
+            executor,
+            lambda: disease.assess(
                 site,
                 list(observations),
                 snapshot,
                 completer=(_disease_completer(site_observations, nearby) if offline else None),
             ),
-            runoff.assess(
+            site_id=site.site_id,
+            provider=provider,
+            model=model,
+            inputs={
+                "site": site.model_dump(mode="json"),
+                "observations": serialized_observations,
+                "tool_result": snapshot.result("agrra_sctld").model_dump(mode="json"),
+            },
+            serialize=lambda result: {"evidence": result.model_dump(mode="json")},
+            rationale=lambda result: result.rationale,
+            validation_checks=("pydantic_schema", "citations_assembled_from_inputs"),
+            llm_calls=disease_calls,
+        )
+
+    with collect_llm_calls() as runoff_calls:
+        runoff_evidence = trace.record(
+            TraceStage.RUNOFF_INVESTIGATOR,
+            executor,
+            lambda: runoff.assess(
                 site,
                 list(observations),
                 snapshot,
                 completer=(_runoff_completer(site_observations, snapshot) if offline else None),
             ),
-            physical.assess(
+            site_id=site.site_id,
+            provider=provider,
+            model=model,
+            inputs={
+                "site": site.model_dump(mode="json"),
+                "observations": serialized_observations,
+                "tool_result": snapshot.result("rainfall").model_dump(mode="json"),
+            },
+            serialize=lambda result: {"evidence": result.model_dump(mode="json")},
+            rationale=lambda result: result.rationale,
+            validation_checks=("pydantic_schema", "citations_assembled_from_inputs"),
+            llm_calls=runoff_calls,
+        )
+
+    with collect_llm_calls() as physical_calls:
+        physical_evidence = trace.record(
+            TraceStage.PHYSICAL_INVESTIGATOR,
+            executor,
+            lambda: physical.assess(
                 site,
                 list(observations),
                 snapshot,
                 completer=(_physical_completer(site_observations, snapshot) if offline else None),
             ),
-        ],
+            site_id=site.site_id,
+            provider=provider,
+            model=model,
+            inputs={
+                "site": site.model_dump(mode="json"),
+                "observations": serialized_observations,
+                "storm_tool_result": snapshot.result("storm_history").model_dump(mode="json"),
+                "vessel_tool_result": snapshot.result("vessel_activity").model_dump(mode="json"),
+            },
+            serialize=lambda result: {"evidence": result.model_dump(mode="json")},
+            rationale=lambda result: result.rationale,
+            validation_checks=("pydantic_schema", "citations_assembled_from_inputs"),
+            llm_calls=physical_calls,
+        )
+
+    investigator_outputs = [
+        thermal_evidence,
+        disease_evidence,
+        runoff_evidence,
+        physical_evidence,
+    ]
+    evidence = trace.record(
+        TraceStage.EVIDENCE_FUSION,
+        TraceExecutor.DETERMINISTIC,
+        lambda: fuse(site.site_id, investigator_outputs),
+        site_id=site.site_id,
+        inputs={
+            "investigator_outputs": [item.model_dump(mode="json") for item in investigator_outputs]
+        },
+        serialize=lambda result: {"fused_evidence": result.model_dump(mode="json")},
+        rationale=lambda result: (
+            "Deterministically retained independent support scores and identified "
+            f"{len(result.dominant_causes)} dominant cause(s)."
+        ),
+        validation_checks=("one_output_per_cause", "support_scores_not_normalized"),
     )
-    return evidence, eligible_actions(site, evidence, list(observations))
+    candidates = trace.record(
+        TraceStage.POLICY_ELIGIBILITY,
+        TraceExecutor.DETERMINISTIC,
+        lambda: eligible_actions(site, evidence, list(observations)),
+        site_id=site.site_id,
+        inputs={
+            "fused_evidence": evidence.model_dump(mode="json"),
+            "observation_count": len(site_observations),
+        },
+        serialize=lambda result: {
+            "eligible_actions": [item.model_dump(mode="json") for item in result]
+        },
+        rationale=lambda result: (
+            f"The policy engine returned {len(result)} source-backed candidate action(s)."
+        ),
+        validation_checks=("knowledge_base_retrieval", "requirements_and_contraindications"),
+    )
+    return evidence, candidates
 
 
 def run(
@@ -477,20 +608,54 @@ def run(
         raise ValueError("all observations must belong to a requested site")
     window = _window(structured)
     offline_mode = get_settings().offline_demo if offline is None else offline
+    trace_recorder = TraceRecorder(
+        scenario_id,
+        offline=offline_mode,
+        trigger=replan_trigger,
+    )
+    settings = get_settings()
+    agent_executor = TraceExecutor.FIXTURE if offline_mode else TraceExecutor.LLM
+    agent_provider = None if offline_mode else settings.llm_provider
+    agent_model = None if offline_mode else settings.llm_model
 
     approved: list[EligibleAction] = []
     evidence_by_site: dict[str, FusedEvidence] = {}
     for site in sites:
-        evidence, candidates = _assess_site(site, structured, window, offline=offline_mode)
+        evidence, candidates = _assess_site(
+            site,
+            structured,
+            window,
+            offline=offline_mode,
+            trace=trace_recorder,
+        )
         evidence_by_site[site.site_id] = evidence
         coordinator_completer: CoordinatorCompleter | None = (
             _offline_coordinator_completer(evidence, candidates) if offline_mode else None
         )
-        decision = decide_coordinator(
-            evidence,
-            candidates,
-            completer=coordinator_completer,
-        )
+        with collect_llm_calls() as coordinator_calls:
+            decision = trace_recorder.record(
+                TraceStage.COORDINATOR,
+                agent_executor,
+                partial(
+                    decide_coordinator,
+                    evidence,
+                    candidates,
+                    completer=coordinator_completer,
+                ),
+                site_id=site.site_id,
+                provider=agent_provider,
+                model=agent_model,
+                inputs={
+                    "fused_evidence": evidence.model_dump(mode="json"),
+                    "eligible_actions": [
+                        candidate.model_dump(mode="json") for candidate in candidates
+                    ],
+                },
+                serialize=lambda result: {"decision": result.model_dump(mode="json")},
+                rationale=lambda result: result.reasoning_summary,
+                validation_checks=("pydantic_schema", "coordinator_business_rules"),
+                llm_calls=coordinator_calls,
+            )
         approved_ids = {action.action_id: action for action in decision.approved_actions}
         approved.extend(
             action.model_copy(update={"priority": approved_ids[action.action_id].priority})
@@ -505,6 +670,30 @@ def run(
         scores,
         site_names={site.site_id: site.name for site in sites},
     )
-    plan = solve(problem).model_copy(update={"replan_trigger": replan_trigger})
-    remember_state(plan, problem, site_ids, structured, evidence_by_site, offline_mode)
+    plan = trace_recorder.record(
+        TraceStage.OPTIMIZER,
+        TraceExecutor.OPTIMIZER,
+        lambda: solve(problem).model_copy(update={"replan_trigger": replan_trigger}),
+        inputs={
+            "scenario": scenario.model_dump(mode="json"),
+            "candidate_actions": [action.model_dump(mode="json") for action in approved],
+            "site_scores": {score.site_id: score.model_dump(mode="json") for score in scores},
+        },
+        serialize=lambda result: {"response_plan": result.model_dump(mode="json")},
+        rationale=lambda result: (
+            f"Selected {len(result.assignments)} feasible assignment(s) and deferred "
+            f"{len(result.deferred)} site(s) under the simulated resource constraints."
+        ),
+        validation_checks=("or_tools_solution", "resource_constraints"),
+    )
+    execution_trace = trace_recorder.finalize(plan.plan_id)
+    remember_state(
+        plan,
+        problem,
+        site_ids,
+        structured,
+        evidence_by_site,
+        offline_mode,
+        execution_trace,
+    )
     return plan

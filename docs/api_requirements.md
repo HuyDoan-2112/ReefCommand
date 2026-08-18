@@ -306,6 +306,22 @@ This is demo beat five.
 Force a recompute. Returns the new plan and its latency.
 Useful for the demo and for debugging; not part of the normal loop.
 
+### `GET /plan/{plan_id}/trace`
+
+Returns the ordered, structured execution trace for one completed plan.
+Each step identifies its site, stage, executor, timing, redacted inputs, validated output, concise rationale, and validation checks.
+Live LLM steps also carry provider, model, attempt count, and provider-reported token usage when available.
+
+The trace includes evidence tools, four investigators, deterministic fusion, policy eligibility, the Coordinator decision, and the optimizer result.
+A resource-only replan contains only an optimizer step and links to its parent plan because unchanged investigators must not rerun.
+
+The trace never exposes API keys, authorization headers, raw prompts, or private token-by-token model reasoning.
+
+### `GET /plan/{plan_id}/trace/{site_id}`
+
+Returns the site-specific stages from the same trace plus plan-wide stages such as the optimizer.
+This is the dashboard-facing view for explaining one site's evidence and resulting allocation.
+
 ### `GET /evaluation`
 
 The evaluation results, reported per module.

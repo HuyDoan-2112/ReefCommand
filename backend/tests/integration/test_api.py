@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 
@@ -29,6 +31,40 @@ async def test_api_exposes_plan_evidence_provenance_and_replanning() -> None:
         )
         assert recompute.status_code == 200
         assert recompute.json()["scenario_banner"].startswith("Simulated operational capacity")
+        plan_id = recompute.json()["plan_id"]
+
+        trace = await client.get(f"/plan/{plan_id}/trace")
+        assert trace.status_code == 200
+        trace_payload = trace.json()
+        assert len(trace_payload["steps"]) == len(SITE_IDS) * 8 + 1
+        assert [step["sequence"] for step in trace_payload["steps"]] == list(
+            range(1, len(trace_payload["steps"]) + 1)
+        )
+        assert trace_payload["steps"][-1]["stage"] == "optimizer"
+        serialized_trace = json.dumps(trace_payload).lower()
+        assert "api_key" not in serialized_trace
+        assert "authorization" not in serialized_trace
+
+        site_trace = await client.get(f"/plan/{plan_id}/trace/cheeca_rocks")
+        assert site_trace.status_code == 200
+        site_steps = site_trace.json()["steps"]
+        assert [step["stage"] for step in site_steps] == [
+            "evidence_tools",
+            "thermal_investigator",
+            "disease_investigator",
+            "runoff_investigator",
+            "physical_investigator",
+            "evidence_fusion",
+            "policy_eligibility",
+            "coordinator",
+            "optimizer",
+        ]
+        coordinator = next(step for step in site_steps if step["stage"] == "coordinator")
+        assert coordinator["output"]["decision"]["reasoning_summary"]
+        assert coordinator["validation_checks"] == [
+            "pydantic_schema",
+            "coordinator_business_rules",
+        ]
 
         sites = await client.get("/sites")
         assert sites.status_code == 200
@@ -50,6 +86,7 @@ async def test_api_exposes_plan_evidence_provenance_and_replanning() -> None:
         )
         assert observation.status_code == 200
         assert observation.json()["plan"]["replan_trigger"].startswith("new_evidence:")
+        observation_plan_id = observation.json()["plan"]["plan_id"]
 
         resource = await client.patch(
             "/resources/scenario",
@@ -60,3 +97,10 @@ async def test_api_exposes_plan_evidence_provenance_and_replanning() -> None:
         )
         assert resource.status_code == 200
         assert resource.json()["plan"]["scenario_id"] == "demo_boat_b_unavailable"
+
+        resource_plan_id = resource.json()["plan"]["plan_id"]
+        resource_trace = await client.get(f"/plan/{resource_plan_id}/trace")
+        assert resource_trace.status_code == 200
+        assert resource_trace.json()["parent_plan_id"] == observation_plan_id
+        assert [step["stage"] for step in resource_trace.json()["steps"]] == ["optimizer"]
+        assert resource_trace.json()["steps"][0]["inputs"]["reused_evidence"] is True

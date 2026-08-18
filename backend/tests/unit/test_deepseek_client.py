@@ -8,7 +8,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
 from reefcommand.config import get_settings
-from reefcommand.llm.client import complete_structured
+from reefcommand.llm.client import collect_llm_calls, complete_structured
 
 
 class Output(BaseModel):
@@ -28,25 +28,29 @@ class FakeDeepSeek:
         return httpx.Response(
             200,
             request=request,
-            json={"choices": [{"message": {"content": json.dumps(content)}}]},
+            json={
+                "choices": [{"message": {"content": json.dumps(content)}}],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 2},
+            },
         )
 
 
 def test_deepseek_json_mode_validates_and_retries(monkeypatch) -> None:
     monkeypatch.setenv("REEFCOMMAND_LLM_PROVIDER", "deepseek")
-    monkeypatch.setenv("REEFCOMMAND_LLM_MODEL", "deepseek-chat")
+    monkeypatch.setenv("REEFCOMMAND_LLM_MODEL", "deepseek-v4-flash")
     monkeypatch.setenv("REEFCOMMAND_DEEPSEEK_API_KEY", "test-key")
     get_settings.cache_clear()
     client = FakeDeepSeek()
 
     try:
-        result = complete_structured(
-            "system",
-            "user",
-            Output,
-            client=None,
-            http_client=client,
-        )
+        with collect_llm_calls() as calls:
+            result = complete_structured(
+                "system",
+                "user",
+                Output,
+                client=None,
+                http_client=client,
+            )
     finally:
         get_settings.cache_clear()
 
@@ -56,7 +60,12 @@ def test_deepseek_json_mode_validates_and_retries(monkeypatch) -> None:
     assert request["url"] == "https://api.deepseek.com/chat/completions"
     assert request["headers"]["Authorization"] == "Bearer test-key"
     body = request["json"]
-    assert body["model"] == "deepseek-chat"
+    assert body["model"] == "deepseek-v4-flash"
     assert body["response_format"] == {"type": "json_object"}
     assert "json" in body["messages"][0]["content"].lower()
     assert "score" in body["messages"][1]["content"]
+    assert len(calls) == 1
+    assert calls[0].provider == "deepseek"
+    assert calls[0].attempt_count == 2
+    assert calls[0].input_tokens == 20
+    assert calls[0].output_tokens == 4

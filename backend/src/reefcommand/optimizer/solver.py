@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from datetime import UTC, datetime
+from uuid import uuid4
 
 from ortools.sat.python import cp_model
 
@@ -150,7 +151,7 @@ def _plan_from_selected(
         for action in selected
     )
     return ResponsePlan(
-        plan_id=f"plan-{problem.scenario.scenario_id}",
+        plan_id=f"plan-{problem.scenario.scenario_id}-{uuid4().hex[:12]}",
         generated_at=datetime.now(UTC),
         scenario_id=problem.scenario.scenario_id,
         scenario_banner=problem.scenario.display_banner(),

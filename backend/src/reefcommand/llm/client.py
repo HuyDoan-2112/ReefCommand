@@ -8,7 +8,10 @@ in this architecture.
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass
 from typing import Any
 
 import anthropic
@@ -19,6 +22,40 @@ from pydantic import BaseModel
 from reefcommand.config import get_settings
 
 _OUTPUT_TOOL_NAME = "emit_structured_output"
+
+
+@dataclass(frozen=True)
+class LlmCallMetrics:
+    """Redacted metadata for one schema-validated provider call."""
+
+    provider: str
+    model: str
+    attempt_count: int
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+
+
+_METRICS_COLLECTOR: ContextVar[list[LlmCallMetrics] | None] = ContextVar(
+    "reefcommand_llm_metrics_collector",
+    default=None,
+)
+
+
+@contextmanager
+def collect_llm_calls() -> Iterator[list[LlmCallMetrics]]:
+    """Collect redacted provider metrics inside one agent stage."""
+    calls: list[LlmCallMetrics] = []
+    token = _METRICS_COLLECTOR.set(calls)
+    try:
+        yield calls
+    finally:
+        _METRICS_COLLECTOR.reset(token)
+
+
+def _record_metrics(metrics: LlmCallMetrics) -> None:
+    collector = _METRICS_COLLECTOR.get()
+    if collector is not None:
+        collector.append(metrics)
 
 
 def _tool_use_input(response: Any) -> Mapping[str, Any]:
@@ -34,9 +71,8 @@ def _tool_use_input(response: Any) -> Mapping[str, Any]:
     raise ValueError("model response did not contain the required structured output tool call")
 
 
-def _deepseek_json(response: httpx.Response) -> Mapping[str, Any]:
+def _deepseek_json(payload: Mapping[str, Any]) -> Mapping[str, Any]:
     """Extract the JSON object returned by DeepSeek JSON mode."""
-    payload = response.json()
     try:
         content = payload["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as exc:
@@ -47,6 +83,18 @@ def _deepseek_json(response: httpx.Response) -> Mapping[str, Any]:
     if not isinstance(parsed, Mapping):
         raise ValueError("DeepSeek structured output was not a JSON object")
     return parsed
+
+
+def _token_count(usage: object, field: str) -> int | None:
+    """Read a provider token counter from an object or response mapping."""
+    value = usage.get(field) if isinstance(usage, Mapping) else getattr(usage, field, None)
+    return value if isinstance(value, int) and value >= 0 else None
+
+
+def _accumulate(current: int | None, value: int | None) -> int | None:
+    if value is None:
+        return current
+    return (current or 0) + value
 
 
 def _complete_deepseek[T: BaseModel](
@@ -70,6 +118,8 @@ def _complete_deepseek[T: BaseModel](
     )
     owned_client = client or httpx.Client(timeout=settings.llm_timeout_seconds)
     endpoint = f"{settings.deepseek_base_url.rstrip('/')}/chat/completions"
+    total_input_tokens: int | None = None
+    total_output_tokens: int | None = None
     try:
         for attempt in range(max_retries + 1):
             response = owned_client.post(
@@ -95,8 +145,30 @@ def _complete_deepseek[T: BaseModel](
                 timeout=settings.llm_timeout_seconds,
             )
             response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, Mapping):
+                raise ValueError("DeepSeek response was not a JSON object")
+            usage = payload.get("usage")
+            total_input_tokens = _accumulate(
+                total_input_tokens,
+                _token_count(usage, "prompt_tokens"),
+            )
+            total_output_tokens = _accumulate(
+                total_output_tokens,
+                _token_count(usage, "completion_tokens"),
+            )
             try:
-                return schema.model_validate(_deepseek_json(response))
+                result = schema.model_validate(_deepseek_json(payload))
+                _record_metrics(
+                    LlmCallMetrics(
+                        provider="deepseek",
+                        model=settings.llm_model,
+                        attempt_count=attempt + 1,
+                        input_tokens=total_input_tokens,
+                        output_tokens=total_output_tokens,
+                    )
+                )
+                return result
             except (TypeError, ValueError) as exc:
                 if attempt == max_retries:
                     raise ValueError("DeepSeek failed to produce valid structured output") from exc
@@ -147,6 +219,8 @@ def complete_structured[T: BaseModel](
         input_schema=schema.model_json_schema(),
     )
     prompt = user
+    total_input_tokens: int | None = None
+    total_output_tokens: int | None = None
 
     for attempt in range(max_retries + 1):
         response = anthropic_client.messages.create(
@@ -157,8 +231,27 @@ def complete_structured[T: BaseModel](
             tools=[tool],
             tool_choice=ToolChoiceToolParam(type="tool", name=_OUTPUT_TOOL_NAME),
         )
+        usage = getattr(response, "usage", None)
+        total_input_tokens = _accumulate(
+            total_input_tokens,
+            _token_count(usage, "input_tokens"),
+        )
+        total_output_tokens = _accumulate(
+            total_output_tokens,
+            _token_count(usage, "output_tokens"),
+        )
         try:
-            return schema.model_validate(_tool_use_input(response))
+            result = schema.model_validate(_tool_use_input(response))
+            _record_metrics(
+                LlmCallMetrics(
+                    provider="anthropic",
+                    model=settings.llm_model,
+                    attempt_count=attempt + 1,
+                    input_tokens=total_input_tokens,
+                    output_tokens=total_output_tokens,
+                )
+            )
+            return result
         except (TypeError, ValueError) as exc:
             if attempt == max_retries:
                 raise ValueError("model failed to produce valid structured output") from exc

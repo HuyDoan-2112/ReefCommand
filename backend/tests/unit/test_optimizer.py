@@ -91,7 +91,9 @@ def test_solver_selects_highest_value_action_under_capacity() -> None:
     )
 
     plan = solve(problem)
+    second_plan = solve(problem)
 
+    assert plan.plan_id != second_plan.plan_id
     assert [assignment.site_id for assignment in plan.assignments] == ["site_a"]
     assert plan.deferred[0].site_id == "site_b"
     assert plan.assignments[0].boat_id == "boat_0"

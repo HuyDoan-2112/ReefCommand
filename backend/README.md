@@ -49,7 +49,7 @@ Copy-Item ..\.env.example .env
 
 ```dotenv
 REEFCOMMAND_LLM_PROVIDER=deepseek
-REEFCOMMAND_LLM_MODEL=deepseek-chat
+REEFCOMMAND_LLM_MODEL=deepseek-v4-flash
 REEFCOMMAND_DEEPSEEK_API_KEY=your-key-here
 REEFCOMMAND_OFFLINE_DEMO=false
 ```
@@ -68,3 +68,19 @@ uv run uvicorn reefcommand.api.app:app --reload
 
 The DeepSeek adapter uses JSON mode, then validates the returned object against the same Pydantic schema used by Anthropic.
 Do not commit `.env` or paste the API key into chat, issues, logs, or pull requests.
+
+## Inspecting agent execution
+
+Every completed plan retains a structured execution trace in process.
+The trace includes tool inputs and provenance, investigator support and confidence, concise rationales, fusion and policy outputs, the complete Coordinator decision, validation checks, timing, provider, model, retry count, and provider-reported token usage when available.
+It never includes API keys, authorization headers, raw prompts, or private token-by-token model reasoning.
+
+```powershell
+Invoke-RestMethod "http://127.0.0.1:8000/plan/PLAN_ID/trace" |
+    ConvertTo-Json -Depth 30
+
+Invoke-RestMethod "http://127.0.0.1:8000/plan/PLAN_ID/trace/cheeca_rocks" |
+    ConvertTo-Json -Depth 30
+```
+
+Trace retention is currently in memory and follows the same prototype lifecycle as the current plan store.
