@@ -21,6 +21,40 @@ npm run format:check
 npm run build
 ```
 
+## API types
+
+`src/types/api.ts` is generated from the backend's OpenAPI document and must never be edited by hand.
+`src/types/index.ts` aliases it into the domain names feature code imports, so a component reads `Assignment` rather than `components['schemas']['Assignment']`.
+
+`openapi.json` is a committed snapshot of that document.
+It is committed so `npm run gen:api`, typecheck, and CI all work without a Python process running.
+
+Regenerate the types from the committed snapshot:
+
+```bash
+npm run gen:api
+```
+
+Refresh the snapshot from a running backend, then regenerate:
+
+```bash
+npm run gen:api:refresh
+```
+
+That needs the backend up first:
+
+```bash
+cd backend && uv run uvicorn reefcommand.api.app:app
+```
+
+Run the refresh whenever the backend contract changes, and commit the snapshot alongside the regenerated types so the two never disagree.
+
+Field names are snake_case because that is the wire format.
+There is deliberately no camelCase mapping layer: a second naming convention is a second place for the contract to drift.
+
+Every route declares a `response_model` on the backend, which is what makes this generation produce real types instead of `Record<string, unknown>`.
+A backend contract test enforces that, so do not work around an untyped route by hand-writing its shape here.
+
 ## Structure
 
 ```text

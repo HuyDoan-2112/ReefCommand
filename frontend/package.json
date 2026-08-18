@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "gen:api": "openapi-typescript ./openapi.json -o ./src/types/api.ts",
+    "gen:api:refresh": "node scripts/refresh-openapi.mjs && npm run gen:api",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\""
   },
@@ -24,6 +26,7 @@
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.17.0",
     "eslint-config-next": "^15.1.0",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.4.0",
     "typescript": "^5.7.0"
   }

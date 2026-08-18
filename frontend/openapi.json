@@ -1,0 +1,2105 @@
+{
+  "components": {
+    "schemas": {
+      "ActionClass": {
+        "description": "Candidate action classes defined by the intervention knowledge base.\n\nThe LLM does not extend this list.\nNew classes are added to the knowledge base with a cited source.",
+        "enum": [
+          "monitoring",
+          "targeted_disease_survey",
+          "biosecurity_workflow",
+          "water_quality_investigation",
+          "physical_damage_assessment",
+          "temporary_shading"
+        ],
+        "title": "ActionClass",
+        "type": "string"
+      },
+      "Assignment": {
+        "description": "One boat and team sent to one site to perform one action.",
+        "properties": {
+          "action_class": {
+            "$ref": "#/components/schemas/ActionClass"
+          },
+          "action_id": {
+            "title": "Action Id",
+            "type": "string"
+          },
+          "boat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Boat Id"
+          },
+          "compatibility_rationale": {
+            "description": "Why this action was considered compatible, with its knowledge-base provenance.",
+            "title": "Compatibility Rationale",
+            "type": "string"
+          },
+          "estimated_cost_usd": {
+            "minimum": 0,
+            "title": "Estimated Cost Usd",
+            "type": "number"
+          },
+          "estimated_hours": {
+            "minimum": 0,
+            "title": "Estimated Hours",
+            "type": "number"
+          },
+          "evidence_summary": {
+            "description": "What evidence supported this decision.",
+            "title": "Evidence Summary",
+            "type": "string"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "remaining_uncertainty": {
+            "description": "What we still do not know.",
+            "title": "Remaining Uncertainty",
+            "type": "string"
+          },
+          "requires_manager_approval": {
+            "default": true,
+            "title": "Requires Manager Approval",
+            "type": "boolean"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "string"
+          },
+          "site_name": {
+            "title": "Site Name",
+            "type": "string"
+          },
+          "team_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team Id"
+          }
+        },
+        "required": [
+          "site_id",
+          "site_name",
+          "action_id",
+          "action_class",
+          "priority",
+          "estimated_hours",
+          "estimated_cost_usd",
+          "evidence_summary",
+          "remaining_uncertainty",
+          "compatibility_rationale"
+        ],
+        "title": "Assignment",
+        "type": "object"
+      },
+      "Boat": {
+        "properties": {
+          "available": {
+            "default": true,
+            "title": "Available",
+            "type": "boolean"
+          },
+          "boat_id": {
+            "title": "Boat Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "operational_hours": {
+            "minimum": 0,
+            "title": "Operational Hours",
+            "type": "number"
+          }
+        },
+        "required": [
+          "boat_id",
+          "name",
+          "operational_hours"
+        ],
+        "title": "Boat",
+        "type": "object"
+      },
+      "Cause": {
+        "description": "The four competing evidence categories.\n\nThese are not mutually exclusive.\nThermal stress and disease can both be well supported at the same site.",
+        "enum": [
+          "thermal",
+          "disease",
+          "runoff",
+          "physical"
+        ],
+        "title": "Cause",
+        "type": "string"
+      },
+      "CauseEvidence": {
+        "description": "One investigator's independent assessment of one cause.",
+        "properties": {
+          "cause": {
+            "$ref": "#/components/schemas/Cause"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceCitation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "confidence": {
+            "description": "How much the investigator trusts its own support score given input quality.",
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "rationale": {
+            "description": "Short explanation shown on the dashboard.",
+            "title": "Rationale",
+            "type": "string"
+          },
+          "support": {
+            "description": "Support score, not a probability. Not normalized against other causes.",
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Support",
+            "type": "number"
+          }
+        },
+        "required": [
+          "cause",
+          "support",
+          "confidence",
+          "rationale",
+          "computed_at"
+        ],
+        "title": "CauseEvidence",
+        "type": "object"
+      },
+      "DataSourceStatus": {
+        "additionalProperties": false,
+        "description": "Live-versus-cache standing for one external source.",
+        "properties": {
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "provenance": {
+            "description": "Every provenance kind seen for this source in the current evidence snapshot.",
+            "items": {
+              "$ref": "#/components/schemas/Provenance"
+            },
+            "title": "Provenance",
+            "type": "array"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "live",
+              "cache",
+              "synthetic_fixture"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "provenance",
+          "status",
+          "note"
+        ],
+        "title": "DataSourceStatus",
+        "type": "object"
+      },
+      "DataSourcesHealth": {
+        "additionalProperties": false,
+        "description": "Per-source provenance standing behind the current plan.\n\n`status` is `no_plan` before the first plan is published, in which case\n`sources` is empty. This endpoint never starts a planning run.",
+        "properties": {
+          "checked_at": {
+            "format": "date-time",
+            "title": "Checked At",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/DataSourceStatus"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "status": {
+            "default": "ok",
+            "enum": [
+              "ok",
+              "no_plan"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "checked_at",
+          "sources"
+        ],
+        "title": "DataSourcesHealth",
+        "type": "object"
+      },
+      "DeferredSite": {
+        "description": "A site that needed attention but did not fit within capacity.",
+        "properties": {
+          "fallback_action_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "For example monitoring only, when intervention was deferred.",
+            "title": "Fallback Action Id"
+          },
+          "reason": {
+            "description": "The binding constraint, stated plainly.",
+            "title": "Reason",
+            "type": "string"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "string"
+          },
+          "site_name": {
+            "title": "Site Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "site_id",
+          "site_name",
+          "reason"
+        ],
+        "title": "DeferredSite",
+        "type": "object"
+      },
+      "DiveTeam": {
+        "properties": {
+          "available_hours": {
+            "description": "Team-level elapsed in-water hours available in the planning window. These are not diver-hours and must not be multiplied by diver_count.",
+            "minimum": 0,
+            "title": "Available Hours",
+            "type": "number"
+          },
+          "available_hours_basis": {
+            "const": "team_elapsed_hours",
+            "default": "team_elapsed_hours",
+            "description": "The unit represented by available_hours.",
+            "title": "Available Hours Basis",
+            "type": "string"
+          },
+          "certifications": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Certifications",
+            "type": "array"
+          },
+          "diver_count": {
+            "minimum": 1,
+            "title": "Diver Count",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "team_id": {
+            "title": "Team Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "team_id",
+          "name",
+          "diver_count",
+          "available_hours"
+        ],
+        "title": "DiveTeam",
+        "type": "object"
+      },
+      "EcologicalMeasurements": {
+        "properties": {
+          "coral_cover_pct": {
+            "maximum": 100,
+            "minimum": 0,
+            "title": "Coral Cover Pct",
+            "type": "number"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceMetadata"
+          },
+          "sampling": {
+            "$ref": "#/components/schemas/SamplingMetadata"
+          },
+          "species_richness": {
+            "minimum": 0,
+            "title": "Species Richness",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "coral_cover_pct",
+          "species_richness",
+          "sampling",
+          "provenance"
+        ],
+        "title": "EcologicalMeasurements",
+        "type": "object"
+      },
+      "EvidenceCitation": {
+        "description": "Where one piece of supporting evidence came from.\n\nSource metadata is preserved rather than discarded after a lookup.\nFor AGRRA records this means submission date, review status, and the\nreporting organization survive into the dashboard.",
+        "properties": {
+          "observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance",
+            "default": "live"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "URL or record identifier.",
+            "title": "Reference"
+          },
+          "reporting_organization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporting Organization"
+          },
+          "review_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "For reviewed datasets, the record's review state.",
+            "title": "Review Status"
+          },
+          "source": {
+            "description": "Human-readable source name, for example 'AGRRA SCTLD map'.",
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "EvidenceCitation",
+        "type": "object"
+      },
+      "ExecutionTrace": {
+        "additionalProperties": false,
+        "description": "Complete trace retained for one response plan.",
+        "properties": {
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "latency_ms": {
+            "minimum": 0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "offline": {
+            "title": "Offline",
+            "type": "boolean"
+          },
+          "parent_plan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Plan Id"
+          },
+          "plan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Id"
+          },
+          "scenario_id": {
+            "minLength": 1,
+            "title": "Scenario Id",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TraceStatus",
+            "default": "succeeded"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/TraceStep"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "trace_id": {
+            "minLength": 1,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "trigger": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger"
+          }
+        },
+        "required": [
+          "trace_id",
+          "scenario_id",
+          "offline",
+          "started_at",
+          "completed_at",
+          "latency_ms",
+          "steps"
+        ],
+        "title": "ExecutionTrace",
+        "type": "object"
+      },
+      "FieldReport": {
+        "description": "A raw observation as submitted by a diver, scientist, or restoration team.",
+        "properties": {
+          "image_refs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Image Refs",
+            "type": "array"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "observer": {
+            "title": "Observer",
+            "type": "string"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance",
+            "default": "synthetic",
+            "description": "Demo reports are synthetic and labeled as such everywhere they appear."
+          },
+          "provenance_metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProvenanceMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Record-level source and retrieval metadata from the fixture envelope."
+          },
+          "report_id": {
+            "title": "Report Id",
+            "type": "string"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report_id",
+          "site_id",
+          "observed_at",
+          "observer",
+          "text"
+        ],
+        "title": "FieldReport",
+        "type": "object"
+      },
+      "FusedEvidence": {
+        "description": "Deterministic reconciliation of the four investigator outputs for one site.\n\nFusion aggregates the summary.\nIt does not normalize the four support scores against each other, because they\nare not competing shares of a single probability mass.",
+        "properties": {
+          "ambiguity": {
+            "description": "How close the leading causes are. High ambiguity is what the Coordinator resolves by requesting more evidence.",
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Ambiguity",
+            "type": "number"
+          },
+          "by_cause": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CauseEvidence"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Cause"
+            },
+            "title": "By Cause",
+            "type": "object"
+          },
+          "dominant_causes": {
+            "description": "Causes whose support clears the acting threshold. May contain more than one.",
+            "items": {
+              "$ref": "#/components/schemas/Cause"
+            },
+            "title": "Dominant Causes",
+            "type": "array"
+          },
+          "fused_at": {
+            "format": "date-time",
+            "title": "Fused At",
+            "type": "string"
+          },
+          "lowest_confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Lowest Confidence",
+            "type": "number"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "site_id",
+          "by_cause",
+          "dominant_causes",
+          "ambiguity",
+          "lowest_confidence",
+          "fused_at"
+        ],
+        "title": "FusedEvidence",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthStatus": {
+        "additionalProperties": false,
+        "description": "Liveness payload.",
+        "properties": {
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthStatus",
+        "type": "object"
+      },
+      "Inventory": {
+        "properties": {
+          "monitoring_kits": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Monitoring Kits",
+            "type": "integer"
+          },
+          "sampling_kits": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Sampling Kits",
+            "type": "integer"
+          },
+          "shade_units": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Shade Units",
+            "type": "integer"
+          }
+        },
+        "title": "Inventory",
+        "type": "object"
+      },
+      "JsonValue": {},
+      "MonitoringProgram": {
+        "description": "Which monitoring programme produced an ecological measurement.\n\nThese are not interchangeable. CREMP uses fixed, permanently staked transects\nwith photo point counts. NCRMP uses stratified random sampling with linear\npoint intercept. A cover value from one is not a like-for-like substitute for\na cover value from the other, which is why the programme is a required field\non every measurement and travels to the dashboard rather than living in a note.",
+        "enum": [
+          "CREMP",
+          "NCRMP"
+        ],
+        "title": "MonitoringProgram",
+        "type": "string"
+      },
+      "ObservationAccepted": {
+        "additionalProperties": false,
+        "description": "Result of submitting one field report, including the plan it produced.",
+        "properties": {
+          "plan": {
+            "$ref": "#/components/schemas/ResponsePlan"
+          },
+          "replan_latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Measured server-side so the dashboard does not include network noise.",
+            "title": "Replan Latency Ms"
+          },
+          "report_id": {
+            "title": "Report Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report_id",
+          "plan"
+        ],
+        "title": "ObservationAccepted",
+        "type": "object"
+      },
+      "Priority": {
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "Priority",
+        "type": "string"
+      },
+      "Provenance": {
+        "description": "Where a value actually came from.\n\nEvery externally sourced value carries one of these.\nSIMULATED and SYNTHETIC are never presented to a user as real.",
+        "enum": [
+          "live",
+          "cache",
+          "simulated",
+          "synthetic"
+        ],
+        "title": "Provenance",
+        "type": "string"
+      },
+      "ProvenanceMetadata": {
+        "additionalProperties": false,
+        "description": "Structured origin metadata for one value or coherent record.\n\n`fetched_at` records when an external value was retrieved.\n`observed_at` records when the source says the condition occurred.\nThey are deliberately separate because snapshot age and observation age are\ndifferent facts.",
+        "properties": {
+          "fetched_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetched At"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/Provenance"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "source": {
+            "description": "Human-readable source or fixture author.",
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          }
+        },
+        "required": [
+          "kind",
+          "source"
+        ],
+        "title": "ProvenanceMetadata",
+        "type": "object"
+      },
+      "RecomputeRequest": {
+        "description": "Optional inputs for a forced plan recompute.",
+        "properties": {
+          "scenario_id": {
+            "default": "demo_default",
+            "title": "Scenario Id",
+            "type": "string"
+          },
+          "site_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Site Ids",
+            "type": "array"
+          }
+        },
+        "title": "RecomputeRequest",
+        "type": "object"
+      },
+      "ResourceChangeRequest": {
+        "description": "Resource scenario selected for the next planning window.",
+        "properties": {
+          "description": {
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "scenario_id": {
+            "minLength": 1,
+            "title": "Scenario Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "description"
+        ],
+        "title": "ResourceChangeRequest",
+        "type": "object"
+      },
+      "ResourceChangeResult": {
+        "additionalProperties": false,
+        "description": "The plan produced by a capacity change, with the scenario now in force.",
+        "properties": {
+          "banner": {
+            "description": "Simulated-data banner. Never drop this in the UI.",
+            "title": "Banner",
+            "type": "string"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/ResponsePlan"
+          },
+          "scenario": {
+            "$ref": "#/components/schemas/ResourceScenario"
+          }
+        },
+        "required": [
+          "plan",
+          "scenario",
+          "banner"
+        ],
+        "title": "ResourceChangeResult",
+        "type": "object"
+      },
+      "ResourceScenario": {
+        "description": "The capacity available for one planning window.",
+        "properties": {
+          "boats": {
+            "items": {
+              "$ref": "#/components/schemas/Boat"
+            },
+            "title": "Boats",
+            "type": "array"
+          },
+          "budget_usd": {
+            "minimum": 0,
+            "title": "Budget Usd",
+            "type": "number"
+          },
+          "daylight_hours": {
+            "minimum": 0,
+            "title": "Daylight Hours",
+            "type": "number"
+          },
+          "dive_teams": {
+            "items": {
+              "$ref": "#/components/schemas/DiveTeam"
+            },
+            "title": "Dive Teams",
+            "type": "array"
+          },
+          "inventory": {
+            "$ref": "#/components/schemas/Inventory"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance",
+            "description": "Simulated for every scenario shipped with the prototype."
+          },
+          "scenario_id": {
+            "title": "Scenario Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "label",
+          "provenance",
+          "boats",
+          "dive_teams",
+          "inventory",
+          "budget_usd",
+          "daylight_hours"
+        ],
+        "title": "ResourceScenario",
+        "type": "object"
+      },
+      "ResponsePlan": {
+        "description": "A complete allocation for one planning window.",
+        "properties": {
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/Assignment"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
+          "binding_constraints": {
+            "description": "Which constraints were tight, so trade-offs are explainable.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Binding Constraints",
+            "type": "array"
+          },
+          "deferred": {
+            "items": {
+              "$ref": "#/components/schemas/DeferredSite"
+            },
+            "title": "Deferred",
+            "type": "array"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "plan_id": {
+            "title": "Plan Id",
+            "type": "string"
+          },
+          "replan_latency_ms": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Evidence submitted to plan displayed. Reported metric, see docs/evaluation.md.",
+            "title": "Replan Latency Ms"
+          },
+          "replan_trigger": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What caused this recompute, when it was not the first plan.",
+            "title": "Replan Trigger"
+          },
+          "scenario_banner": {
+            "description": "Simulated-data banner text, carried on the plan so it cannot be dropped.",
+            "title": "Scenario Banner",
+            "type": "string"
+          },
+          "scenario_id": {
+            "title": "Scenario Id",
+            "type": "string"
+          },
+          "total_strategic_value": {
+            "description": "Objective value achieved. Comparable against the naive baseline.",
+            "minimum": 0,
+            "title": "Total Strategic Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "plan_id",
+          "generated_at",
+          "scenario_id",
+          "scenario_banner",
+          "assignments",
+          "total_strategic_value"
+        ],
+        "title": "ResponsePlan",
+        "type": "object"
+      },
+      "RestorationInvestment": {
+        "description": "Prior management commitment. Feeds strategic_value only.\n\nNo public dataset publishes per-site restoration spend, so every value shipped\nwith the prototype is simulated and its provenance says so.",
+        "properties": {
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceMetadata"
+          },
+          "value": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "value",
+          "provenance"
+        ],
+        "title": "RestorationInvestment",
+        "type": "object"
+      },
+      "SamplingMetadata": {
+        "description": "How a measurement was obtained, as data rather than as prose.\n\nEvery field here exists because a reviewer could reasonably disagree with the\nchoice it records. Sample size and spread are first-class so that downstream\nconsumers can see how thin a measurement is, without the model imposing a\nconfidence weight of its own.",
+        "properties": {
+          "habitat_types": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Habitat Types",
+            "type": "array"
+          },
+          "includes_millepora": {
+            "description": "CREMP cover includes Millepora, a hydrocoral. NCRMP figures here exclude it.",
+            "title": "Includes Millepora",
+            "type": "boolean"
+          },
+          "matching_distance_km": {
+            "description": "Zero when the site is named in the source data.",
+            "minimum": 0,
+            "title": "Matching Distance Km",
+            "type": "number"
+          },
+          "matching_method": {
+            "description": "How this site was matched to the source data, so a reviewer can disagree with it.",
+            "title": "Matching Method",
+            "type": "string"
+          },
+          "program": {
+            "$ref": "#/components/schemas/MonitoringProgram"
+          },
+          "reference_years": {
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 1,
+            "title": "Reference Years",
+            "type": "array"
+          },
+          "richness_definition": {
+            "description": "Neither programme publishes a richness field. This states how ours was counted.",
+            "title": "Richness Definition",
+            "type": "string"
+          },
+          "sample_n": {
+            "description": "Number of stations or sample units pooled.",
+            "minimum": 1,
+            "title": "Sample N",
+            "type": "integer"
+          },
+          "sample_sd_pct": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Standard deviation of cover across the pooled units.",
+            "title": "Sample Sd Pct"
+          },
+          "sample_unit": {
+            "description": "What one unit of sample_n is: station, or sample unit.",
+            "title": "Sample Unit",
+            "type": "string"
+          },
+          "sampling_design": {
+            "description": "How the programme samples, in one phrase. Not interchangeable between programmes.",
+            "title": "Sampling Design",
+            "type": "string"
+          },
+          "station_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Station Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "program",
+          "sampling_design",
+          "reference_years",
+          "sample_n",
+          "sample_unit",
+          "matching_method",
+          "matching_distance_km",
+          "habitat_types",
+          "richness_definition",
+          "includes_millepora"
+        ],
+        "title": "SamplingMetadata",
+        "type": "object"
+      },
+      "ScenarioView": {
+        "additionalProperties": false,
+        "description": "The active simulated capacity scenario and its mandatory banner.",
+        "properties": {
+          "banner": {
+            "description": "Simulated-data banner. Never drop this in the UI.",
+            "title": "Banner",
+            "type": "string"
+          },
+          "scenario": {
+            "$ref": "#/components/schemas/ResourceScenario"
+          }
+        },
+        "required": [
+          "scenario",
+          "banner"
+        ],
+        "title": "ScenarioView",
+        "type": "object"
+      },
+      "SiteExecutionTrace": {
+        "additionalProperties": false,
+        "description": "Site-filtered view of a completed execution trace.",
+        "properties": {
+          "offline": {
+            "title": "Offline",
+            "type": "boolean"
+          },
+          "parent_plan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Plan Id"
+          },
+          "plan_id": {
+            "title": "Plan Id",
+            "type": "string"
+          },
+          "scenario_id": {
+            "title": "Scenario Id",
+            "type": "string"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TraceStatus"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/TraceStep"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "trigger": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger"
+          }
+        },
+        "required": [
+          "trace_id",
+          "plan_id",
+          "status",
+          "scenario_id",
+          "offline",
+          "site_id",
+          "steps"
+        ],
+        "title": "SiteExecutionTrace",
+        "type": "object"
+      },
+      "SiteLocation": {
+        "description": "A point convention applied to an area, with the convention recorded.",
+        "properties": {
+          "latitude": {
+            "maximum": 90,
+            "minimum": -90,
+            "title": "Latitude",
+            "type": "number"
+          },
+          "location_basis": {
+            "description": "The convention used to reduce an area to a point. Not a survey position.",
+            "title": "Location Basis",
+            "type": "string"
+          },
+          "longitude": {
+            "maximum": 180,
+            "minimum": -180,
+            "title": "Longitude",
+            "type": "number"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ProvenanceMetadata"
+          },
+          "zone_name_in_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone Name In Source"
+          },
+          "zone_span_km": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone Span Km"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude",
+          "location_basis",
+          "provenance"
+        ],
+        "title": "SiteLocation",
+        "type": "object"
+      },
+      "SiteScores": {
+        "description": "Two scores, deliberately not blended into one.\n\necological_value = 0.6 * normalized(coral_cover) + 0.4 * normalized(species_richness)\nstrategic_value  = 0.7 * ecological_value       + 0.3 * normalized(restoration_investment)\n\nRestoration investment is a management consideration, not an ecological one.\nBlending them into a single number quietly mixes two kinds of judgment.\n\nThe weights are stated prototype assumptions, not scientific claims, and are\nlabeled as such on the dashboard and in the pitch.",
+        "properties": {
+          "ecological_value": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Ecological Value",
+            "type": "number"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "string"
+          },
+          "strategic_value": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Strategic Value",
+            "type": "number"
+          },
+          "weights_are_prototype_assumptions": {
+            "default": true,
+            "description": "Always true. Present in the payload so the dashboard cannot forget to say so.",
+            "title": "Weights Are Prototype Assumptions",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "site_id",
+          "ecological_value",
+          "strategic_value"
+        ],
+        "title": "SiteScores",
+        "type": "object"
+      },
+      "SiteView": {
+        "description": "One study-area site with its scores and its standing in the current plan.\n\nThis extends `ReefSite` rather than nesting it, because the site's own\nfields are serialized at the top level of the response.",
+        "properties": {
+          "current_assignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Assignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deferred": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeferredSite"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dominant_causes": {
+            "description": "Causes currently in play. More than one can be, and none is valid.",
+            "items": {
+              "$ref": "#/components/schemas/Cause"
+            },
+            "title": "Dominant Causes",
+            "type": "array"
+          },
+          "has_active_restoration": {
+            "default": false,
+            "description": "Whether active nursery or outplant work exists at this site. This is prior management commitment, not ecological value. Do not name specific organizations unless verified per site.",
+            "title": "Has Active Restoration",
+            "type": "boolean"
+          },
+          "latitude": {
+            "description": "Serialized convenience field for the flat API site shape.",
+            "readOnly": true,
+            "title": "Latitude",
+            "type": "number"
+          },
+          "location": {
+            "$ref": "#/components/schemas/SiteLocation"
+          },
+          "longitude": {
+            "description": "Serialized convenience field for the flat API site shape.",
+            "readOnly": true,
+            "title": "Longitude",
+            "type": "number"
+          },
+          "measurements": {
+            "$ref": "#/components/schemas/EcologicalMeasurements"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "restoration_investment": {
+            "$ref": "#/components/schemas/RestorationInvestment"
+          },
+          "scores": {
+            "$ref": "#/components/schemas/SiteScores"
+          },
+          "site_id": {
+            "title": "Site Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "site_id",
+          "name",
+          "location",
+          "measurements",
+          "restoration_investment",
+          "scores",
+          "dominant_causes",
+          "latitude",
+          "longitude"
+        ],
+        "title": "SiteView",
+        "type": "object"
+      },
+      "TokenUsage": {
+        "additionalProperties": false,
+        "description": "Provider-reported token usage accumulated across validation retries.",
+        "properties": {
+          "input_tokens": {
+            "minimum": 0,
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "minimum": 0,
+            "title": "Output Tokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "input_tokens",
+          "output_tokens"
+        ],
+        "title": "TokenUsage",
+        "type": "object"
+      },
+      "TraceExecutor": {
+        "description": "What actually executed a trace stage.",
+        "enum": [
+          "deterministic",
+          "llm",
+          "fixture",
+          "optimizer"
+        ],
+        "title": "TraceExecutor",
+        "type": "string"
+      },
+      "TraceStage": {
+        "description": "Named stages visible to API clients and the future dashboard.",
+        "enum": [
+          "evidence_tools",
+          "thermal_investigator",
+          "disease_investigator",
+          "runoff_investigator",
+          "physical_investigator",
+          "evidence_fusion",
+          "policy_eligibility",
+          "coordinator",
+          "optimizer"
+        ],
+        "title": "TraceStage",
+        "type": "string"
+      },
+      "TraceStatus": {
+        "enum": [
+          "succeeded",
+          "failed"
+        ],
+        "title": "TraceStatus",
+        "type": "string"
+      },
+      "TraceStep": {
+        "additionalProperties": false,
+        "description": "One completed and validated pipeline boundary.",
+        "properties": {
+          "attempt_count": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Count"
+          },
+          "completed_at": {
+            "format": "date-time",
+            "title": "Completed At",
+            "type": "string"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "error_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Type"
+          },
+          "executor": {
+            "$ref": "#/components/schemas/TraceExecutor"
+          },
+          "inputs": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Inputs",
+            "type": "object"
+          },
+          "latency_ms": {
+            "minimum": 0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "output": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Output",
+            "type": "object"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rationale"
+          },
+          "sequence": {
+            "minimum": 1,
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "site_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Site Id"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/TraceStage"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TraceStatus",
+            "default": "succeeded"
+          },
+          "token_usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TokenUsage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "validation_checks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Validation Checks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sequence",
+          "stage",
+          "executor",
+          "started_at",
+          "completed_at",
+          "latency_ms"
+        ],
+        "title": "TraceStep",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "summary": "Decision support that turns environmental monitoring, field observations, scientific intervention guidance, and limited conservation resources into continuously updated reef-response plans.",
+    "title": "ReefCommand",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "description": "Liveness check.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/health/data-sources": {
+      "get": {
+        "description": "Per-source live-versus-cache status and snapshot age.",
+        "operationId": "data_sources_health_data_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataSourcesHealth"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Data Sources",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/observations": {
+      "post": {
+        "description": "Accept a field report, structure it, and trigger re-planning.",
+        "operationId": "submit_observation_observations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldReport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObservationAccepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Observation",
+        "tags": [
+          "observations"
+        ]
+      }
+    },
+    "/plan/current": {
+      "get": {
+        "description": "The current response plan.",
+        "operationId": "current_plan_plan_current_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsePlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Current Plan",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
+    "/plan/failed-traces/{trace_id}": {
+      "get": {
+        "description": "Return a bounded failed-run trace when its id was reported with an error.",
+        "operationId": "failed_execution_trace_plan_failed_traces__trace_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "trace_id",
+            "required": true,
+            "schema": {
+              "title": "Trace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutionTrace"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Failed Execution Trace",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
+    "/plan/recompute": {
+      "post": {
+        "description": "Force a recompute. Returns the new plan and its latency.",
+        "operationId": "recompute_plan_recompute_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RecomputeRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsePlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recompute",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
+    "/plan/{plan_id}/trace": {
+      "get": {
+        "description": "Structured, redacted execution trace for one completed plan.",
+        "operationId": "execution_trace_plan__plan_id__trace_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutionTrace"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Execution Trace",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
+    "/plan/{plan_id}/trace/{site_id}": {
+      "get": {
+        "description": "Site agent decisions plus plan-wide stages for one completed plan.",
+        "operationId": "site_execution_trace_plan__plan_id__trace__site_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "site_id",
+            "required": true,
+            "schema": {
+              "title": "Site Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteExecutionTrace"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Site Execution Trace",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
+    "/resources/scenario": {
+      "get": {
+        "description": "The active simulated resource scenario.",
+        "operationId": "get_scenario_resources_scenario_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Scenario",
+        "tags": [
+          "resources"
+        ]
+      },
+      "patch": {
+        "description": "Change capacity, for example marking a boat unavailable, and trigger re-planning.",
+        "operationId": "update_scenario_resources_scenario_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceChangeResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Scenario",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/sites": {
+      "get": {
+        "description": "All sites in the study area with both value scores and current evidence.",
+        "operationId": "list_sites_sites_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SiteView"
+                  },
+                  "title": "Response List Sites Sites Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Sites",
+        "tags": [
+          "sites"
+        ]
+      }
+    },
+    "/sites/{site_id}/evidence": {
+      "get": {
+        "description": "Fused evidence for one site, including per-cause support, confidence, and citations.",
+        "operationId": "site_evidence_sites__site_id__evidence_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "site_id",
+            "required": true,
+            "schema": {
+              "title": "Site Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FusedEvidence"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Site Evidence",
+        "tags": [
+          "sites"
+        ]
+      }
+    }
+  }
+}
