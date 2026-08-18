@@ -45,6 +45,12 @@ jobs:
       - name: End-to-end tests
         run: uv run pytest tests/e2e
 
+      - name: Validate demo fixtures
+        # Cross-file check: the per-fixture tests prove each file is valid on its
+        # own, this proves they agree with each other. Strict mode keeps known
+        # infeasible demo inputs from entering the branch.
+        run: uv run python ../scripts/validate_fixtures.py --strict
+
   frontend:
     name: Dashboard
     runs-on: ubuntu-latest
