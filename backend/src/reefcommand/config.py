@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -28,8 +29,11 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"
     api_port: int = 8000
 
+    llm_provider: Literal["anthropic", "deepseek"] = "anthropic"
     llm_model: str = "claude-sonnet-4-5"
     llm_timeout_seconds: float = 30.0
+    deepseek_api_key: str | None = None
+    deepseek_base_url: str = "https://api.deepseek.com"
 
     external_timeout_seconds: float = 3.0
     force_cache: bool = False

@@ -36,3 +36,35 @@ The LLM does not assign boats or teams.
 
 The Coordinator's output never reaches `optimizer` without passing `coordinator/validation.py`.
 That is a hard import-direction rule, not a convention.
+
+## Testing with DeepSeek
+
+The LLM client supports `anthropic` and `deepseek` providers through the same structured Pydantic contract.
+
+From `backend/`, copy the root example environment file and set these values in `.env`:
+
+```powershell
+Copy-Item ..\.env.example .env
+```
+
+```dotenv
+REEFCOMMAND_LLM_PROVIDER=deepseek
+REEFCOMMAND_LLM_MODEL=deepseek-chat
+REEFCOMMAND_DEEPSEEK_API_KEY=your-key-here
+REEFCOMMAND_OFFLINE_DEMO=false
+```
+
+First make one provider-only request:
+
+```powershell
+uv run python ../scripts/test_deepseek.py
+```
+
+Then run the existing API or pipeline after the smoke test succeeds:
+
+```bash
+uv run uvicorn reefcommand.api.app:app --reload
+```
+
+The DeepSeek adapter uses JSON mode, then validates the returned object against the same Pydantic schema used by Anthropic.
+Do not commit `.env` or paste the API key into chat, issues, logs, or pull requests.
