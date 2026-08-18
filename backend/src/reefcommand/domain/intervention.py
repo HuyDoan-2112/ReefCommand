@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from reefcommand.domain.enums import ActionClass, Cause
+from reefcommand.domain.enums import ActionClass, Cause, Priority
 
 
 class ResourceRequirement(BaseModel):
@@ -100,6 +100,7 @@ class EligibleAction(BaseModel):
     resources: ResourceRequirement
     expected_compatibility: float = Field(ge=0.0, le=1.0)
     provenance: str
+    priority: Priority = Priority.MEDIUM
     requires_manager_approval: bool = Field(
         default=True, description="Always true. The system is decision support."
     )
