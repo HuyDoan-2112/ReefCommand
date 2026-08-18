@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReefCommand — AI Decision Support for Reef Managers</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23073B4C'/%3E%3Cpath d='M10 55 Q 30 40 50 55 T 90 55' stroke='%234ECDC4' stroke-width='8' fill='none' stroke-linecap='round'/%3E%3Cpath d='M10 70 Q 30 55 50 70 T 90 70' stroke='%23FF7F6B' stroke-width='6' fill='none' stroke-linecap='round' opacity='0.8'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light;
+    /* ---- Brand chrome (ocean, professional-with-cute) ---- */
+    --ocean-deep:#073B4C;
+    --ocean-deep-2:#0A4E63;
+    --ocean-mid:#118AB2;
+    --ocean-bright:#1CB4D6;
+    --seafoam:#4ECDC4;
+    --coral:#FF7F6B;
+    --coral-deep:#E85D4A;
+    --sunshine:#FFD166;
+    --sand:#FBF9F4;
+    --foam:#EAF6F6;
+    --card:#FFFFFF;
+    --text-primary:#0E2A32;
+    --text-secondary:#4E6B72;
+    --text-muted:#8AA0A6;
+    --border:rgba(7,59,76,0.10);
+    --border-strong:rgba(7,59,76,0.18);
+    --shadow-sm:0 1px 2px rgba(7,59,76,0.06), 0 1px 1px rgba(7,59,76,0.04);
+    --shadow-md:0 6px 20px rgba(7,59,76,0.10);
+    --shadow-lg:0 16px 40px rgba(7,59,76,0.16);
+    --radius-sm:10px;
+    --radius-md:16px;
+    --radius-lg:24px;
+
+    /* ---- Data-viz tokens (validated: dataviz skill, method-derived) ---- */
+    --series-1:#2a78d6; /* boats — blue */
+    --series-2:#eb6834; /* budget — orange */
+    --series-3:#1baf7a; /* equipment — aqua */
+    --series-4:#eda100; /* dive teams — yellow */
+    --status-good:#0ca30c;
+    --status-warning:#c98500; /* stepped darker than doc default (#fab219) for 3:1 text contrast on light surface, same hue family */
+    --status-serious:#ec835a;
+    --status-critical:#d03b3b;
+    --surface-1:#fcfcfb;
+    --gridline:#e1e0d9;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
+    background:var(--sand);
+    color:var(--text-primary);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4,.brand-font{font-family:'Poppins','Inter',system-ui,sans-serif;}
+  button{font-family:inherit;}
+  ::selection{background:var(--seafoam); color:var(--ocean-deep);}
+
+  /* ---------------- App shell ---------------- */
+  .app-shell{display:flex; min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{
+    width:236px; flex-shrink:0;
+    background:linear-gradient(180deg, var(--ocean-deep) 0%, var(--ocean-deep-2) 70%, #0d5d75 100%);
+    color:#EAF6F6;
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh;
+    overflow:hidden;
+  }
+  .sidebar::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:0; height:120px;
+    background:
+      radial-gradient(120px 40px at 20% 100%, rgba(78,205,196,0.18), transparent 60%),
+      radial-gradient(160px 50px at 80% 100%, rgba(255,127,107,0.12), transparent 60%);
+    pointer-events:none;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    padding:22px 20px 18px 20px;
+    position:relative; z-index:1;
+  }
+  .brand-mark{
+    width:38px; height:38px; border-radius:12px;
+    background:radial-gradient(circle at 30% 25%, #1CB4D6, #073B4C 75%);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; box-shadow:var(--shadow-sm);
+  }
+  .brand-text{line-height:1.15;}
+  .brand-text .name{font-weight:700; font-size:16px; letter-spacing:0.2px;}
+  .brand-text .tag{font-size:10.5px; color:#9FD8D3; letter-spacing:0.6px; text-transform:uppercase;}
+
+  .nav{padding:10px 12px; display:flex; flex-direction:column; gap:4px; position:relative; z-index:1;}
+  .nav-item{
+    display:flex; align-items:center; gap:11px;
+    padding:10px 12px; border-radius:12px;
+    color:#CFE9E7; text-decoration:none; font-size:13.5px; font-weight:500;
+    cursor:pointer; border:1px solid transparent; background:none;
+    transition:background .15s ease, color .15s ease;
+    width:100%; text-align:left;
+  }
+  .nav-item .ic{width:20px; text-align:center; font-size:15px;}
+  .nav-item:hover{background:rgba(255,255,255,0.07); color:#fff;}
+  .nav-item.active{background:rgba(78,205,196,0.16); color:#fff; border-color:rgba(78,205,196,0.35); box-shadow:inset 0 0 0 1px rgba(78,205,196,0.15);}
+  .nav-item.active .ic{filter:drop-shadow(0 0 6px rgba(78,205,196,0.5));}
+
+  .nav-section-label{
+    padding:16px 16px 4px; font-size:10px; letter-spacing:1px; text-transform:uppercase;
+    color:#6FA8A3; font-weight:600;
+  }
+
+  .sidebar-footer{
+    margin-top:auto; padding:16px; position:relative; z-index:1;
+    border-top:1px solid rgba(255,255,255,0.08);
+  }
+  .resource-mini{font-size:11px; color:#9FD8D3; margin-bottom:10px;}
+  .mini-bar-row{display:flex; align-items:center; gap:8px; margin-bottom:7px;}
+  .mini-bar-row .lbl{width:56px; font-size:10.5px; color:#BFE3E0;}
+  .mini-bar-track{flex:1; height:5px; border-radius:4px; background:rgba(255,255,255,0.12); overflow:hidden;}
+  .mini-bar-fill{height:100%; border-radius:4px; background:var(--seafoam);}
+  .user-chip{display:flex; align-items:center; gap:9px; margin-top:12px;}
+  .avatar{width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#FF7F6B,#FFD166); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#073B4C;}
+  .user-chip .u-name{font-size:12.5px; font-weight:600; color:#fff;}
+  .user-chip .u-role{font-size:10.5px; color:#9FD8D3;}
+
+  /* Main column */
+  .main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    background:rgba(251,249,244,0.88); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--border);
+    padding:16px 28px; display:flex; align-items:center; gap:18px;
+  }
+  .topbar h1{font-size:19px; margin:0; font-weight:600; letter-spacing:-0.2px;}
+  .topbar .sub{font-size:12.5px; color:var(--text-secondary); margin-top:2px;}
+  .topbar-titlewrap{margin-right:auto;}
+
+  .ask-bar{
+    display:flex; align-items:center; gap:8px;
+    background:#fff; border:1px solid var(--border-strong); border-radius:999px;
+    padding:9px 16px; width:340px; box-shadow:var(--shadow-sm); color:var(--text-muted); font-size:12.5px;
+    cursor:text;
+  }
+  .ask-bar .go{margin-left:auto; background:var(--ocean-mid); color:#fff; border:none; border-radius:999px; padding:4px 11px; font-size:11px; font-weight:600; cursor:pointer;}
+  .icon-btn{
+    width:36px; height:36px; border-radius:11px; border:1px solid var(--border);
+    background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:var(--shadow-sm); position:relative; font-size:15px;
+  }
+  .icon-btn .dot{position:absolute; top:6px; right:7px; width:7px; height:7px; border-radius:50%; background:var(--coral-deep); border:1.5px solid #fff;}
+
+  main{padding:24px 28px 48px; flex:1;}
+  .view{display:none;}
+  .view.active{display:block; animation:fadeIn .25s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  /* ---------------- shared bits ---------------- */
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px;}
+  .stat-tile{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius-md);
+    padding:16px 18px; box-shadow:var(--shadow-sm); position:relative; overflow:hidden;
+  }
+  .stat-tile .wave-deco{position:absolute; right:-10px; bottom:-14px; font-size:46px; opacity:0.07;}
+  .stat-tile .stat-label{font-size:11.5px; color:var(--text-secondary); font-weight:600; text-transform:uppercase; letter-spacing:0.4px; display:flex; align-items:center; gap:6px;}
+  .stat-tile .stat-value{font-size:28px; font-weight:700; margin-top:6px; letter-spacing:-0.5px; font-variant-numeric:proportional-nums;}
+  .stat-tile .stat-delta{font-size:11.5px; margin-top:4px; font-weight:600;}
+  .stat-delta.up{color:var(--status-critical);}
+  .stat-delta.down{color:var(--status-good);}
+  .stat-delta.flat{color:var(--text-muted);}
+
+  .panel{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);}
+  .panel-head{padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px;}
+  .panel-head h3{margin:0; font-size:14.5px; font-weight:600;}
+  .panel-head .hint{margin-left:auto; font-size:11.5px; color:var(--text-muted);}
+  .panel-body{padding:18px 20px;}
+
+  .badge{display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:0.2px;}
+  .badge.good{background:rgba(12,163,12,0.12); color:#0a7a0a;}
+  .badge.warning{background:rgba(201,133,0,0.14); color:#8a5c00;}
+  .badge.serious{background:rgba(236,131,90,0.16); color:#a4471f;}
+  .badge.critical{background:rgba(208,59,59,0.13); color:#a02121;}
+  .badge .sw{width:7px; height:7px; border-radius:50%; display:inline-block;}
+  .badge.good .sw{background:var(--status-good);}
+  .badge.warning .sw{background:var(--status-warning);}
+  .badge.serious .sw{background:var(--status-serious);}
+  .badge.critical .sw{background:var(--status-critical);}
+
+  .chip{display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:8px; font-size:10.5px; font-weight:600; background:var(--foam); color:var(--ocean-deep-2); border:1px solid rgba(17,138,178,0.18);}
+
+  .btn{border:none; border-radius:11px; padding:9px 16px; font-size:12.5px; font-weight:600; cursor:pointer; transition:transform .12s ease, box-shadow .12s ease;}
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:linear-gradient(135deg, var(--ocean-mid), var(--ocean-deep-2)); color:#fff; box-shadow:0 4px 14px rgba(17,138,178,0.35);}
+  .btn-coral{background:linear-gradient(135deg,#FF9587,var(--coral-deep)); color:#fff; box-shadow:0 4px 14px rgba(232,93,74,0.32);}
+  .btn-ghost{background:#fff; color:var(--ocean-deep-2); border:1px solid var(--border-strong);}
+  .btn-sm{padding:6px 12px; font-size:11.5px; border-radius:9px;}
+
+  .divider-wave{width:100%; height:14px; margin:2px 0; opacity:0.5;}
+
+  a.linklike{color:var(--ocean-mid); text-decoration:none; font-weight:600;}
+  a.linklike:hover{text-decoration:underline;}
+
+  /* two-column layout helper */
+  .cols{display:grid; grid-template-columns:1fr; gap:20px;}
+  .cols.split-70-30{grid-template-columns:1.7fr 1fr;}
+  .cols.split-60-40{grid-template-columns:1.5fr 1fr;}
+  .cols.two{grid-template-columns:1fr 1fr;}
+
+  /* ================= MAP VIEW ================= */
+  .map-wrap{position:relative; border-radius:var(--radius-lg); overflow:hidden; height:560px; box-shadow:var(--shadow-md); border:1px solid var(--border);}
+  .map-ocean{
+    position:absolute; inset:0;
+    background:
+      radial-gradient(1100px 500px at 15% -10%, #1CB4D6 0%, transparent 55%),
+      linear-gradient(160deg, #0c5c74 0%, #0a4a5f 45%, #073B4C 100%);
+  }
+  .map-ocean::before{
+    content:""; position:absolute; inset:0; opacity:0.15;
+    background-image: repeating-linear-gradient(115deg, transparent 0 22px, rgba(255,255,255,0.5) 22px 23px);
+    mix-blend-mode:overlay;
+  }
+  .island{position:absolute; background:#2c8f68; box-shadow:0 6px 18px rgba(0,0,0,0.25) inset, 0 10px 24px rgba(0,0,0,0.22);}
+  .island::before{content:""; position:absolute; inset:-13px; background:rgba(247,235,200,0.4); border-radius:inherit; filter:blur(9px); z-index:-1;}
+  .island::after{content:""; position:absolute; inset:6px; border-radius:inherit; background:radial-gradient(circle at 32% 28%, rgba(255,255,255,0.22), transparent 55%);}
+  .island.i1{width:210px; height:120px; left:8%; top:18%; border-radius:60% 55% 65% 50%/55% 60% 45% 60%; background:linear-gradient(135deg,#3a9c74,#1f6e50);}
+  .island.i2{width:140px; height:90px; left:38%; top:52%; border-radius:55% 60% 50% 65%/50% 55% 60% 45%; background:linear-gradient(135deg,#3a9c74,#1f6e50);}
+  .island.i3{width:170px; height:100px; left:63%; top:14%; border-radius:60% 50% 55% 65%/55% 50% 60% 50%; background:linear-gradient(135deg,#3a9c74,#1f6e50);}
+  .island.i4{width:120px; height:80px; left:74%; top:60%; border-radius:55% 65% 50% 55%/60% 45% 60% 50%; background:linear-gradient(135deg,#3a9c74,#1f6e50);}
+
+  .thermal-layer{position:absolute; inset:0; transition:opacity .3s ease;}
+  .thermal-layer.hidden{opacity:0; pointer-events:none;}
+  .thermal-blob{position:absolute; border-radius:50%; filter:blur(18px); mix-blend-mode:normal;}
+
+  .diver-layer{position:absolute; inset:0; transition:opacity .3s ease;}
+  .diver-layer.hidden{opacity:0; pointer-events:none;}
+  .diver-pin{
+    position:absolute; transform:translate(-50%,-50%);
+    width:22px; height:22px; border-radius:50%;
+    background:#fff; border:2px solid var(--ocean-mid);
+    display:flex; align-items:center; justify-content:center; font-size:10px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.3);
+  }
+  .diver-pin .n{font-size:9px; font-weight:800; color:var(--ocean-deep-2);}
+
+  .site-pin{
+    position:absolute; transform:translate(-50%,-100%);
+    display:flex; flex-direction:column; align-items:center; cursor:pointer;
+    z-index:5;
+  }
+  .site-pin .pin-dot{
+    width:18px; height:18px; border-radius:50% 50% 50% 0; transform:rotate(-45deg);
+    border:2.5px solid #fff; box-shadow:0 3px 8px rgba(0,0,0,0.35);
+  }
+  .site-pin.good .pin-dot{background:var(--status-good);}
+  .site-pin.warning .pin-dot{background:var(--status-warning);}
+  .site-pin.serious .pin-dot{background:var(--status-serious);}
+  .site-pin.critical .pin-dot{background:var(--status-critical);}
+  .site-pin .pulse{
+    position:absolute; top:1px; width:18px; height:18px; border-radius:50%;
+    animation:pulse 2.2s ease-out infinite;
+  }
+  .site-pin.critical .pulse{background:var(--status-critical);}
+  .site-pin.serious .pulse{background:var(--status-serious);}
+  @keyframes pulse{0%{transform:scale(0.6); opacity:0.55;} 100%{transform:scale(2.2); opacity:0;}}
+  .site-pin .pin-label{
+    margin-top:4px; background:rgba(7,59,76,0.85); color:#fff; font-size:10px; font-weight:600;
+    padding:2px 7px; border-radius:6px; white-space:nowrap; opacity:0; transform:translateY(-2px);
+    transition:opacity .15s ease, transform .15s ease; pointer-events:none;
+  }
+  .site-pin:hover .pin-label{opacity:1; transform:translateY(0);}
+  .site-pin:hover .pin-dot{filter:brightness(1.15);}
+
+  .map-legend{
+    position:absolute; left:16px; bottom:16px; background:rgba(255,255,255,0.94); backdrop-filter:blur(6px);
+    border-radius:14px; padding:12px 14px; box-shadow:var(--shadow-md); font-size:11.5px; width:230px;
+  }
+  .map-legend .lg-title{font-weight:700; font-size:11px; margin-bottom:8px; color:var(--text-primary);}
+  .lg-row{display:flex; align-items:center; gap:7px; margin-bottom:5px; color:var(--text-secondary);}
+  .lg-swatch{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+
+  .layer-toggles{
+    position:absolute; right:16px; top:16px; display:flex; flex-direction:column; gap:8px;
+  }
+  .layer-toggle{
+    display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.94); backdrop-filter:blur(6px);
+    border-radius:12px; padding:8px 12px; box-shadow:var(--shadow-md); font-size:11.5px; font-weight:600; color:var(--text-primary); cursor:pointer; user-select:none;
+  }
+  .switch{width:30px; height:17px; border-radius:999px; background:var(--border-strong); position:relative; transition:background .15s ease; flex-shrink:0;}
+  .switch::after{content:""; position:absolute; top:2px; left:2px; width:13px; height:13px; border-radius:50%; background:#fff; transition:transform .15s ease; box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+  .switch.on{background:var(--ocean-mid);}
+  .switch.on::after{transform:translateX(13px);}
+
+  .map-title-card{position:absolute; left:16px; top:16px; color:#fff;}
+  .map-title-card h2{margin:0; font-size:18px; font-weight:600;}
+  .map-title-card .sub{font-size:11.5px; color:#BFE3E0; margin-top:2px; display:flex; align-items:center; gap:6px;}
+
+  /* priority queue */
+  .queue-card{
+    display:flex; gap:12px; padding:13px 14px; border-radius:14px; border:1px solid var(--border);
+    margin-bottom:10px; cursor:pointer; transition:border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+    background:#fff;
+  }
+  .queue-card:hover{border-color:var(--ocean-mid); box-shadow:var(--shadow-sm); transform:translateX(2px);}
+  .queue-rank{
+    width:26px; height:26px; border-radius:8px; background:var(--foam); color:var(--ocean-deep-2);
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0;
+  }
+  .queue-card.r1 .queue-rank{background:var(--coral); color:#fff;}
+  .queue-body{flex:1; min-width:0;}
+  .queue-top{display:flex; align-items:center; gap:8px; margin-bottom:3px;}
+  .queue-top .site-name{font-weight:700; font-size:13.5px;}
+  .queue-meta{font-size:11px; color:var(--text-muted); margin-bottom:6px;}
+  .queue-insight{font-size:11.5px; color:var(--text-secondary); line-height:1.4; background:var(--foam); border-radius:8px; padding:6px 9px; border-left:3px solid var(--ocean-mid);}
+  .queue-insight b{color:var(--ocean-deep-2);}
+
+  /* ================= SITE VIEW ================= */
+  .site-header{
+    display:flex; gap:20px; align-items:flex-start; margin-bottom:20px; padding:20px; border-radius:var(--radius-lg);
+    background:linear-gradient(120deg, #0c5c74, #073B4C); color:#fff; box-shadow:var(--shadow-md); position:relative; overflow:hidden;
+  }
+  .site-header::after{content:"🐠"; position:absolute; right:24px; top:18px; font-size:54px; opacity:0.12;}
+  .site-header .shi{flex:1; min-width:0;}
+  .site-header h2{margin:0 0 4px; font-size:22px;}
+  .site-header .coords{font-size:12px; color:#BFE3E0;}
+  .site-header .tags{margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;}
+
+  .gauge-wrap{width:150px; flex-shrink:0; text-align:center;}
+  .gauge{width:130px; height:70px; position:relative; margin:0 auto;}
+  .gauge svg{width:100%; height:100%;}
+  .gauge .g-value{position:absolute; bottom:0; left:0; right:0; text-align:center; font-size:22px; font-weight:700;}
+  .gauge .g-label{font-size:10px; color:#BFE3E0; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px;}
+
+  .hyp-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;}
+  .hyp-card{background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:15px; box-shadow:var(--shadow-sm);}
+  .hyp-card .hyp-top{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+  .hyp-card .hyp-icon{font-size:19px;}
+  .hyp-card .hyp-title{font-weight:700; font-size:13px; flex:1;}
+  .conf-track{height:7px; border-radius:5px; background:var(--gridline); overflow:hidden; margin:8px 0 4px;}
+  .conf-fill{height:100%; border-radius:5px;}
+  .conf-fill.strong{background:var(--status-critical);}
+  .conf-fill.mid{background:var(--status-serious);}
+  .conf-fill.low{background:var(--status-good);}
+  .conf-num{font-size:11px; font-weight:700; color:var(--text-secondary);}
+  .hyp-evidence{list-style:none; margin:10px 0 0; padding:0; font-size:11.3px; color:var(--text-secondary); line-height:1.5;}
+  .hyp-evidence li{padding-left:14px; position:relative; margin-bottom:4px;}
+  .hyp-evidence li::before{content:"•"; position:absolute; left:2px; color:var(--ocean-mid);}
+
+  .coord-log{display:flex; flex-direction:column; gap:0;}
+  .log-item{display:flex; gap:12px; padding:11px 0; border-bottom:1px dashed var(--border);}
+  .log-item:last-child{border-bottom:none;}
+  .log-dot{width:9px; height:9px; border-radius:50%; background:var(--ocean-mid); margin-top:5px; flex-shrink:0; box-shadow:0 0 0 4px var(--foam);}
+  .log-dot.flag{background:var(--status-warning);}
+  .log-text{font-size:12.5px; color:var(--text-primary); line-height:1.5;}
+  .log-time{font-size:10.5px; color:var(--text-muted); margin-top:2px;}
+  .uncertainty-box{
+    margin-top:10px; background:#FFF7E8; border:1px solid #F3D9A0; border-radius:12px; padding:12px 14px;
+    font-size:12px; color:#7A5B00; display:flex; gap:10px; align-items:flex-start;
+  }
+
+  .intervention-item{
+    display:flex; gap:12px; padding:13px 0; border-bottom:1px solid var(--border);
+  }
+  .intervention-item:last-child{border-bottom:none;}
+  .intervention-num{width:24px; height:24px; border-radius:7px; background:var(--foam); color:var(--ocean-deep-2); font-weight:700; font-size:11.5px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .intervention-body h4{margin:0 0 3px; font-size:13px; font-weight:700;}
+  .intervention-body p{margin:0 0 6px; font-size:11.8px; color:var(--text-secondary); line-height:1.5;}
+  .source-chip{font-size:10px; color:var(--ocean-deep-2); background:var(--foam); padding:2px 8px; border-radius:6px; font-weight:600;}
+
+  /* ================= OPTIMIZER VIEW ================= */
+  .inv-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px;}
+  .inv-tile{background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:15px 16px; box-shadow:var(--shadow-sm);}
+  .inv-tile .inv-top{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--text-secondary); margin-bottom:8px;}
+  .inv-num{font-size:20px; font-weight:700;}
+  .inv-num span{font-size:12px; color:var(--text-muted); font-weight:600;}
+  .inv-track{height:8px; border-radius:5px; background:var(--gridline); margin-top:9px; overflow:hidden;}
+  .inv-fill{height:100%; border-radius:5px;}
+
+  .plan-row{
+    display:grid; grid-template-columns:28px 1.4fr 0.8fr 0.9fr 0.9fr 0.9fr 1fr; gap:10px; align-items:center;
+    padding:12px 6px; border-bottom:1px solid var(--border); font-size:12.5px;
+  }
+  .plan-row.head{font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-muted); font-weight:700; border-bottom:1px solid var(--border-strong);}
+  .plan-row .site-cell{font-weight:700;}
+  .plan-row .site-cell .region{display:block; font-weight:500; font-size:10.5px; color:var(--text-muted);}
+  .value-bar-track{height:8px; border-radius:5px; background:var(--gridline); overflow:hidden;}
+  .value-bar-fill{height:100%; border-radius:5px; background:linear-gradient(90deg, var(--seafoam), var(--ocean-mid));}
+
+  .bar-chart{display:flex; flex-direction:column; gap:10px;}
+  .bar-row{display:grid; grid-template-columns:120px 1fr 46px; gap:10px; align-items:center; font-size:11.8px;}
+  .bar-row .b-label{color:var(--text-secondary); font-weight:600; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .bar-track{height:14px; border-radius:5px; background:var(--gridline); overflow:hidden; position:relative;}
+  .bar-fill{height:100%; border-radius:4px 5px 5px 4px;}
+  .bar-row .b-val{font-weight:700; font-variant-numeric:tabular-nums;}
+
+  .donut-wrap{display:flex; align-items:center; gap:20px;}
+  .donut-legend{flex:1; display:flex; flex-direction:column; gap:9px;}
+  .donut-legend .dl-row{display:flex; align-items:center; gap:8px; font-size:12px;}
+  .donut-legend .dl-swatch{width:11px; height:11px; border-radius:3px; flex-shrink:0;}
+  .donut-legend .dl-name{flex:1; color:var(--text-secondary); font-weight:600;}
+  .donut-legend .dl-val{font-weight:700;}
+
+  .constraint-row{margin-bottom:16px;}
+  .constraint-row .c-top{display:flex; justify-content:space-between; font-size:12px; font-weight:600; margin-bottom:6px;}
+  .constraint-row .c-top span.val{color:var(--ocean-deep-2); font-weight:700;}
+  input[type=range]{width:100%; accent-color:var(--ocean-mid); height:4px;}
+
+  .callout{
+    display:flex; gap:12px; align-items:flex-start; background:var(--foam); border:1px solid rgba(17,138,178,0.18);
+    border-radius:14px; padding:13px 15px; font-size:12px; color:var(--ocean-deep-2); line-height:1.55;
+  }
+
+  /* ================= INBOX VIEW ================= */
+  .inbox-layout{display:grid; grid-template-columns:360px 1fr; gap:20px;}
+  .report-list{display:flex; flex-direction:column; gap:8px; max-height:680px; overflow:auto; padding-right:4px;}
+  .report-item{
+    background:#fff; border:1px solid var(--border); border-radius:13px; padding:12px 13px; cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .report-item:hover{border-color:var(--ocean-mid);}
+  .report-item.active{border-color:var(--ocean-mid); background:var(--foam);}
+  .report-item .r-top{display:flex; align-items:center; gap:7px; margin-bottom:5px;}
+  .report-item .r-source{font-size:14px;}
+  .report-item .r-who{font-weight:700; font-size:12px; flex:1;}
+  .report-item .r-time{font-size:10px; color:var(--text-muted);}
+  .report-item .r-snip{font-size:11.5px; color:var(--text-secondary); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .status-pill{font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:6px; margin-top:6px; display:inline-block;}
+  .status-pill.auto{background:rgba(12,163,12,0.12); color:#0a7a0a;}
+  .status-pill.review{background:rgba(201,133,0,0.14); color:#8a5c00;}
+
+  .extract-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;}
+  .field{background:var(--sand); border:1px solid var(--border); border-radius:11px; padding:10px 12px;}
+  .field .f-label{font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-muted); font-weight:700; margin-bottom:4px;}
+  .field .f-val{font-size:13px; font-weight:600;}
+
+  .route-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;}
+  .route-pill{display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--border-strong); border-radius:999px; padding:6px 12px; font-size:11.5px; font-weight:600;}
+  .route-pill .arrow{color:var(--text-muted);}
+
+  table.mini-table{width:100%; border-collapse:collapse; font-size:12px;}
+  table.mini-table th{text-align:left; font-size:10.5px; text-transform:uppercase; color:var(--text-muted); font-weight:700; padding:8px 10px; border-bottom:1px solid var(--border-strong);}
+  table.mini-table td{padding:9px 10px; border-bottom:1px solid var(--border);}
+
+  .raw-quote{background:var(--sand); border-left:3px solid var(--coral); border-radius:8px; padding:12px 14px; font-size:12.5px; color:var(--text-secondary); font-style:italic; line-height:1.55; margin-bottom:16px;}
+
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border-strong); border-radius:8px;}
+
+  @media (max-width: 1180px){
+    .hyp-grid{grid-template-columns:repeat(2,1fr);}
+    .cols.split-70-30, .cols.split-60-40{grid-template-columns:1fr;}
+    .inbox-layout{grid-template-columns:1fr;}
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body class="viz-root" data-palette="#2a78d6,#eb6834,#1baf7a,#eda100">
+
+<div class="app-shell">
+  <!-- ============= SIDEBAR ============= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">🪸</div>
+      <div class="brand-text">
+        <div class="name">ReefCommand</div>
+        <div class="tag">AI Reef Ops</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section-label">Monitor</div>
+      <button class="nav-item active" data-view="view-map"><span class="ic">🗺️</span> Command Map</button>
+      <button class="nav-item" data-view="view-inbox"><span class="ic">📥</span> Report Inbox</button>
+      <div class="nav-section-label">Decide</div>
+      <button class="nav-item" data-view="view-site"><span class="ic">🧭</span> Site Intelligence</button>
+      <button class="nav-item" data-view="view-optimizer"><span class="ic">🛥️</span> Resource Optimizer</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="resource-mini">This week's resources</div>
+      <div class="mini-bar-row"><span class="lbl">Boats</span><div class="mini-bar-track"><div class="mini-bar-fill" style="width:62%"></div></div></div>
+      <div class="mini-bar-row"><span class="lbl">Teams</span><div class="mini-bar-track"><div class="mini-bar-fill" style="width:40%"></div></div></div>
+      <div class="mini-bar-row"><span class="lbl">Budget</span><div class="mini-bar-track"><div class="mini-bar-fill" style="width:78%"></div></div></div>
+      <div class="user-chip">
+        <div class="avatar">KL</div>
+        <div>
+          <div class="u-name">Kai Lindgren</div>
+          <div class="u-role">Reef Manager · Maui Nui</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============= MAIN ============= -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-titlewrap">
+        <h1 id="topbar-title">Command Map</h1>
+        <div class="sub" id="topbar-sub">Live view of reef health across Maui Nui, updated 6 minutes ago</div>
+      </div>
+      <div class="ask-bar">🌊 <span>Ask ReefCommand — “which reefs need us this week?”</span><button class="go">Ask</button></div>
+      <button class="icon-btn">🔔<span class="dot"></span></button>
+      <button class="icon-btn">⚙️</button>
+    </header>
+
+    <main>
+
+      <!-- ================= VIEW: COMMAND MAP ================= -->
+      <section class="view active" id="view-map">
+
+        <div class="stat-row">
+          <div class="stat-tile">
+            <div class="stat-label">🪸 Sites monitored</div>
+            <div class="stat-value">18</div>
+            <div class="stat-delta flat">across 4 islands</div>
+            <div class="wave-deco">🌊</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">🌡️ At watch or worse</div>
+            <div class="stat-value">6</div>
+            <div class="stat-delta up">▲ 2 vs last week</div>
+            <div class="wave-deco">🌡️</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">🤿 New reports (24h)</div>
+            <div class="stat-value">23</div>
+            <div class="stat-delta flat">94% auto-structured</div>
+            <div class="wave-deco">🤿</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">🛥️ Deployments this week</div>
+            <div class="stat-value">4 <span style="font-size:13px;color:var(--text-muted);font-weight:600;">/ 7 boats</span></div>
+            <div class="stat-delta down">on plan</div>
+            <div class="wave-deco">🛥️</div>
+          </div>
+        </div>
+
+        <div class="cols split-70-30">
+          <div class="map-wrap">
+            <div class="map-ocean"></div>
+            <div class="island i1"></div>
+            <div class="island i2"></div>
+            <div class="island i3"></div>
+            <div class="island i4"></div>
+
+            <div class="thermal-layer" id="thermal-layer">
+              <div class="thermal-blob" style="left:2%; top:4%; width:290px; height:250px; background:radial-gradient(circle, rgba(208,59,59,0.85), rgba(208,59,59,0.25) 55%, transparent 75%);"></div>
+              <div class="thermal-blob" style="left:56%; top:-4%; width:250px; height:220px; background:radial-gradient(circle, rgba(236,131,90,0.75), rgba(236,131,90,0.2) 55%, transparent 75%);"></div>
+              <div class="thermal-blob" style="left:62%; top:46%; width:220px; height:200px; background:radial-gradient(circle, rgba(236,131,90,0.7), rgba(236,131,90,0.18) 55%, transparent 75%);"></div>
+              <div class="thermal-blob" style="left:26%; top:40%; width:180px; height:170px; background:radial-gradient(circle, rgba(201,133,0,0.6), rgba(201,133,0,0.15) 55%, transparent 75%);"></div>
+            </div>
+
+            <div class="diver-layer" id="diver-layer">
+              <div class="diver-pin" style="left:15%; top:24%;">🤿<span class="n" style="position:absolute;bottom:-6px;right:-6px;background:var(--coral);color:#fff;border-radius:50%;width:14px;height:14px;font-size:8px;display:flex;align-items:center;justify-content:center;">14</span></div>
+              <div class="diver-pin" style="left:69%; top:22%;">🤿<span class="n" style="position:absolute;bottom:-6px;right:-6px;background:var(--coral);color:#fff;border-radius:50%;width:14px;height:14px;font-size:8px;display:flex;align-items:center;justify-content:center;">7</span></div>
+              <div class="diver-pin" style="left:44%; top:58%;">🤿<span class="n" style="position:absolute;bottom:-6px;right:-6px;background:var(--coral);color:#fff;border-radius:50%;width:14px;height:14px;font-size:8px;display:flex;align-items:center;justify-content:center;">9</span></div>
+              <div class="diver-pin" style="left:79%; top:66%;">🤿<span class="n" style="position:absolute;bottom:-6px;right:-6px;background:var(--coral);color:#fff;border-radius:50%;width:14px;height:14px;font-size:8px;display:flex;align-items:center;justify-content:center;">4</span></div>
+            </div>
+
+            <!-- site pins -->
+            <div class="site-pin critical" style="left:14%; top:30%;" onclick="openSite('molokini')">
+              <div class="pulse"></div><div class="pin-dot"></div>
+              <div class="pin-label">Molokini Crater · Critical</div>
+            </div>
+            <div class="site-pin serious" style="left:22%; top:38%;" onclick="openSite('wailea')">
+              <div class="pulse"></div><div class="pin-dot"></div>
+              <div class="pin-label">Wailea Reef · Serious</div>
+            </div>
+            <div class="site-pin warning" style="left:9%; top:22%;" onclick="openSite('honolua')">
+              <div class="pin-dot"></div>
+              <div class="pin-label">Honolua Bay · Watch</div>
+            </div>
+            <div class="site-pin good" style="left:82%; top:34%;" onclick="openSite('kealakekua')">
+              <div class="pin-dot"></div>
+              <div class="pin-label">Kealakekua Bay · Healthy</div>
+            </div>
+            <div class="site-pin warning" style="left:44%; top:65%;" onclick="openSite('hanauma')">
+              <div class="pin-dot"></div>
+              <div class="pin-label">Hanauma Bay · Watch</div>
+            </div>
+            <div class="site-pin serious" style="left:79%; top:73%;" onclick="openSite('puako')">
+              <div class="pulse"></div><div class="pin-dot"></div>
+              <div class="pin-label">Puakō Reef · Serious</div>
+            </div>
+
+            <div class="map-title-card">
+              <h2>Maui Nui Reef Network</h2>
+              <div class="sub">🛰️ NOAA Coral Reef Watch · updated 6h ago</div>
+            </div>
+
+            <div class="layer-toggles">
+              <div class="layer-toggle" onclick="toggleLayer('thermal-layer', this)">🛰️ Satellite thermal stress <div class="switch on"></div></div>
+              <div class="layer-toggle" onclick="toggleLayer('diver-layer', this)">🤿 Diver reports <div class="switch on"></div></div>
+            </div>
+
+            <div class="map-legend">
+              <div class="lg-title">Reef status</div>
+              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-good)"></span> Healthy — no action needed</div>
+              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-warning)"></span> Watch — monitor closely</div>
+              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-serious)"></span> Serious — response advised</div>
+              <div class="lg-row"><span class="lg-swatch" style="background:var(--status-critical)"></span> Critical — act this week</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h3>🎯 Priority Action Queue</h3>
+              <span class="hint">by coordinator</span>
+            </div>
+            <div class="panel-body">
+              <div class="queue-card r1" onclick="openSite('molokini')">
+                <div class="queue-rank">1</div>
+                <div class="queue-body">
+                  <div class="queue-top"><span class="site-name">Molokini Crater</span><span class="badge critical"><span class="sw"></span>Critical</span></div>
+                  <div class="queue-meta">DHW 9.2 °C-weeks · 14 new reports · Maui</div>
+                  <div class="queue-insight"><b>Coordinator:</b> High-confidence thermal stress, consistent across satellite + 11 diver reports.</div>
+                </div>
+              </div>
+              <div class="queue-card" onclick="openSite('puako')">
+                <div class="queue-rank">2</div>
+                <div class="queue-body">
+                  <div class="queue-top"><span class="site-name">Puakō Reef</span><span class="badge serious"><span class="sw"></span>Serious</span></div>
+                  <div class="queue-meta">DHW 5.5 · 4 new reports · Big Island</div>
+                  <div class="queue-insight"><b>Coordinator:</b> Physical damage supported — anchor scarring reported near mooring buoy 3.</div>
+                </div>
+              </div>
+              <div class="queue-card" onclick="openSite('wailea')">
+                <div class="queue-rank">3</div>
+                <div class="queue-body">
+                  <div class="queue-top"><span class="site-name">Wailea Reef</span><span class="badge serious"><span class="sw"></span>Serious</span></div>
+                  <div class="queue-meta">DHW 6.1 · 7 new reports · Maui</div>
+                  <div class="queue-insight"><b>Coordinator:</b> Evidence conflicting between disease and thermal — requesting close-up tissue photos.</div>
+                </div>
+              </div>
+              <div class="queue-card" onclick="openSite('hanauma')">
+                <div class="queue-rank">4</div>
+                <div class="queue-body">
+                  <div class="queue-top"><span class="site-name">Hanauma Bay</span><span class="badge warning"><span class="sw"></span>Watch</span></div>
+                  <div class="queue-meta">DHW 2.9 · 9 new reports · Oahu</div>
+                  <div class="queue-insight"><b>Coordinator:</b> Runoff signature supported — turbidity spike after Sunday rainfall.</div>
+                </div>
+              </div>
+              <div class="queue-card" onclick="openSite('honolua')">
+                <div class="queue-rank">5</div>
+                <div class="queue-body">
+                  <div class="queue-top"><span class="site-name">Honolua Bay</span><span class="badge warning"><span class="sw"></span>Watch</span></div>
+                  <div class="queue-meta">DHW 3.4 · 5 new reports · Maui</div>
+                  <div class="queue-insight"><b>Coordinator:</b> Early thermal signal only — below action threshold, continue monitoring.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW: SITE INTELLIGENCE ================= -->
+      <section class="view" id="view-site">
+
+        <div class="site-header">
+          <div class="shi">
+            <div class="chip" style="background:rgba(255,255,255,0.15); color:#fff; border-color:rgba(255,255,255,0.3);">🪸 Site Intelligence</div>
+            <h2 id="s-name">Molokini Crater</h2>
+            <div class="coords" id="s-coords">20.6312° N, 156.4967° W · Maui, Hawai‘i · last surveyed 6h ago</div>
+            <div class="tags" id="s-tags">
+              <span class="badge critical"><span class="sw"></span>Critical</span>
+              <span class="chip">🌡️ DHW 9.2</span>
+              <span class="chip">🤿 14 reports (7d)</span>
+              <span class="chip">📷 6 photos attached</span>
+            </div>
+          </div>
+          <div class="gauge-wrap">
+            <div class="gauge">
+              <svg viewBox="0 0 130 70">
+                <path d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="10" stroke-linecap="round"/>
+                <path id="gauge-arc" d="M10,65 A55,55 0 0,1 120,65" fill="none" stroke="var(--status-critical)" stroke-width="10" stroke-linecap="round" stroke-dasharray="150" stroke-dashoffset="15"/>
+              </svg>
+              <div class="g-value" id="s-dhw" style="color:#fff;">9.2</div>
+            </div>
+            <div class="g-label">Degree Heating Weeks</div>
+          </div>
+          <button class="btn btn-coral" onclick="switchView('view-optimizer')">🛥️ Add to Resource Plan</button>
+        </div>
+
+        <div class="panel-head" style="border:none; padding:0 0 10px;"><h3>🧠 Hypothesis Investigation — 4 parallel modules</h3><span class="hint">run by ingestion + reasoning agents</span></div>
+        <div class="hyp-grid">
+          <div class="hyp-card">
+            <div class="hyp-top"><span class="hyp-icon">🌡️</span><span class="hyp-title">Thermal Stress</span><span class="badge critical"><span class="sw"></span>Supported</span></div>
+            <div class="conf-track"><div class="conf-fill strong" style="width:91%"></div></div>
+            <div class="conf-num">91% confidence</div>
+            <ul class="hyp-evidence">
+              <li>NOAA DHW at 9.2 °C-weeks, above Alert Level 2 threshold</li>
+              <li>11 of 14 reports describe pale/white coral tissue</li>
+              <li>Sea surface temp +2.1°C above monthly max for 18 days</li>
+            </ul>
+          </div>
+          <div class="hyp-card">
+            <div class="hyp-top"><span class="hyp-icon">🦠</span><span class="hyp-title">Disease</span><span class="badge good"><span class="sw"></span>Unsupported</span></div>
+            <div class="conf-track"><div class="conf-fill low" style="width:12%"></div></div>
+            <div class="conf-num">12% confidence</div>
+            <ul class="hyp-evidence">
+              <li>No lesion or tissue-loss patterns reported</li>
+              <li>Bleaching pattern is uniform, not patchy</li>
+              <li>No unusual mortality reported by divers</li>
+            </ul>
+          </div>
+          <div class="hyp-card">
+            <div class="hyp-top"><span class="hyp-icon">💧</span><span class="hyp-title">Runoff / Pollution</span><span class="badge good"><span class="sw"></span>Unsupported</span></div>
+            <div class="conf-track"><div class="conf-fill low" style="width:8%"></div></div>
+            <div class="conf-num">8% confidence</div>
+            <ul class="hyp-evidence">
+              <li>Water clarity reported as good by 9 divers</li>
+              <li>No recent heavy rainfall near site</li>
+              <li>No nearby runoff source identified</li>
+            </ul>
+          </div>
+          <div class="hyp-card">
+            <div class="hyp-top"><span class="hyp-icon">⚓</span><span class="hyp-title">Physical Damage</span><span class="badge warning"><span class="sw"></span>Investigating</span></div>
+            <div class="conf-track"><div class="conf-fill mid" style="width:24%"></div></div>
+            <div class="conf-num">24% confidence</div>
+            <ul class="hyp-evidence">
+              <li>1 report mentions minor fin-kick contact, isolated</li>
+              <li>No mooring or anchor damage reported</li>
+              <li>Not consistent as primary cause</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="cols split-60-40">
+          <div class="panel">
+            <div class="panel-head"><h3>🤖 Coordinator Agent — reasoning trace</h3><span class="hint">last run 6 min ago</span></div>
+            <div class="panel-body">
+              <div class="coord-log">
+                <div class="log-item"><div class="log-dot"></div><div><div class="log-text">Ingestion LLM parsed <b>3 new diver reports</b> into structured observations (tissue color, depth, visibility).</div><div class="log-time">08:14 AM</div></div></div>
+                <div class="log-item"><div class="log-dot"></div><div><div class="log-text">Four hypothesis modules evaluated evidence in parallel against NOAA DHW feed + 14 field reports.</div><div class="log-time">08:15 AM</div></div></div>
+                <div class="log-item"><div class="log-dot"></div><div><div class="log-text">Thermal stress hypothesis cleared confidence threshold (91%); disease, runoff ruled out.</div><div class="log-time">08:15 AM</div></div></div>
+                <div class="log-item"><div class="log-dot"></div><div><div class="log-text">Matched cause against source-grounded intervention knowledge base — 3 candidate actions retrieved.</div><div class="log-time">08:16 AM</div></div></div>
+                <div class="log-item"><div class="log-dot flag"></div><div><div class="log-text">Physical damage module below confidence threshold — flagged for optional follow-up, not blocking.</div><div class="log-time">08:16 AM</div></div></div>
+              </div>
+              <div class="uncertainty-box">⚠️ <div><b>No blocking uncertainty.</b> Confidence is high enough to recommend action. The coordinator only pauses for more field data when hypotheses conflict — see <a class="linklike" onclick="openSite('wailea')">Wailea Reef</a> for an example.</div></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>📖 Recommended Interventions</h3></div>
+            <div class="panel-body">
+              <div class="intervention-item">
+                <div class="intervention-num">1</div>
+                <div class="intervention-body">
+                  <h4>Deploy temporary shade structures over highest-value colonies</h4>
+                  <p>Reduces irradiance stress during peak thermal window; used successfully in prior DHW &gt; 8 events.</p>
+                  <span class="source-chip">NOAA CRW Intervention Guide §4.2</span>
+                </div>
+              </div>
+              <div class="intervention-item">
+                <div class="intervention-num">2</div>
+                <div class="intervention-body">
+                  <h4>Increase monitoring frequency to every 48h</h4>
+                  <p>Tracks bleaching progression to catch early mortality and re-route resources if it worsens.</p>
+                  <span class="source-chip">Reef Resilience Network Protocol</span>
+                </div>
+              </div>
+              <div class="intervention-item">
+                <div class="intervention-num">3</div>
+                <div class="intervention-body">
+                  <h4>Coral fragment rescue for high-value / rare genotypes</h4>
+                  <p>Prioritize genotype bank candidates identified in prior surveys for land-based nursery holding.</p>
+                  <span class="source-chip">DAR Coral Rescue SOP v3</span>
+                </div>
+              </div>
+              <div class="callout" style="margin-top:6px;">🔒 Interventions are pulled from a source-grounded knowledge base mapped to supported causes only — the agent cannot invent a treatment.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW: RESOURCE OPTIMIZER ================= -->
+      <section class="view" id="view-optimizer">
+
+        <div class="inv-grid">
+          <div class="inv-tile">
+            <div class="inv-top">🛥️ Boats available</div>
+            <div class="inv-num" id="opt-boats-num">4 <span>/ 7</span></div>
+            <div class="inv-track"><div class="inv-fill" style="width:57%; background:var(--series-1);"></div></div>
+          </div>
+          <div class="inv-tile">
+            <div class="inv-top">🧑‍🤝‍🧑 Dive teams</div>
+            <div class="inv-num" id="opt-teams-num">3 <span>/ 5</span></div>
+            <div class="inv-track"><div class="inv-fill" style="width:60%; background:var(--series-4);"></div></div>
+          </div>
+          <div class="inv-tile">
+            <div class="inv-top">🧰 Equipment kits</div>
+            <div class="inv-num">9 <span>/ 12</span></div>
+            <div class="inv-track"><div class="inv-fill" style="width:75%; background:var(--series-3);"></div></div>
+          </div>
+          <div class="inv-tile">
+            <div class="inv-top">💰 Budget remaining</div>
+            <div class="inv-num" id="opt-budget-num">$18.4k <span>/ $32k</span></div>
+            <div class="inv-track"><div class="inv-fill" style="width:57%; background:var(--series-2);"></div></div>
+          </div>
+        </div>
+
+        <div class="callout" style="margin-bottom:20px;">⚙️ <div>The coordinator has already decided <b>which</b> sites need intervention and <b>why</b>. This deterministic optimizer decides <b>who goes where</b> — assigning your real boats, teams, equipment and budget to maximize expected conservation value under today's constraints.</div>
+        </div>
+
+        <div class="cols split-70-30">
+          <div class="panel">
+            <div class="panel-head"><h3>📋 This Week's Allocation Plan</h3><span class="hint" id="plan-hint">top 3 of 6 flagged sites, ranked by expected value</span></div>
+            <div class="panel-body">
+              <div class="plan-row head">
+                <span>#</span><span>Site</span><span>Cause</span><span>Boat / Team</span><span>Equipment</span><span>Budget</span><span>Expected value</span>
+              </div>
+              <div class="plan-row" id="plan-row-1">
+                <span class="queue-rank" style="width:22px;height:22px;font-size:11px;">1</span>
+                <span class="site-cell">Molokini Crater<span class="region">Maui · Critical</span></span>
+                <span class="chip">🌡️ Thermal</span>
+                <span>Boat 2 · Team Kai</span>
+                <span>Shade kit ×3</span>
+                <span>$6,200</span>
+                <span><div class="value-bar-track"><div class="value-bar-fill" style="width:96%"></div></div></span>
+              </div>
+              <div class="plan-row" id="plan-row-2">
+                <span class="queue-rank" style="width:22px;height:22px;font-size:11px;">2</span>
+                <span class="site-cell">Puakō Reef<span class="region">Big Island · Serious</span></span>
+                <span class="chip">⚓ Physical</span>
+                <span>Boat 1 · Team Noa</span>
+                <span>Mooring repair kit</span>
+                <span>$4,100</span>
+                <span><div class="value-bar-track"><div class="value-bar-fill" style="width:81%"></div></div></span>
+              </div>
+              <div class="plan-row" id="plan-row-3">
+                <span class="queue-rank" style="width:22px;height:22px;font-size:11px;">3</span>
+                <span class="site-cell">Hanauma Bay<span class="region">Oahu · Watch</span></span>
+                <span class="chip">💧 Runoff</span>
+                <span>Boat 3 · Team Lea</span>
+                <span>Turbidity sampler</span>
+                <span>$2,800</span>
+                <span><div class="value-bar-track"><div class="value-bar-fill" style="width:64%"></div></div></span>
+              </div>
+              <div class="plan-row" id="plan-row-4" style="opacity:0.4;">
+                <span class="queue-rank" style="width:22px;height:22px;font-size:11px;">4</span>
+                <span class="site-cell">Wailea Reef<span class="region">Maui · Serious</span></span>
+                <span class="chip">❓ Pending data</span>
+                <span>—</span>
+                <span>—</span>
+                <span>—</span>
+                <span><div class="value-bar-track"><div class="value-bar-fill" style="width:52%"></div></div></span>
+              </div>
+              <div class="plan-row" id="plan-row-5" style="opacity:0.4;">
+                <span class="queue-rank" style="width:22px;height:22px;font-size:11px;">5</span>
+                <span class="site-cell">Honolua Bay<span class="region">Maui · Watch</span></span>
+                <span class="chip">🌡️ Thermal (early)</span>
+                <span>—</span>
+                <span>—</span>
+                <span>—</span>
+                <span><div class="value-bar-track"><div class="value-bar-fill" style="width:38%"></div></div></span>
+              </div>
+              <div class="plan-row" id="plan-row-6" style="opacity:0.4; border-bottom:none;">
+                <span class="queue-rank" style="width:22px;height:22px;font-size:11px;">6</span>
+                <span class="site-cell">Kealakekua Bay<span class="region">Big Island · Healthy</span></span>
+                <span class="chip">✅ Monitoring only</span>
+                <span>—</span>
+                <span>—</span>
+                <span>—</span>
+                <span><div class="value-bar-track"><div class="value-bar-fill" style="width:12%"></div></div></span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:20px;">
+            <div class="panel">
+              <div class="panel-head"><h3>🎚️ Constraints</h3></div>
+              <div class="panel-body">
+                <div class="constraint-row">
+                  <div class="c-top"><span>Boats available today</span><span class="val" id="c-boats-val">4</span></div>
+                  <input type="range" min="1" max="7" value="4" id="c-boats" oninput="updatePlan()">
+                </div>
+                <div class="constraint-row">
+                  <div class="c-top"><span>Dive teams available</span><span class="val" id="c-teams-val">3</span></div>
+                  <input type="range" min="1" max="5" value="3" id="c-teams" oninput="updatePlan()">
+                </div>
+                <div class="constraint-row">
+                  <div class="c-top"><span>Budget cap (thousand $)</span><span class="val" id="c-budget-val">18</span></div>
+                  <input type="range" min="4" max="32" value="18" id="c-budget" oninput="updatePlan()">
+                </div>
+                <div class="constraint-row" style="margin-bottom:0;">
+                  <div class="c-top"><span>Max travel time (hrs)</span><span class="val" id="c-travel-val">6</span></div>
+                  <input type="range" min="1" max="10" value="6" id="c-travel" oninput="updatePlan()">
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><h3>📊 Allocation by category</h3></div>
+              <div class="panel-body">
+                <div class="donut-wrap">
+                  <svg width="120" height="120" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--gridline)" stroke-width="4"></circle>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--series-1)" stroke-width="4" stroke-dasharray="38 62" stroke-dashoffset="25" stroke-linecap="round"></circle>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--series-2)" stroke-width="4" stroke-dasharray="27 73" stroke-dashoffset="-13" stroke-linecap="round"></circle>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--series-3)" stroke-width="4" stroke-dasharray="20 80" stroke-dashoffset="-40" stroke-linecap="round"></circle>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--series-4)" stroke-width="4" stroke-dasharray="15 85" stroke-dashoffset="-60" stroke-linecap="round"></circle>
+                  </svg>
+                  <div class="donut-legend">
+                    <div class="dl-row"><span class="dl-swatch" style="background:var(--series-1)"></span><span class="dl-name">Boats</span><span class="dl-val">38%</span></div>
+                    <div class="dl-row"><span class="dl-swatch" style="background:var(--series-2)"></span><span class="dl-name">Budget</span><span class="dl-val">27%</span></div>
+                    <div class="dl-row"><span class="dl-swatch" style="background:var(--series-3)"></span><span class="dl-name">Equipment</span><span class="dl-val">20%</span></div>
+                    <div class="dl-row"><span class="dl-swatch" style="background:var(--series-4)"></span><span class="dl-name">Dive teams</span><span class="dl-val">15%</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW: REPORT INBOX ================= -->
+      <section class="view" id="view-inbox">
+
+        <div class="stat-row" style="grid-template-columns:repeat(3,1fr);">
+          <div class="stat-tile"><div class="stat-label">📥 Reports today</div><div class="stat-value">127</div><div class="stat-delta flat">across app, email, SMS</div></div>
+          <div class="stat-tile"><div class="stat-label">🤖 Auto-structured</div><div class="stat-value">94%</div><div class="stat-delta down">by ingestion LLM</div></div>
+          <div class="stat-tile"><div class="stat-label">🚩 Needs manager review</div><div class="stat-value">6%</div><div class="stat-delta up">low confidence extraction</div></div>
+        </div>
+
+        <div class="inbox-layout">
+          <div class="panel">
+            <div class="panel-head"><h3>📨 Incoming reports</h3></div>
+            <div class="panel-body">
+              <div class="report-list">
+                <div class="report-item active" onclick="selectReport(this,'molokini')">
+                  <div class="r-top"><span class="r-source">📱</span><span class="r-who">Mia T. — dive shop app</span><span class="r-time">7 min ago</span></div>
+                  <div class="r-snip">"went down to 40ft at molokini backwall today, so much of the coral looks totally white/bleached compared to last month, way more than usual :("</div>
+                  <span class="status-pill auto">Auto-structured</span>
+                </div>
+                <div class="report-item" onclick="selectReport(this,'puako')">
+                  <div class="r-top"><span class="r-source">✉️</span><span class="r-who">James O. — email</span><span class="r-time">41 min ago</span></div>
+                  <div class="r-snip">"Hey, saw some scraping on the reef near mooring buoy 3 at Puako, looked like a boat anchor dragged across it. Sending photos separately."</div>
+                  <span class="status-pill auto">Auto-structured</span>
+                </div>
+                <div class="report-item" onclick="selectReport(this,'wailea')">
+                  <div class="r-top"><span class="r-source">💬</span><span class="r-who">Reef Watch SMS line</span><span class="r-time">1h ago</span></div>
+                  <div class="r-snip">"wailea reef patchy pale spots, some colonies fine some not, water a bit murky too not sure why"</div>
+                  <span class="status-pill review">Flagged for review</span>
+                </div>
+                <div class="report-item" onclick="selectReport(this,'hanauma')">
+                  <div class="r-top"><span class="r-source">🌐</span><span class="r-who">Public web form</span><span class="r-time">2h ago</span></div>
+                  <div class="r-snip">"Water at Hanauma was really cloudy today after the rain, could see algae buildup on some coral heads near the entrance."</div>
+                  <span class="status-pill auto">Auto-structured</span>
+                </div>
+                <div class="report-item" onclick="selectReport(this,'honolua')">
+                  <div class="r-top"><span class="r-source">📱</span><span class="r-who">Alex P. — dive shop app</span><span class="r-time">3h ago</span></div>
+                  <div class="r-snip">"Honolua looking mostly ok, maybe very slight paling on the shallow table corals but nothing dramatic yet."</div>
+                  <span class="status-pill auto">Auto-structured</span>
+                </div>
+                <div class="report-item" onclick="selectReport(this,'kealakekua')">
+                  <div class="r-top"><span class="r-source">📱</span><span class="r-who">Local guide co-op</span><span class="r-time">5h ago</span></div>
+                  <div class="r-snip">"Kealakekua looks great this week, good color across the whole bay, visibility 80ft+."</div>
+                  <span class="status-pill auto">Auto-structured</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3 id="extract-title">🧬 Structured by Ingestion LLM</h3><span class="hint">raw text → observation</span></div>
+            <div class="panel-body">
+              <div class="raw-quote" id="extract-raw">"went down to 40ft at molokini backwall today, so much of the coral looks totally white/bleached compared to last month, way more than usual :("</div>
+              <div class="extract-grid" id="extract-fields">
+                <div class="field"><div class="f-label">Site match</div><div class="f-val">Molokini Crater (backwall)</div></div>
+                <div class="field"><div class="f-label">Depth</div><div class="f-val">~40 ft</div></div>
+                <div class="field"><div class="f-label">Observed condition</div><div class="f-val">Extensive whitening / bleaching</div></div>
+                <div class="field"><div class="f-label">Severity vs. baseline</div><div class="f-val">Much worse than 30 days prior</div></div>
+                <div class="field"><div class="f-label">Extraction confidence</div><div class="f-val">96%</div></div>
+                <div class="field"><div class="f-label">Photos attached</div><div class="f-val">2 (auto-linked to site)</div></div>
+              </div>
+              <div class="panel-head" style="padding:0 0 8px; border:none;"><h3 style="font-size:13px;">Routed to hypothesis modules</h3></div>
+              <div class="route-row" id="extract-routes">
+                <div class="route-pill">🌡️ Thermal Stress <span class="arrow">↑ high weight</span></div>
+                <div class="route-pill">🦠 Disease <span class="arrow">↓ low weight</span></div>
+                <div class="route-pill">💧 Runoff <span class="arrow">↓ low weight</span></div>
+                <div class="route-pill">⚓ Physical <span class="arrow">↓ low weight</span></div>
+              </div>
+
+              <div class="panel-head" style="padding:18px 0 8px; border-top:1px solid var(--border); margin-top:16px;"><h3 style="font-size:13px;">Recently structured observations</h3></div>
+              <table class="mini-table">
+                <thead><tr><th>Time</th><th>Site</th><th>Primary signal</th><th>Confidence</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>7 min ago</td><td>Molokini Crater</td><td>🌡️ Bleaching</td><td>96%</td><td><span class="status-pill auto">Auto</span></td></tr>
+                  <tr><td>41 min ago</td><td>Puakō Reef</td><td>⚓ Physical damage</td><td>89%</td><td><span class="status-pill auto">Auto</span></td></tr>
+                  <tr><td>1h ago</td><td>Wailea Reef</td><td>❓ Mixed / unclear</td><td>54%</td><td><span class="status-pill review">Review</span></td></tr>
+                  <tr><td>2h ago</td><td>Hanauma Bay</td><td>💧 Turbidity / runoff</td><td>91%</td><td><span class="status-pill auto">Auto</span></td></tr>
+                  <tr><td>3h ago</td><td>Honolua Bay</td><td>🌡️ Early paling</td><td>78%</td><td><span class="status-pill auto">Auto</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  const titles = {
+    'view-map': ['Command Map', 'Live view of reef health across Maui Nui, updated 6 minutes ago'],
+    'view-site': ['Site Intelligence', 'Cause reasoning behind a single reef, before you commit resources'],
+    'view-optimizer': ['Resource Optimizer', 'Turning limited boats, teams, equipment and budget into a ranked plan'],
+    'view-inbox': ['Report Inbox', 'Messy diver reports, structured automatically into observations']
+  };
+
+  function switchView(id){
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === id));
+    document.getElementById('topbar-title').textContent = titles[id][0];
+    document.getElementById('topbar-sub').textContent = titles[id][1];
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
+
+  function toggleLayer(id, el){
+    const layer = document.getElementById(id);
+    layer.classList.toggle('hidden');
+    el.querySelector('.switch').classList.toggle('on');
+  }
+
+  const sites = {
+    molokini: {name:'Molokini Crater', coords:'20.6312° N, 156.4967° W · Maui, Hawai‘i · last surveyed 6h ago', dhw:'9.2', status:'critical', arc:15},
+    wailea:   {name:'Wailea Reef', coords:'20.6840° N, 156.4419° W · Maui, Hawai‘i · last surveyed 10h ago', dhw:'6.1', status:'serious', arc:52},
+    honolua:  {name:'Honolua Bay', coords:'21.0075° N, 156.6394° W · Maui, Hawai‘i · last surveyed 1d ago', dhw:'3.4', status:'warning', arc:88},
+    kealakekua:{name:'Kealakekua Bay', coords:'19.4761° N, 155.9256° W · Hawai‘i Island · last surveyed 2d ago', dhw:'0.8', status:'good', arc:130},
+    hanauma:  {name:'Hanauma Bay', coords:'21.2690° N, 157.6938° W · O‘ahu · last surveyed 12h ago', dhw:'2.9', status:'warning', arc:95},
+    puako:    {name:'Puakō Reef', coords:'19.9483° N, 155.8461° W · Hawai‘i Island · last surveyed 8h ago', dhw:'5.5', status:'serious', arc:55}
+  };
+  const statusVar = {good:'--status-good', warning:'--status-warning', serious:'--status-serious', critical:'--status-critical'};
+
+  function openSite(key){
+    const s = sites[key];
+    if(!s) return;
+    document.getElementById('s-name').textContent = s.name;
+    document.getElementById('s-coords').textContent = s.coords;
+    document.getElementById('s-dhw').textContent = s.dhw;
+    const arc = document.getElementById('gauge-arc');
+    arc.setAttribute('stroke-dashoffset', s.arc);
+    arc.setAttribute('stroke', getComputedStyle(document.documentElement).getPropertyValue(statusVar[s.status]));
+    switchView('view-site');
+  }
+
+  function selectReport(el, key){
+    document.querySelectorAll('.report-item').forEach(r => r.classList.remove('active'));
+    el.classList.add('active');
+    // demo: only Molokini has full canned extraction; others reuse layout with a note
+    if(key !== 'molokini'){
+      document.getElementById('extract-raw').textContent = el.querySelector('.r-snip').textContent;
+      document.getElementById('extract-title').textContent = '🧬 Structured by Ingestion LLM — ' + sites[key].name;
+    } else {
+      document.getElementById('extract-title').textContent = '🧬 Structured by Ingestion LLM';
+      document.getElementById('extract-raw').textContent = '"went down to 40ft at molokini backwall today, so much of the coral looks totally white/bleached compared to last month, way more than usual :("';
+    }
+  }
+
+  function updatePlan(){
+    const boats = document.getElementById('c-boats').value;
+    const teams = document.getElementById('c-teams').value;
+    const budget = document.getElementById('c-budget').value;
+    const travel = document.getElementById('c-travel').value;
+    document.getElementById('c-boats-val').textContent = boats;
+    document.getElementById('c-teams-val').textContent = teams;
+    document.getElementById('c-budget-val').textContent = budget;
+    document.getElementById('c-travel-val').textContent = travel;
+    document.getElementById('opt-boats-num').innerHTML = boats + ' <span>/ 7</span>';
+    document.getElementById('opt-teams-num').innerHTML = teams + ' <span>/ 5</span>';
+    document.getElementById('opt-budget-num').innerHTML = '$' + (budget - 0) + 'k <span>/ $32k</span>';
+
+    // Simple deterministic demo: how many top-ranked sites the current resources can actually cover
+    const capacity = Math.min(Number(boats), Number(teams), Math.max(1, Math.floor(budget / 4)));
+    const covered = Math.max(1, Math.min(6, capacity));
+    for(let i=1; i<=6; i++){
+      const row = document.getElementById('plan-row-' + i);
+      row.style.opacity = i <= covered ? '1' : '0.4';
+    }
+    document.getElementById('plan-hint').textContent = 'top ' + covered + ' of 6 flagged sites, ranked by expected value';
+  }
+</script>
+</body>
+</html>
