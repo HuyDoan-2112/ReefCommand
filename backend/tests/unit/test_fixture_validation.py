@@ -68,6 +68,15 @@ def test_a_site_claiming_live_provenance_is_caught(inputs) -> None:
     assert any("live" in finding.message for finding in findings)
 
 
+def test_a_fixture_envelope_claiming_live_provenance_is_caught(inputs) -> None:
+    lying = inputs.fixture_provenance[0].model_copy(update={"kind": Provenance.LIVE})
+    broken = inputs.model_copy(
+        update={"fixture_provenance": [lying, *inputs.fixture_provenance[1:]]}
+    )
+    findings = validation.check_nothing_persisted_claims_to_be_live(broken)
+    assert any("envelope" in finding.message for finding in findings)
+
+
 def test_a_report_pointing_at_an_unknown_site_is_caught(inputs) -> None:
     stray = inputs.reports[0].model_copy(update={"site_id": "atlantis"})
     broken = inputs.model_copy(update={"reports": [stray, *inputs.reports[1:]]})
@@ -148,3 +157,7 @@ def test_an_action_that_only_one_scenario_can_run_is_not_flagged(inputs) -> None
     partly = inputs.model_copy(update={"catalog": [two_boats]})
     findings = validation.check_actions_are_executable(partly)
     assert not [f for f in findings if "cannot be executed" in f.message]
+
+
+def test_shipped_inputs_have_no_warnings(inputs) -> None:
+    assert not validation.warnings(validation.run_all_checks(inputs))

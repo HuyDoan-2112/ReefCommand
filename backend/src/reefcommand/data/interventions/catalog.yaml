@@ -198,7 +198,7 @@ interventions:
     resources:
       boats: 1
       dive_teams: 1
-      dive_hours: 5.0
+      dive_hours: 4.5
       shade_units: 2
       cost_usd: 2500.0
     expected_compatibility: 0.4
@@ -230,3 +230,6 @@ interventions:
       been deployed in Florida, ten structures at the Coral Restoration Foundation
       Tavernier nursery and two at Key West in 2024, but that is documented only in
       an organizational blog post which reports no outcome data.
+      The 4.5 dive-hour resource value is a prototype planning estimate, not a
+      published operating limit. It fits within the 4.7-hour demo team window and
+      still requires manager confirmation for a real deployment.

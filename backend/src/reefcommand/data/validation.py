@@ -30,6 +30,7 @@ from reefcommand.domain.observation import FieldReport, StructuredObservation
 from reefcommand.domain.provenance import FixtureSet, ProvenanceMetadata
 from reefcommand.domain.resources import ResourceScenario
 from reefcommand.domain.site import ReefSite
+from reefcommand.ingestion.agrra_sctld import SctldRecord
 
 STUDY_AREA: frozenset[str] = frozenset(
     {
@@ -85,6 +86,8 @@ class Inputs(BaseModel):
     structured: list[StructuredObservation]
     site_provenance: dict[str, list[ProvenanceMetadata]]
     agrra_kinds: set[Provenance]
+    fixture_provenance: list[ProvenanceMetadata]
+    agrra_provenance: list[ProvenanceMetadata]
 
 
 def _load_set[T](path: str, model: type[T]) -> FixtureSet[T]:
@@ -107,6 +110,7 @@ def load_inputs() -> Inputs:
     catalog = [InterventionDefinition.model_validate(e) for e in catalog_document["interventions"]]
 
     agrra_document = yaml.safe_load(AGRRA_FILE.read_text(encoding="utf-8"))
+    agrra_fixture = _load_set(str(AGRRA_FILE), SctldRecord)
     agrra_kinds = {Provenance(record["data"]["provenance"]) for record in agrra_document["records"]}
 
     site_provenance = {
@@ -128,6 +132,11 @@ def load_inputs() -> Inputs:
         structured=[r.data for r in structured.records],
         site_provenance=site_provenance,
         agrra_kinds=agrra_kinds,
+        fixture_provenance=[
+            record.provenance
+            for record in [*reports.records, *updates.records, *structured.records]
+        ],
+        agrra_provenance=[record.provenance for record in agrra_fixture.records],
     )
 
 
@@ -191,6 +200,14 @@ def check_nothing_persisted_claims_to_be_live(inputs: Inputs) -> list[Finding]:
                     message=f"demo report {report.report_id} claims live provenance",
                 )
             )
+    if any(provenance.kind is Provenance.LIVE for provenance in inputs.fixture_provenance):
+        findings.append(
+            Finding(
+                check="honesty",
+                severity=Severity.ERROR,
+                message="a persisted report or structured-observation envelope claims live provenance",
+            )
+        )
     if Provenance.LIVE in inputs.agrra_kinds:
         findings.append(
             Finding(
@@ -205,7 +222,12 @@ def check_nothing_persisted_claims_to_be_live(inputs: Inputs) -> list[Finding]:
 def check_provenance_carries_what_it_needs(inputs: Inputs) -> list[Finding]:
     """Cached values need a fetch time and a source. Invented values need a note."""
     findings: list[Finding] = []
-    for site_id, provenances in inputs.site_provenance.items():
+    provenance_groups = [
+        *inputs.site_provenance.items(),
+        ("report and observation fixtures", inputs.fixture_provenance),
+        ("AGRRA snapshot", inputs.agrra_provenance),
+    ]
+    for label, provenances in provenance_groups:
         for provenance in provenances:
             if provenance.kind is Provenance.CACHE and provenance.source_url is None:
                 findings.append(
@@ -213,7 +235,7 @@ def check_provenance_carries_what_it_needs(inputs: Inputs) -> list[Finding]:
                         check="provenance",
                         severity=Severity.ERROR,
                         message=(
-                            f"site {site_id} has a cached block from {provenance.source!r} "
+                            f"{label} has a cached block from {provenance.source!r} "
                             "with no source_url, so a reviewer cannot check it"
                         ),
                     )
@@ -241,6 +263,14 @@ def check_every_catalog_action_is_cited(inputs: Inputs) -> list[Finding]:
                     message=f"{action.action_id} provenance names no retrievable source",
                 )
             )
+    if any(provenance.kind is Provenance.LIVE for provenance in inputs.agrra_provenance):
+        findings.append(
+            Finding(
+                check="honesty",
+                severity=Severity.ERROR,
+                message="the AGRRA fixture envelope claims live provenance",
+            )
+        )
     return findings
 
 
