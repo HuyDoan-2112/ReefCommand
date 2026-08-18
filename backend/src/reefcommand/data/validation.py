@@ -205,7 +205,10 @@ def check_nothing_persisted_claims_to_be_live(inputs: Inputs) -> list[Finding]:
             Finding(
                 check="honesty",
                 severity=Severity.ERROR,
-                message="a persisted report or structured-observation envelope claims live provenance",
+                message=(
+                    "a persisted report or structured-observation envelope claims "
+                    "live provenance"
+                ),
             )
         )
     if Provenance.LIVE in inputs.agrra_kinds:
