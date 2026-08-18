@@ -49,3 +49,14 @@ The API may flatten `provenance.kind` to its public `provenance` field, but it m
 One provenance object may cover a coherent record when every value in that record came from the same source and retrieval.
 Split a record or add separately provenance-carrying records when values have different origins.
 Never use document-level provenance to hide mixed real, cached, simulated, or synthetic values.
+
+## Local snapshot cache
+
+External snapshots are stored on disk by `reefcommand.ingestion.cache` so the demo never depends on a live call.
+Each `CacheEntry` round-trips its cache key, a timezone-aware `fetched_at`, an optional `source_url`, and the JSON payload.
+A naive `fetched_at` is rejected on write, because a snapshot whose retrieval instant is ambiguous cannot be reported honestly.
+
+Adapters read and write through `fetch_with_fallback`, which returns the value together with its `Provenance`.
+A live success is written back to the cache and returned as `live`; a value served from disk is returned as `cache`, never `live`.
+With `force_cache` set, no live call is attempted at all: the snapshot is read from disk, or a `CacheMiss` is raised when none exists.
+A slow or failing live call falls back to the cached snapshot under a short timeout, so a value is `cache` whenever the network did not actually answer.
