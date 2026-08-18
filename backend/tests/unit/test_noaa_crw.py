@@ -52,6 +52,9 @@ def test_fetch_site_series_parses_and_labels_live(tmp_path: Path) -> None:
     assert first.sst_c == 31.2
     assert first.alert_level is AlertLevel.ALERT_LEVEL_2
     assert first.provenance is Provenance.LIVE
+    assert first.provenance_metadata is not None
+    assert first.provenance_metadata.kind is Provenance.LIVE
+    assert first.provenance_metadata.fetched_at is not None
 
 
 @respx.mock
@@ -69,6 +72,9 @@ def test_forced_cache_serves_without_network(tmp_path: Path) -> None:
     assert route.call_count == 1  # no new network call was made
     assert [o.provenance for o in cached] == [Provenance.CACHE] * len(cached)
     assert cached[0].degree_heating_weeks == live[0].degree_heating_weeks
+    assert cached[0].provenance_metadata is not None
+    assert cached[0].provenance_metadata.kind is Provenance.CACHE
+    assert cached[0].provenance_metadata.note is not None
 
 
 @respx.mock

@@ -34,7 +34,7 @@ from pydantic import BaseModel
 
 from reefcommand.config import DATA_DIR
 from reefcommand.domain.enums import Provenance
-from reefcommand.domain.provenance import FixtureSet
+from reefcommand.domain.provenance import FixtureSet, ProvenanceMetadata
 from reefcommand.ingestion._geo import haversine_km, site_coordinates
 
 SOURCE_URL = "https://www.agrra.org/coral-disease-outbreak/"
@@ -52,6 +52,7 @@ class SctldRecord(BaseModel):
     reporting_organization: str | None = None
     condition_note: str | None = None
     provenance: Provenance
+    provenance_metadata: ProvenanceMetadata | None = None
 
 
 class NearbyRecords(BaseModel):
@@ -66,7 +67,10 @@ def _snapshot() -> tuple[SctldRecord, ...]:
     fixtures = FixtureSet[SctldRecord].model_validate(
         yaml.safe_load(_SNAPSHOT_FILE.read_text(encoding="utf-8"))
     )
-    return tuple(record.data for record in fixtures.records)
+    return tuple(
+        record.data.model_copy(update={"provenance_metadata": record.provenance})
+        for record in fixtures.records
+    )
 
 
 def find_records_near_site(site_id: str, radius_km: float, since: date) -> NearbyRecords:

@@ -51,6 +51,9 @@ def test_shipped_records_are_labeled_synthetic() -> None:
     for record in nearby.records:
         assert record.provenance is Provenance.SYNTHETIC
         assert record.review_status == "synthetic_example"
+        assert record.provenance_metadata is not None
+        assert record.provenance_metadata.kind is Provenance.SYNTHETIC
+        assert record.provenance_metadata.note is not None
 
 
 def test_prefetch_snapshot_reports_coverage() -> None:

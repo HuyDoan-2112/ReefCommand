@@ -29,8 +29,9 @@ from pydantic import BaseModel
 
 from reefcommand.config import CACHE_DIR, Settings, get_settings
 from reefcommand.domain.enums import AlertLevel, Provenance
+from reefcommand.domain.provenance import ProvenanceMetadata
 from reefcommand.ingestion._geo import site_coordinates
-from reefcommand.ingestion.cache import fetch_with_fallback
+from reefcommand.ingestion.cache import CacheError, fetch_with_fallback, read
 
 # Combined CRW griddap dataset carrying all four products in one request. A
 # historical replay window may need the archival CoralTemp dataset id instead, so
@@ -58,6 +59,7 @@ class CrwObservation(BaseModel):
     degree_heating_weeks: float
     alert_level: AlertLevel
     provenance: Provenance
+    provenance_metadata: ProvenanceMetadata | None = None
 
 
 def _build_url(lat: float, lon: float, start: date, end: date) -> str:
@@ -123,8 +125,9 @@ def fetch_site_series(
         response.raise_for_status()
         return _parse_csv(response.text, site_id)
 
+    key = f"noaa_crw:{site_id}:{start.isoformat()}:{end.isoformat()}"
     observations, provenance = fetch_with_fallback(
-        key=f"noaa_crw:{site_id}:{start.isoformat()}:{end.isoformat()}",
+        key=key,
         live=_live,
         to_payload=lambda series: {"observations": [o.model_dump(mode="json") for o in series]},
         from_payload=lambda raw: [CrwObservation.model_validate(o) for o in raw["observations"]],
@@ -133,8 +136,25 @@ def fetch_site_series(
         directory=directory,
         settings=settings,
     )
+    cache_entry = read(key, directory)
+    if cache_entry is None:
+        raise CacheError(f"cache entry disappeared after fetching {key!r}")
+    provenance_metadata = ProvenanceMetadata(
+        kind=provenance,
+        source="NOAA Coral Reef Watch 5km",
+        source_url=cache_entry.source_url or SOURCE_URL,
+        fetched_at=cache_entry.fetched_at,
+        note=(
+            "Served from the local snapshot cache."
+            if provenance is Provenance.CACHE
+            else "Retrieved from the NOAA ERDDAP endpoint."
+        ),
+    )
     return [
-        observation.model_copy(update={"provenance": provenance}) for observation in observations
+        observation.model_copy(
+            update={"provenance": provenance, "provenance_metadata": provenance_metadata}
+        )
+        for observation in observations
     ]
 
 
