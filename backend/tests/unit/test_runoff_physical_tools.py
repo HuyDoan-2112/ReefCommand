@@ -5,9 +5,9 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from reefcommand.domain.enums import Provenance
+from reefcommand.tools.contracts import EvidenceWindow
 from reefcommand.tools.rainfall import RainfallTool
 from reefcommand.tools.storm_vessel import StormHistoryTool, VesselActivityTool
-from reefcommand.tools.contracts import EvidenceWindow
 
 
 def _window() -> EvidenceWindow:

@@ -54,6 +54,9 @@ def test_fusion_requires_exactly_one_assessment_per_cause() -> None:
     with pytest.raises(ValueError, match="one assessment"):
         fuse(
             "sombrero",
-            _all()[:2]
-            + [_evidence(Cause.THERMAL, 0.2), _evidence(Cause.PHYSICAL, 0.1)],
+            [
+                *_all()[:2],
+                _evidence(Cause.THERMAL, 0.2),
+                _evidence(Cause.PHYSICAL, 0.1),
+            ],
         )

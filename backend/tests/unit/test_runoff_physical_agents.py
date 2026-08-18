@@ -13,8 +13,8 @@ from reefcommand.domain.enums import Cause, Provenance
 from reefcommand.domain.observation import StructuredObservation
 from reefcommand.domain.provenance import FixtureSet
 from reefcommand.domain.site import ReefSite
-from reefcommand.evidence.physical import PhysicalAssessment, PhysicalAgent
-from reefcommand.evidence.runoff import RunoffAssessment, RunoffAgent
+from reefcommand.evidence.physical import PhysicalAgent, PhysicalAssessment
+from reefcommand.evidence.runoff import RunoffAgent, RunoffAssessment
 from reefcommand.ingestion.field_reports import load_demo_updates, structure
 from reefcommand.tools.contracts import EvidenceSnapshot, EvidenceWindow
 from reefcommand.tools.rainfall import RainfallTool
