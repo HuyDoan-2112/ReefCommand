@@ -39,6 +39,14 @@ export interface CoordinatorDecision {
   model: string | null;
 }
 
+export interface EligibleActionTrace {
+  action_id: string;
+  provenance: string;
+  priority: string;
+  expected_compatibility: number;
+  requires_manager_approval: boolean;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -110,6 +118,27 @@ export function readCoordinatorDecision(
     provider: step.provider ?? null,
     model: step.model ?? null,
   };
+}
+
+/** Read source-grounded candidates exactly as emitted by the policy engine. */
+export function readEligibleActions(trace: SiteExecutionTrace | undefined): EligibleActionTrace[] {
+  const step = trace?.steps.find((candidate) => candidate.stage === 'policy_eligibility');
+  const actions = step?.output?.['eligible_actions'];
+  if (!Array.isArray(actions)) return [];
+
+  return actions.flatMap((entry) => {
+    if (!isRecord(entry) || typeof entry.action_id !== 'string') return [];
+    return [
+      {
+        action_id: entry.action_id,
+        provenance: typeof entry.provenance === 'string' ? entry.provenance : '',
+        priority: typeof entry.priority === 'string' ? entry.priority : 'medium',
+        expected_compatibility:
+          typeof entry.expected_compatibility === 'number' ? entry.expected_compatibility : 0,
+        requires_manager_approval: entry.requires_manager_approval !== false,
+      },
+    ];
+  });
 }
 
 /** Turn an evidence-request enum value into something a diver would be asked for. */

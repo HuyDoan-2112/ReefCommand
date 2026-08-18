@@ -23,12 +23,10 @@ const LABELS: Record<Provenance, string> = {
   synthetic: 'Synthetic',
 };
 
-/** Distinct shapes, not four variations on a dot. */
-const GLYPHS: Record<Provenance, string> = {
+const GLYPHS: Partial<Record<Provenance, string>> = {
   live: '●',
   cache: '■',
   simulated: '▲',
-  synthetic: '◆',
 };
 
 const DESCRIPTIONS: Record<Provenance, string> = {
@@ -52,14 +50,18 @@ export interface ProvenanceBadgeProps {
 }
 
 export function ProvenanceBadge({ provenance, title }: ProvenanceBadgeProps) {
+  const glyph = GLYPHS[provenance];
+
   return (
     <span
       className={cx(styles.root, VARIANTS[provenance])}
       title={title ?? `${LABELS[provenance]}: ${DESCRIPTIONS[provenance]}`}
     >
-      <span className={styles.glyph} aria-hidden="true">
-        {GLYPHS[provenance]}
-      </span>
+      {glyph ? (
+        <span className={styles.glyph} aria-hidden="true">
+          {glyph}
+        </span>
+      ) : null}
       {LABELS[provenance]}
       <span className="visually-hidden">, {DESCRIPTIONS[provenance]}</span>
     </span>

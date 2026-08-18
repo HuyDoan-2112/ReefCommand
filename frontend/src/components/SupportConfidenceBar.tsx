@@ -51,8 +51,10 @@ export interface SupportConfidenceBarProps {
   confidence: number;
   /** True when this cause is currently in play for the site. */
   isDominant?: boolean;
-  /** The investigator's short explanation, shown beneath the bars. */
-  rationale?: string;
+  /** One backend-validated sentence for the card. */
+  displaySummary: string;
+  /** One to three backend-validated evidence points. */
+  keyFindings: string[];
 }
 
 export function SupportConfidenceBar({
@@ -60,7 +62,8 @@ export function SupportConfidenceBar({
   support,
   confidence,
   isDominant = false,
-  rationale,
+  displaySummary,
+  keyFindings,
 }: SupportConfidenceBarProps) {
   const label = CAUSE_LABELS[cause];
 
@@ -110,7 +113,12 @@ export function SupportConfidenceBar({
         </div>
       </div>
 
-      {rationale ? <p className={styles.rationale}>{rationale}</p> : null}
+      <p className={styles.summary}>{displaySummary}</p>
+      <ul className={styles.findings}>
+        {keyFindings.map((finding, index) => (
+          <li key={`${cause}-finding-${index}`}>{finding}</li>
+        ))}
+      </ul>
     </div>
   );
 }

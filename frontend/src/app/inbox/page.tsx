@@ -1,5 +1,4 @@
 import { ReportForm } from '@/features/inbox';
-import { CurrentPlan } from '@/features/plan';
 
 /**
  * Report Inbox: submit a field observation and watch the plan change.
@@ -7,10 +6,5 @@ import { CurrentPlan } from '@/features/plan';
  * Composition only.
  */
 export default function InboxPage() {
-  return (
-    <>
-      <ReportForm />
-      <CurrentPlan />
-    </>
-  );
+  return <ReportForm />;
 }

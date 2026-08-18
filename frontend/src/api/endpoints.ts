@@ -14,6 +14,7 @@ import type {
   FieldReport,
   FusedEvidence,
   ObservationAccepted,
+  RecomputeRequest,
   ResourceChangeRequest,
   ResourceChangeResult,
   ResponsePlan,
@@ -76,9 +77,6 @@ export function changeScenario(body: ResourceChangeRequest): Promise<ResourceCha
 }
 
 /** Force a recompute. Useful for the demo and for debugging. */
-export function recomputePlan(body?: {
-  scenario_id?: string;
-  site_ids?: string[];
-}): Promise<ResponsePlan> {
+export function recomputePlan(body?: RecomputeRequest): Promise<ResponsePlan> {
   return post<ResponsePlan>('/plan/recompute', body);
 }

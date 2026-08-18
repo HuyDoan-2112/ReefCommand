@@ -168,8 +168,27 @@
             "title": "Confidence",
             "type": "number"
           },
+          "display_summary": {
+            "description": "One concise sentence for the hypothesis card.",
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Display Summary",
+            "type": "string"
+          },
+          "key_findings": {
+            "description": "One to three concise evidence points for the hypothesis card.",
+            "items": {
+              "maxLength": 110,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Key Findings",
+            "type": "array"
+          },
           "rationale": {
-            "description": "Short explanation shown on the dashboard.",
+            "description": "Full audit rationale retained in the execution trace.",
             "title": "Rationale",
             "type": "string"
           },
@@ -185,6 +204,8 @@
           "cause",
           "support",
           "confidence",
+          "display_summary",
+          "key_findings",
           "rationale",
           "computed_at"
         ],
@@ -833,6 +854,15 @@
       "RecomputeRequest": {
         "description": "Optional inputs for a forced plan recompute.",
         "properties": {
+          "execution_mode": {
+            "default": "configured",
+            "enum": [
+              "configured",
+              "live_llm"
+            ],
+            "title": "Execution Mode",
+            "type": "string"
+          },
           "scenario_id": {
             "default": "demo_default",
             "title": "Scenario Id",

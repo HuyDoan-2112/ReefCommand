@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Panel, ProvenanceBadge, SimulatedDataBanner } from '@/components';
+import { Button, Panel, ProvenanceBadge, SimulatedDataBanner, StatTile } from '@/components';
 import { useChangeScenario, useCurrentPlan } from '@/hooks/usePlan';
 import { useScenario } from '@/hooks/useResources';
 import { cx } from '@/lib/cx';
@@ -33,7 +33,7 @@ const SCENARIOS: ReadonlyArray<{ id: string; label: string; description: string 
   },
 ];
 
-export function CapacityPanel() {
+export function CapacityPanel({ mode = 'full' }: { mode?: 'full' | 'summary' | 'controls' }) {
   const { data: view, isPending, error } = useScenario();
   const { data: plan } = useCurrentPlan();
   const changeScenario = useChangeScenario();
@@ -55,129 +55,175 @@ export function CapacityPanel() {
   const activeId = plan?.scenario_id ?? scenario.scenario_id;
   const boatsAvailable = scenario.boats.filter((boat) => boat.available !== false).length;
   const teamHours = scenario.dive_teams.reduce((sum, team) => sum + team.available_hours, 0);
+  const gearUnits =
+    scenario.inventory.shade_units +
+    scenario.inventory.monitoring_kits +
+    scenario.inventory.sampling_kits;
 
   return (
     <div className={styles.root}>
-      <SimulatedDataBanner text={view.banner} detail={scenario.label} />
-
-      <Panel title="Capacity in force" hint={scenario.scenario_id}>
-        <div className={styles.grid}>
-          <div className={styles.metric}>
-            <span className={styles.metricLabel}>Boats</span>
-            <span className={styles.metricValue}>
-              {boatsAvailable}
-              <span className={styles.metricUnit}> / {scenario.boats.length}</span>
-            </span>
-            <ul className={styles.itemList}>
-              {scenario.boats.map((boat) => (
-                <li
-                  key={boat.boat_id}
-                  className={cx(styles.item, boat.available === false && styles.itemOut)}
-                >
-                  {boat.name}
-                  <span className={styles.itemMeta}>
-                    {boat.available === false
-                      ? 'out of service'
-                      : `${boat.operational_hours.toFixed(1)} h`}
-                  </span>
-                </li>
-              ))}
-            </ul>
+      {mode !== 'controls' ? (
+        <>
+          <SimulatedDataBanner text={view.banner} detail={scenario.label} />
+          <div className={styles.inventoryGrid}>
+            <StatTile
+              label="🛥️ Boats available"
+              value={boatsAvailable}
+              unit={`/ ${scenario.boats.length}`}
+              note="simulated operating fleet"
+              decoration="🛥️"
+            />
+            <StatTile
+              label="🤿 Dive teams"
+              value={scenario.dive_teams.length}
+              unit={`/ ${teamHours.toFixed(1)} h`}
+              note="simulated team capacity"
+              decoration="🤿"
+            />
+            <StatTile
+              label="🧰 Gear units"
+              value={gearUnits}
+              note={`${scenario.inventory.shade_units} shade, ${scenario.inventory.monitoring_kits} monitoring, ${scenario.inventory.sampling_kits} sampling`}
+              decoration="🧰"
+            />
+            <StatTile
+              label="💵 Available budget"
+              value={`$${Math.round(scenario.budget_usd / 1000)}k`}
+              note={<ProvenanceBadge provenance={scenario.provenance} />}
+              decoration="💵"
+            />
           </div>
+        </>
+      ) : null}
 
-          <div className={styles.metric}>
-            <span className={styles.metricLabel}>Dive teams</span>
-            <span className={styles.metricValue}>
-              {scenario.dive_teams.length}
-              <span className={styles.metricUnit}> / {teamHours.toFixed(1)} h</span>
-            </span>
-            <ul className={styles.itemList}>
-              {scenario.dive_teams.map((team) => (
-                <li key={team.team_id} className={styles.item}>
-                  {team.name}
-                  <span className={styles.itemMeta}>
-                    {team.diver_count} divers, {team.available_hours.toFixed(1)} h
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className={styles.metric}>
-            <span className={styles.metricLabel}>Gear and budget</span>
-            <ul className={styles.itemList}>
-              <li className={styles.item}>
-                Shade units<span className={styles.itemMeta}>{scenario.inventory.shade_units}</span>
-              </li>
-              <li className={styles.item}>
-                Monitoring kits
-                <span className={styles.itemMeta}>{scenario.inventory.monitoring_kits}</span>
-              </li>
-              <li className={styles.item}>
-                Sampling kits
-                <span className={styles.itemMeta}>{scenario.inventory.sampling_kits}</span>
-              </li>
-              <li className={styles.item}>
-                Budget
-                <span className={styles.itemMeta}>
-                  ${scenario.budget_usd.toLocaleString('en-US')}
+      {mode !== 'summary' ? (
+        <>
+          <Panel title="Capacity in force" hint={scenario.scenario_id}>
+            <div className={styles.grid}>
+              <div className={styles.metric}>
+                <span className={styles.metricLabel}>Boats</span>
+                <span className={styles.metricValue}>
+                  {boatsAvailable}
+                  <span className={styles.metricUnit}> / {scenario.boats.length}</span>
                 </span>
-              </li>
-              <li className={styles.item}>
-                Daylight<span className={styles.itemMeta}>{scenario.daylight_hours} h</span>
-              </li>
-            </ul>
-            <div className={styles.provenance}>
-              <ProvenanceBadge provenance={scenario.provenance} />
-            </div>
-          </div>
-        </div>
-      </Panel>
-
-      <Panel title="Change capacity" hint="re-runs the optimizer only, not the investigators">
-        <div className={styles.scenarioList}>
-          {SCENARIOS.map((option) => {
-            const isActive = option.id === activeId;
-            return (
-              <div key={option.id} className={cx(styles.scenario, isActive && styles.scenarioOn)}>
-                <div className={styles.scenarioBody}>
-                  <div className={styles.scenarioLabel}>
-                    {option.label}
-                    {isActive ? <span className={styles.activeTag}>In force</span> : null}
-                  </div>
-                  <div className={styles.scenarioDesc}>{option.description}</div>
-                </div>
-                <Button
-                  variant={isActive ? 'ghost' : 'primary'}
-                  size="small"
-                  disabled={isActive || changeScenario.isPending}
-                  onClick={() =>
-                    changeScenario.mutate({
-                      scenario_id: option.id,
-                      description: option.label,
-                    })
-                  }
-                >
-                  {changeScenario.isPending ? 'Re-planning...' : isActive ? 'Active' : 'Apply'}
-                </Button>
+                <ul className={styles.itemList}>
+                  {scenario.boats.map((boat) => (
+                    <li
+                      key={boat.boat_id}
+                      className={cx(styles.item, boat.available === false && styles.itemOut)}
+                    >
+                      {boat.name}
+                      <span className={styles.itemMeta}>
+                        {boat.available === false
+                          ? 'out of service'
+                          : `${boat.operational_hours.toFixed(1)} h`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            );
-          })}
-        </div>
 
-        {changeScenario.isError ? (
-          <p className={styles.error}>The capacity change failed: {changeScenario.error.message}</p>
-        ) : null}
+              <div className={styles.metric}>
+                <span className={styles.metricLabel}>Dive teams</span>
+                <span className={styles.metricValue}>
+                  {scenario.dive_teams.length}
+                  <span className={styles.metricUnit}> / {teamHours.toFixed(1)} h</span>
+                </span>
+                <ul className={styles.itemList}>
+                  {scenario.dive_teams.map((team) => (
+                    <li key={team.team_id} className={styles.item}>
+                      {team.name}
+                      <span className={styles.itemMeta}>
+                        {team.diver_count} divers, {team.available_hours.toFixed(1)} h
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-        {plan?.replan_trigger?.startsWith('resource_change') ? (
-          <p className={styles.replanNote}>
-            Plan re-planned from <code>{plan.replan_trigger}</code>
-            {plan.replan_latency_ms !== null && plan.replan_latency_ms !== undefined
-              ? ` in ${plan.replan_latency_ms} ms, measured server side.`
-              : '.'}
-          </p>
-        ) : null}
-      </Panel>
+              <div className={styles.metric}>
+                <span className={styles.metricLabel}>Gear and budget</span>
+                <ul className={styles.itemList}>
+                  <li className={styles.item}>
+                    Shade units
+                    <span className={styles.itemMeta}>{scenario.inventory.shade_units}</span>
+                  </li>
+                  <li className={styles.item}>
+                    Monitoring kits
+                    <span className={styles.itemMeta}>{scenario.inventory.monitoring_kits}</span>
+                  </li>
+                  <li className={styles.item}>
+                    Sampling kits
+                    <span className={styles.itemMeta}>{scenario.inventory.sampling_kits}</span>
+                  </li>
+                  <li className={styles.item}>
+                    Budget
+                    <span className={styles.itemMeta}>
+                      ${scenario.budget_usd.toLocaleString('en-US')}
+                    </span>
+                  </li>
+                  <li className={styles.item}>
+                    Daylight<span className={styles.itemMeta}>{scenario.daylight_hours} h</span>
+                  </li>
+                </ul>
+                <div className={styles.provenance}>
+                  <ProvenanceBadge provenance={scenario.provenance} />
+                </div>
+              </div>
+            </div>
+          </Panel>
+
+          <Panel title="Change capacity" hint="re-runs the optimizer only">
+            <div className={styles.scenarioList}>
+              {SCENARIOS.map((option) => {
+                const isActive = option.id === activeId;
+                return (
+                  <div
+                    key={option.id}
+                    className={cx(styles.scenario, isActive && styles.scenarioOn)}
+                  >
+                    <div className={styles.scenarioBody}>
+                      <div className={styles.scenarioLabel}>
+                        {option.label}
+                        {isActive ? <span className={styles.activeTag}>In force</span> : null}
+                      </div>
+                      <div className={styles.scenarioDesc}>{option.description}</div>
+                    </div>
+                    <Button
+                      variant={isActive ? 'ghost' : 'primary'}
+                      size="small"
+                      disabled={isActive || changeScenario.isPending}
+                      onClick={() =>
+                        changeScenario.mutate({
+                          scenario_id: option.id,
+                          description: option.label,
+                        })
+                      }
+                    >
+                      {changeScenario.isPending ? 'Re-planning...' : isActive ? 'Active' : 'Apply'}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {changeScenario.isError ? (
+              <p className={styles.error}>
+                The capacity change failed: {changeScenario.error.message}
+              </p>
+            ) : null}
+
+            {plan?.replan_trigger?.startsWith('resource_change') ? (
+              <p className={styles.replanNote}>
+                Plan re-planned from <code>{plan.replan_trigger}</code>
+                {plan.replan_latency_ms !== null && plan.replan_latency_ms !== undefined
+                  ? ` in ${plan.replan_latency_ms} ms, measured server side.`
+                  : '.'}
+              </p>
+            ) : null}
+          </Panel>
+        </>
+      ) : null}
     </div>
   );
 }

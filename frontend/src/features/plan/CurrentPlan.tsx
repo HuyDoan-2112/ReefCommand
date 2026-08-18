@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { Panel, ProvenanceBadge, SimulatedDataBanner, StatTile } from '@/components';
 import { useCurrentPlan } from '@/hooks/usePlan';
 import { cx } from '@/lib/cx';
@@ -148,7 +150,60 @@ function DeferredRow({ site }: { site: DeferredSite }) {
   );
 }
 
-function PlanBody({ plan }: { plan: ResponsePlan }) {
+function PriorityQueue({ plan }: { plan: ResponsePlan }) {
+  const deferred = plan.deferred ?? [];
+
+  return (
+    <Panel title="Priority queue" hint="current plan order" className={styles.queuePanel}>
+      <div className={styles.queueList}>
+        {plan.assignments.map((assignment, index) => (
+          <Link
+            href={`/sites/${assignment.site_id}`}
+            className={styles.queueCard}
+            key={`${assignment.site_id}-${assignment.action_id}`}
+          >
+            <span className={styles.queueRank}>{index + 1}</span>
+            <span className={styles.queueBody}>
+              <span className={styles.queueHead}>
+                <strong>{assignment.site_name}</strong>
+                <span
+                  className={styles.queuePriority}
+                  style={{ color: PRIORITY_COLOR[assignment.priority] }}
+                >
+                  {PRIORITY_LABEL[assignment.priority]}
+                </span>
+              </span>
+              <span className={styles.queueAction}>{assignment.action_id.replace(/_/g, ' ')}</span>
+              <span className={styles.queueReason}>{assignment.evidence_summary}</span>
+              <span className={styles.queueApproval}>Manager approval required</span>
+            </span>
+          </Link>
+        ))}
+
+        {deferred.map((site) => (
+          <Link
+            href={`/sites/${site.site_id}`}
+            className={styles.queueCardMuted}
+            key={site.site_id}
+          >
+            <span className={styles.queuePause} aria-hidden="true">
+              ⏸
+            </span>
+            <span className={styles.queueBody}>
+              <span className={styles.queueHead}>
+                <strong>{site.site_name}</strong>
+                <span className={styles.queueDeferred}>Deferred</span>
+              </span>
+              <span className={styles.queueReason}>{site.reason}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function PlanBody({ plan, surface }: { plan: ResponsePlan; surface: 'command' | 'optimizer' }) {
   const totalHours = plan.assignments.reduce((sum, a) => sum + a.estimated_hours, 0);
   const totalCost = plan.assignments.reduce((sum, a) => sum + a.estimated_cost_usd, 0);
   const binding = plan.binding_constraints ?? [];
@@ -156,111 +211,127 @@ function PlanBody({ plan }: { plan: ResponsePlan }) {
 
   return (
     <div className={styles.root}>
-      <SimulatedDataBanner
-        text={plan.scenario_banner}
-        detail={`Scenario ${plan.scenario_id}. Plan generated ${new Date(plan.generated_at).toLocaleString()}.`}
-      />
+      {surface === 'command' ? (
+        <>
+          <SimulatedDataBanner
+            text={plan.scenario_banner}
+            detail={`Scenario ${plan.scenario_id}. Plan generated ${new Date(plan.generated_at).toLocaleString()}.`}
+          />
 
-      <div className={styles.statRow}>
-        <StatTile
-          label="🛥️ Sites tasked"
-          value={plan.assignments.length}
-          unit={`/ ${plan.assignments.length + deferred.length}`}
-          note="the rest are deferred"
-          decoration="🛥️"
-        />
-        <StatTile
-          label="🎯 Strategic value"
-          value={plan.total_strategic_value.toFixed(2)}
-          note="objective value achieved"
-          decoration="🎯"
-        />
-        <StatTile
-          label="⏱️ Dive hours"
-          value={totalHours.toFixed(1)}
-          note="committed across the plan"
-          decoration="⏱️"
-        />
-        <StatTile
-          label="💵 Cost"
-          value={currency(totalCost)}
-          note={<ProvenanceBadge provenance="simulated" />}
-          decoration="💵"
-        />
-      </div>
-
-      <Panel title="Study area" hint="pins plotted at real coordinates">
-        <SiteMap />
-      </Panel>
-
-      <Panel
-        title="Assignments"
-        hint={`${plan.assignments.length} tasked, each requiring manager approval`}
-      >
-        {plan.assignments.length === 0 ? (
-          <p className={styles.empty}>
-            No site could be tasked with the capacity in this scenario. Every site appears under
-            deferrals below with the reason.
-          </p>
-        ) : (
-          <>
-            <div className={cx(styles.row, styles.rowHead)}>
-              <span />
-              <span>Site and action</span>
-              <span>Crew</span>
-              <span>Priority</span>
-              <span>Hours</span>
-              <span>Cost</span>
-            </div>
-            {plan.assignments.map((assignment, index) => (
-              <AssignmentRow
-                key={`${assignment.site_id}-${assignment.action_id}`}
-                assignment={assignment}
-                rank={index + 1}
-              />
-            ))}
-          </>
-        )}
-      </Panel>
-
-      <Panel
-        title="Why these trade-offs"
-        hint={binding.length > 0 ? 'binding constraints' : 'nothing was binding'}
-      >
-        {binding.length > 0 ? (
-          <>
-            <div className={styles.constraintList}>
-              {binding.map((key) => (
-                <span key={key} className={styles.constraint}>
-                  <span aria-hidden="true">⛔</span>
-                  {constraintLabel(key)}
-                </span>
-              ))}
-            </div>
-            <p className={styles.empty} style={{ paddingBottom: 0 }}>
-              These are the limits that stopped the optimizer from tasking more sites. Relaxing any
-              one of them is what would change the plan.
-            </p>
-          </>
-        ) : (
-          <p className={styles.empty}>
-            No capacity limit was binding. The plan is shaped by which actions were policy-eligible,
-            not by what the fleet could reach.
-          </p>
-        )}
-      </Panel>
-
-      <Panel title="Deferred" hint={`${deferred.length} site(s) not tasked this cycle`}>
-        {deferred.length === 0 ? (
-          <p className={styles.empty}>Every site with an eligible action was tasked.</p>
-        ) : (
-          <div className={styles.deferred}>
-            {deferred.map((site) => (
-              <DeferredRow key={site.site_id} site={site} />
-            ))}
+          <div className={styles.statRow}>
+            <StatTile
+              label="🛥️ Sites tasked"
+              value={plan.assignments.length}
+              unit={`/ ${plan.assignments.length + deferred.length}`}
+              note="the rest are deferred"
+              decoration="🛥️"
+            />
+            <StatTile
+              label="🎯 Strategic value"
+              value={plan.total_strategic_value.toFixed(2)}
+              note="prototype objective achieved"
+              decoration="🎯"
+            />
+            <StatTile
+              label="⏱️ Dive hours"
+              value={totalHours.toFixed(1)}
+              note="committed across the plan"
+              decoration="⏱️"
+            />
+            <StatTile
+              label="💵 Cost"
+              value={currency(totalCost)}
+              note={<ProvenanceBadge provenance="simulated" />}
+              decoration="💵"
+            />
           </div>
-        )}
-      </Panel>
+
+          <div className={styles.commandGrid}>
+            <Panel
+              title="Florida Keys study area"
+              hint="site pins use reported coordinates"
+              className={styles.mapPanel}
+            >
+              <SiteMap />
+            </Panel>
+            <PriorityQueue plan={plan} />
+          </div>
+        </>
+      ) : null}
+
+      {surface === 'optimizer' ? (
+        <>
+          <Panel
+            title="Assignments"
+            hint={`${plan.assignments.length} tasked, each requiring manager approval`}
+            scrollX
+          >
+            {plan.assignments.length === 0 ? (
+              <p className={styles.empty}>
+                No site could be tasked with the capacity in this scenario. Every site appears under
+                deferrals below with the reason.
+              </p>
+            ) : (
+              <>
+                <div className={cx(styles.row, styles.rowHead)}>
+                  <span />
+                  <span>Site and action</span>
+                  <span>Crew</span>
+                  <span>Priority</span>
+                  <span>Hours</span>
+                  <span>Cost</span>
+                </div>
+                {plan.assignments.map((assignment, index) => (
+                  <AssignmentRow
+                    key={`${assignment.site_id}-${assignment.action_id}`}
+                    assignment={assignment}
+                    rank={index + 1}
+                  />
+                ))}
+              </>
+            )}
+          </Panel>
+
+          <Panel
+            title="Why these trade-offs"
+            hint={binding.length > 0 ? 'binding constraints' : 'nothing was binding'}
+          >
+            {binding.length > 0 ? (
+              <>
+                <div className={styles.constraintList}>
+                  {binding.map((key) => (
+                    <span key={key} className={styles.constraint}>
+                      <span aria-hidden="true">⛔</span>
+                      {constraintLabel(key)}
+                    </span>
+                  ))}
+                </div>
+                <p className={styles.empty} style={{ paddingBottom: 0 }}>
+                  These are the limits that stopped the optimizer from tasking more sites. Relaxing
+                  any one of them is what would change the plan.
+                </p>
+              </>
+            ) : (
+              <p className={styles.empty}>
+                No capacity limit was binding. The plan is shaped by which actions were
+                policy-eligible, not by what the fleet could reach.
+              </p>
+            )}
+          </Panel>
+
+          <Panel title="Deferred" hint={`${deferred.length} site(s) not tasked this cycle`}>
+            {deferred.length === 0 ? (
+              <p className={styles.empty}>Every site with an eligible action was tasked.</p>
+            ) : (
+              <div className={styles.deferred}>
+                {deferred.map((site) => (
+                  <DeferredRow key={site.site_id} site={site} />
+                ))}
+              </div>
+            )}
+          </Panel>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -281,7 +352,7 @@ function LoadingSkeleton() {
   );
 }
 
-export function CurrentPlan() {
+export function CurrentPlan({ surface = 'command' }: { surface?: 'command' | 'optimizer' }) {
   const { data: plan, isPending, error } = useCurrentPlan();
 
   if (isPending) {
@@ -300,5 +371,5 @@ export function CurrentPlan() {
     );
   }
 
-  return <PlanBody plan={plan} />;
+  return <PlanBody plan={plan} surface={surface} />;
 }

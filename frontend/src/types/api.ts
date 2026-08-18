@@ -325,8 +325,18 @@ export interface components {
              */
             confidence: number;
             /**
+             * Display Summary
+             * @description One concise sentence for the hypothesis card.
+             */
+            display_summary: string;
+            /**
+             * Key Findings
+             * @description One to three concise evidence points for the hypothesis card.
+             */
+            key_findings: string[];
+            /**
              * Rationale
-             * @description Short explanation shown on the dashboard.
+             * @description Full audit rationale retained in the execution trace.
              */
             rationale: string;
             /**
@@ -660,6 +670,12 @@ export interface components {
          * @description Optional inputs for a forced plan recompute.
          */
         RecomputeRequest: {
+            /**
+             * Execution Mode
+             * @default configured
+             * @enum {string}
+             */
+            execution_mode: "configured" | "live_llm";
             /**
              * Scenario Id
              * @default demo_default

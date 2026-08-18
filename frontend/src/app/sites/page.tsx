@@ -1,12 +1,5 @@
-/**
- * Site Intelligence.
- *
- * Placeholder. Built in frontend step 5.
- */
+import { redirect } from 'next/navigation';
+
 export default function Page() {
-  return (
-    <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-      This surface is built in a later step.
-    </p>
-  );
+  redirect('/sites/cheeca_rocks');
 }

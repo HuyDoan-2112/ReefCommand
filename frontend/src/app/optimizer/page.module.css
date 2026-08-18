@@ -1,0 +1,35 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.callout {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1px solid rgba(17, 138, 178, 0.18);
+  border-radius: 14px;
+  background: var(--foam);
+  padding: 13px 15px;
+  color: var(--ocean-deep-2);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.optimizerGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(320px, 3fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.optimizerGrid > * {
+  min-width: 0;
+}
+
+@media (max-width: 1180px) {
+  .optimizerGrid {
+    grid-template-columns: 1fr;
+  }
+}
