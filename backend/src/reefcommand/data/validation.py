@@ -206,8 +206,7 @@ def check_nothing_persisted_claims_to_be_live(inputs: Inputs) -> list[Finding]:
                 check="honesty",
                 severity=Severity.ERROR,
                 message=(
-                    "a persisted report or structured-observation envelope claims "
-                    "live provenance"
+                    "a persisted report or structured-observation envelope claims live provenance"
                 ),
             )
         )
