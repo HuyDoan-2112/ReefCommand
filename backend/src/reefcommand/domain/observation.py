@@ -17,6 +17,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from reefcommand.domain.enums import Provenance
+from reefcommand.domain.provenance import ProvenanceMetadata
 
 
 class FieldReport(BaseModel):
@@ -33,6 +34,10 @@ class FieldReport(BaseModel):
     provenance: Provenance = Field(
         default=Provenance.SYNTHETIC,
         description="Demo reports are synthetic and labeled as such everywhere they appear.",
+    )
+    provenance_metadata: ProvenanceMetadata | None = Field(
+        default=None,
+        description="Record-level source and retrieval metadata from the fixture envelope.",
     )
 
 
@@ -64,4 +69,8 @@ class StructuredObservation(BaseModel):
 
     extraction_notes: str | None = Field(
         default=None, description="What the extractor was unsure about. Surfaced, not swallowed."
+    )
+    provenance_metadata: ProvenanceMetadata | None = Field(
+        default=None,
+        description="Record-level source and retrieval metadata from the fixture envelope.",
     )

@@ -72,6 +72,24 @@ def test_every_structured_observation_is_labeled_synthetic() -> None:
         assert record.provenance.note is not None
 
 
+def test_report_loaders_preserve_record_provenance_metadata(demo_site_ids) -> None:
+    reports = [*load_demo_reports(demo_site_ids), *load_demo_updates()]
+    assert all(report.provenance_metadata is not None for report in reports)
+    assert all(
+        report.provenance_metadata.kind is Provenance.SYNTHETIC for report in reports
+    )
+
+
+def test_structuring_preserves_record_provenance_metadata(demo_site_ids) -> None:
+    reports = [*load_demo_reports(demo_site_ids), *load_demo_updates()]
+    observations = [structure(report) for report in reports]
+    assert all(observation.provenance_metadata is not None for observation in observations)
+    assert all(
+        observation.provenance_metadata.kind is Provenance.SYNTHETIC
+        for observation in observations
+    )
+
+
 def test_update_is_separate_from_the_initial_reports() -> None:
     updates = load_demo_updates()
     assert len(updates) == 1

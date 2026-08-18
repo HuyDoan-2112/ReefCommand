@@ -35,7 +35,10 @@ def _load_reports(path: Path) -> tuple[FieldReport, ...]:
     fixtures = FixtureSet[FieldReport].model_validate(
         yaml.safe_load(path.read_text(encoding="utf-8"))
     )
-    return tuple(record.data for record in fixtures.records)
+    return tuple(
+        record.data.model_copy(update={"provenance_metadata": record.provenance})
+        for record in fixtures.records
+    )
 
 
 @lru_cache(maxsize=1)
@@ -53,7 +56,12 @@ def _structured_index() -> dict[str, StructuredObservation]:
     fixtures = FixtureSet[StructuredObservation].model_validate(
         yaml.safe_load(_STRUCTURED_FILE.read_text(encoding="utf-8"))
     )
-    return {record.data.report_id: record.data for record in fixtures.records}
+    return {
+        record.data.report_id: record.data.model_copy(
+            update={"provenance_metadata": record.provenance}
+        )
+        for record in fixtures.records
+    }
 
 
 def load_demo_reports(site_ids: list[str]) -> list[FieldReport]:
