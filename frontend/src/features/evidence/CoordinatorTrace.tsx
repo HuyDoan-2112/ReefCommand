@@ -1,6 +1,7 @@
 'use client';
 
 import { Panel } from '@/components';
+import { useCurrentPlan } from '@/hooks/usePlan';
 import { useSiteTrace } from '@/hooks/useTrace';
 import { cx } from '@/lib/cx';
 import type { TraceStep } from '@/types';
