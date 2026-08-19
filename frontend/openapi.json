@@ -2187,6 +2187,28 @@
         ]
       }
     },
+    "/plan/baseline": {
+      "get": {
+        "description": "The offline fixture plan used before a user starts a live run.",
+        "operationId": "baseline_plan_plan_baseline_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsePlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Baseline Plan",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
     "/plan/current": {
       "get": {
         "description": "The current response plan.",
@@ -2296,6 +2318,49 @@
           }
         },
         "summary": "Recompute",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
+    "/plan/site/{site_id}/latest": {
+      "get": {
+        "description": "The latest single-site diagnosis, if that reef has been run before.",
+        "operationId": "latest_site_plan_plan_site__site_id__latest_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "site_id",
+            "required": true,
+            "schema": {
+              "title": "Site Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsePlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Latest Site Plan",
         "tags": [
           "plan"
         ]
@@ -2496,6 +2561,22 @@
             "schema": {
               "title": "Site Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "plan_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Plan Id"
             }
           }
         ],

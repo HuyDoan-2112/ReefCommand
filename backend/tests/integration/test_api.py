@@ -93,6 +93,20 @@ async def test_live_recompute_forces_provider_execution(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
+async def test_latest_site_plan_returns_only_the_retained_site_diagnosis(monkeypatch) -> None:
+    plan = api_state.baseline_plan()
+    monkeypatch.setattr(api_state, "_latest_site_plans", {"cheeca_rocks": plan})
+    transport = httpx.ASGITransport(app=create_app())
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        latest = await client.get("/plan/site/cheeca_rocks/latest")
+        missing = await client.get("/plan/site/carysfort/latest")
+
+    assert latest.status_code == 200
+    assert latest.json()["plan_id"] == plan.plan_id
+    assert missing.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_health_and_sites_do_not_trigger_pipeline_execution(monkeypatch) -> None:
     monkeypatch.setattr(api_state, "_current_plan", None)
 

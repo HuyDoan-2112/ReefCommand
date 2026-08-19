@@ -30,14 +30,25 @@ export function fetchCurrentPlan(): Promise<ResponsePlan> {
   return get<ResponsePlan>('/plan/current');
 }
 
+/** The offline fixture plan used by Site Intelligence before its own live run. */
+export function fetchBaselinePlan(): Promise<ResponsePlan> {
+  return get<ResponsePlan>('/plan/baseline');
+}
+
+/** The latest live single-site diagnosis, retained for navigation within the demo. */
+export function fetchLatestSitePlan(siteId: string): Promise<ResponsePlan> {
+  return get<ResponsePlan>(`/plan/site/${encodeURIComponent(siteId)}/latest`);
+}
+
 /** All study-area sites with both value scores and their standing in the plan. */
 export function fetchSites(): Promise<SiteView[]> {
   return get<SiteView[]>('/sites');
 }
 
 /** Fused evidence for one site: four support scores, confidence, citations. */
-export function fetchSiteEvidence(siteId: string): Promise<FusedEvidence> {
-  return get<FusedEvidence>(`/sites/${encodeURIComponent(siteId)}/evidence`);
+export function fetchSiteEvidence(siteId: string, planId?: string | null): Promise<FusedEvidence> {
+  const query = planId ? `?plan_id=${encodeURIComponent(planId)}` : '';
+  return get<FusedEvidence>(`/sites/${encodeURIComponent(siteId)}/evidence${query}`);
 }
 
 /** The active simulated capacity scenario and its mandatory banner. */

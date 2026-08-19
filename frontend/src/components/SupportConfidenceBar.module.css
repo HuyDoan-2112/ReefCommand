@@ -1,10 +1,5 @@
-/* One cause: its support score and, beneath it, the confidence in that score.
- *
- * The reference draws a single bar per cause. That cannot express this data:
- * support 0.8 at confidence 0.3 is a different situation from support 0.8 at
- * confidence 0.9, and a manager has to see which one they are looking at. So
- * the card carries two tracks, weighted so support reads first.
- */
+/* Compact hypothesis card: confidence is the only visible track, while the
+ * status colour communicates how the backend support score is being used. */
 
 .root {
   display: flex;
@@ -32,17 +27,40 @@
 
 /* Marks a cause as currently in play. Deliberately a word and a border rather
  * than a colour alone. */
-.dominant {
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  color: var(--ocean-deep-2);
-  background: var(--foam);
-  border: 1px solid rgba(17, 138, 178, 0.25);
+  border: 1px solid transparent;
   border-radius: 6px;
   padding: 2px 6px;
   white-space: nowrap;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentcolor;
+}
+
+.status-supported {
+  color: var(--status-critical-text);
+  background: rgba(208, 59, 59, 0.13);
+}
+
+.status-investigating {
+  color: var(--status-warning-text);
+  background: rgba(201, 133, 0, 0.14);
+}
+
+.status-unsupported {
+  color: var(--status-good-text);
+  background: rgba(12, 163, 12, 0.12);
 }
 
 .metric {
@@ -82,23 +100,24 @@
   transition: width 0.25s ease;
 }
 
-.fillSupport {
-  background: var(--support-fill);
-}
-
-/* Confidence is a hatched, quieter treatment so the two tracks are never read
- * as the same quantity, and stay distinguishable without relying on hue. */
 .trackConfidence {
-  height: 6px;
+  height: 7px;
 }
 
 .fillConfidence {
   background-color: var(--confidence-fill);
-  background-image: repeating-linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.55) 0 3px,
-    transparent 3px 6px
-  );
+}
+
+.fill-supported {
+  background-color: var(--status-critical);
+}
+
+.fill-investigating {
+  background-color: var(--status-warning);
+}
+
+.fill-unsupported {
+  background-color: var(--status-good);
 }
 
 .summary {

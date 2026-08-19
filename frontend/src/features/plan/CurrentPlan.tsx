@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useLayoutEffect, useRef } from 'react';
 
 import { Panel, ProvenanceBadge, SimulatedDataBanner, StatTile } from '@/components';
 import { useCurrentPlan } from '@/hooks/usePlan';
@@ -210,7 +211,12 @@ function PriorityQueue({ plan }: { plan: ResponsePlan }) {
   }
 
   return (
-    <Panel title="Priority queue" hint="current plan order" className={styles.queuePanel}>
+    <Panel
+      title="Priority queue"
+      hint="current plan order"
+      className={styles.queuePanel}
+      bodyClassName={styles.queuePanelBody}
+    >
       <div className={styles.queueList}>
         {plan.assignments.map((assignment, index) => (
           <Link
@@ -280,10 +286,42 @@ function PriorityQueue({ plan }: { plan: ResponsePlan }) {
 }
 
 function PlanBody({ plan, surface }: { plan: ResponsePlan; surface: 'command' | 'optimizer' }) {
+  const commandGridRef = useRef<HTMLDivElement>(null);
   const totalHours = plan.assignments.reduce((sum, a) => sum + a.estimated_hours, 0);
   const totalCost = plan.assignments.reduce((sum, a) => sum + a.estimated_cost_usd, 0);
   const binding = plan.binding_constraints ?? [];
   const deferred = plan.deferred ?? [];
+
+  useLayoutEffect(() => {
+    if (surface !== 'command') return;
+
+    const grid = commandGridRef.current;
+    if (!grid) return;
+
+    const syncRowHeight = () => {
+      if (window.matchMedia('(max-width: 1180px)').matches) {
+        grid.style.removeProperty('--command-row-height');
+        return;
+      }
+
+      const mapSvg = grid.querySelector('svg');
+      const mapHeight = mapSvg?.getBoundingClientRect().height ?? 0;
+      if (mapHeight > 0) {
+        grid.style.setProperty('--command-row-height', `${mapHeight}px`);
+      }
+    };
+
+    const observer = new ResizeObserver(syncRowHeight);
+    observer.observe(grid);
+    const mutationObserver = new MutationObserver(syncRowHeight);
+    mutationObserver.observe(grid, { childList: true, subtree: true });
+    syncRowHeight();
+
+    return () => {
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, [surface]);
 
   return (
     <div className={styles.root}>
@@ -322,7 +360,7 @@ function PlanBody({ plan, surface }: { plan: ResponsePlan; surface: 'command' | 
             />
           </div>
 
-          <div className={styles.commandGrid}>
+          <div ref={commandGridRef} className={styles.commandGrid}>
             <div className={styles.mapPanel}>
               <SiteMap />
             </div>

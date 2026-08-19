@@ -14,7 +14,34 @@
   display: grid;
   grid-template-columns: 288px minmax(0, 1fr);
   gap: var(--space-5);
-  align-items: start;
+  align-items: stretch;
+}
+
+.structuredBody {
+  /* Keep the result panel stable before and after the live extraction. The
+   * structured fields and recent-history table scroll inside this fixed body
+   * instead of changing the page geometry when the model returns. */
+  height: 508px;
+  max-height: none;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-color: var(--ocean-mid) var(--foam);
+  scrollbar-width: thin;
+}
+
+.structuredBody::-webkit-scrollbar {
+  width: 8px;
+}
+
+.structuredBody::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: var(--foam);
+}
+
+.structuredBody::-webkit-scrollbar-thumb {
+  border: 2px solid var(--foam);
+  border-radius: 999px;
+  background: var(--ocean-mid);
 }
 
 .structuredBody {

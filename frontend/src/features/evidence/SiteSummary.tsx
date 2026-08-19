@@ -5,11 +5,16 @@ import type { CSSProperties } from 'react';
 import { useState } from 'react';
 
 import { ApiError } from '@/api/client';
-import { Button, ProvenanceBadge } from '@/components';
-import { useCurrentPlan, useRecomputePlan } from '@/hooks/usePlan';
-import { useSites } from '@/hooks/useSites';
+import { Button, ConditionBadge, type Condition } from '@/components';
+import {
+  useBaselinePlan,
+  useCurrentPlan,
+  useLatestSitePlan,
+  useRecomputePlan,
+} from '@/hooks/usePlan';
+import { useSiteEvidence, useSites } from '@/hooks/useSites';
 import { useExecutionTrace } from '@/hooks/useTrace';
-import type { ResponsePlan } from '@/types';
+import type { FusedEvidence, ResponsePlan, SiteView } from '@/types';
 
 import { CoordinatorTrace } from './CoordinatorTrace';
 import { EvidencePanel } from './EvidencePanel';
@@ -22,12 +27,53 @@ function mutationMessage(error: Error | null): string | null {
   return error instanceof ApiError && error.detail ? error.detail : error.message;
 }
 
+function conditionForSite(site: SiteView): Condition {
+  if (site.current_assignment?.priority === 'high') return 'critical';
+  if (site.current_assignment) return 'serious';
+  if (site.deferred) return 'warning';
+  return 'good';
+}
+
+function reportCount(evidence: FusedEvidence | undefined): number {
+  const citations = Object.values(evidence?.by_cause ?? {}).flatMap(
+    (cause) => cause?.citations ?? [],
+  );
+  return new Set(
+    citations
+      .filter((citation) =>
+        citation.source.toLowerCase().startsWith('structured form of demo report'),
+      )
+      .map((citation) => citation.reference ?? citation.source),
+  ).size;
+}
+
+function latestSurveyYear(site: SiteView): number | null {
+  return [...site.measurements.sampling.reference_years].sort((a, b) => b - a)[0] ?? null;
+}
+
+function sampleLabel(site: SiteView): string {
+  const { program, sample_n: sampleN, sample_unit: sampleUnit } = site.measurements.sampling;
+  const unit = sampleUnit.replaceAll('_', ' ');
+  return `${program} ${sampleN} ${unit}${sampleN === 1 ? '' : 's'}`;
+}
+
+function dhwLabel(evidence: FusedEvidence | undefined): string | null {
+  const summary = evidence?.by_cause.thermal?.display_summary ?? '';
+  const match = summary.match(/\bDHW\s+([\d.]+)/i);
+  return match ? `DHW ${match[1]}` : null;
+}
+
 export function SiteSummary({ siteId }: { siteId: string }) {
   const { data: sites, isPending, error } = useSites();
   const { data: plan } = useCurrentPlan();
+  const { data: baselinePlan } = useBaselinePlan();
+  const { data: latestSitePlan } = useLatestSitePlan(siteId);
   const [livePlan, setLivePlan] = useState<ResponsePlan | null>(null);
   const recompute = useRecomputePlan();
-  const { data: planTrace } = useExecutionTrace(livePlan?.plan_id ?? plan?.plan_id ?? null);
+  const displayedPlanId =
+    livePlan?.plan_id ?? latestSitePlan?.plan_id ?? baselinePlan?.plan_id ?? null;
+  const { data: siteEvidence } = useSiteEvidence(siteId, displayedPlanId);
+  const { data: planTrace } = useExecutionTrace(displayedPlanId);
 
   if (isPending) return <p className={styles.muted}>Loading site...</p>;
   if (error) return <p className={styles.muted}>Could not load sites: {error.message}</p>;
@@ -47,9 +93,11 @@ export function SiteSummary({ siteId }: { siteId: string }) {
       total + (step.token_usage?.input_tokens ?? 0) + (step.token_usage?.output_tokens ?? 0),
     0,
   );
-  const provider = llmSteps[0];
   const isLivePlan = planTrace?.offline === false && llmSteps.length > 0;
   const liveError = mutationMessage(recompute.error);
+  const reports = reportCount(siteEvidence);
+  const dhw = dhwLabel(siteEvidence);
+  const surveyYear = latestSurveyYear(site);
   function runLivePipeline() {
     recompute.mutate(
       {
@@ -74,18 +122,21 @@ export function SiteSummary({ siteId }: { siteId: string }) {
             {site.location.zone_name_in_source ? ` (${site.location.zone_name_in_source})` : ''}
           </div>
           <div className={styles.headerTags}>
-            <ProvenanceBadge
-              provenance={site.location.provenance.kind}
-              title={site.location.provenance.source}
+            <ConditionBadge
+              condition={conditionForSite(site)}
+              basis="current response plan status"
             />
-            {site.has_active_restoration ? (
-              <span className={styles.tag}>Active restoration</span>
+            {dhw ? <span className={styles.tag}>🌡️ {dhw}</span> : null}
+            {reports > 0 ? (
+              <span className={styles.tag}>
+                🤿 {reports} report{reports === 1 ? '' : 's'} cited
+              </span>
             ) : null}
-            <span className={isLivePlan ? styles.liveTag : styles.fixtureTag}>
-              {isLivePlan
-                ? `${provider?.provider} ${provider?.model}`
-                : 'Deterministic fixture baseline'}
-            </span>
+            <span className={styles.tag}>🧪 {sampleLabel(site)}</span>
+            {surveyYear ? <span className={styles.tag}>📅 reference {surveyYear}</span> : null}
+            {!isLivePlan ? (
+              <span className={styles.fixtureTag}>Deterministic fixture baseline</span>
+            ) : null}
           </div>
         </div>
 
@@ -136,11 +187,11 @@ export function SiteSummary({ siteId }: { siteId: string }) {
         </div>
       </header>
 
-      <EvidencePanel siteId={site.site_id} />
+      <EvidencePanel siteId={site.site_id} planId={displayedPlanId} />
 
       <div className={styles.decisionGrid}>
-        <CoordinatorTrace siteId={site.site_id} planId={livePlan?.plan_id} />
-        <RecommendedInterventions siteId={site.site_id} />
+        <CoordinatorTrace siteId={site.site_id} planId={displayedPlanId} />
+        <RecommendedInterventions siteId={site.site_id} planId={displayedPlanId} />
       </div>
     </div>
   );

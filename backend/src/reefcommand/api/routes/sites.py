@@ -45,12 +45,15 @@ def list_sites() -> list[SiteView]:
 
 
 @router.get("/{site_id}/evidence", response_model=FusedEvidence)
-def site_evidence(site_id: str) -> FusedEvidence:
+def site_evidence(site_id: str, plan_id: str | None = None) -> FusedEvidence:
     """Fused evidence for one site, including per-cause support, confidence, and citations."""
-    plan = peek_current_plan()
-    if plan is None:
+    if plan_id is None:
+        plan = peek_current_plan()
+        if plan is None:
+            raise HTTPException(status_code=404, detail=f"unknown site {site_id!r}")
+        pipeline_state = state_for_plan(plan.plan_id)
+    else:
+        pipeline_state = state_for_plan(plan_id)
+    if pipeline_state is None or site_id not in pipeline_state.evidence_by_site:
         raise HTTPException(status_code=404, detail=f"unknown site {site_id!r}")
-    state = state_for_plan(plan.plan_id)
-    if state is None or site_id not in state.evidence_by_site:
-        raise HTTPException(status_code=404, detail=f"unknown site {site_id!r}")
-    return state.evidence_by_site[site_id]
+    return pipeline_state.evidence_by_site[site_id]

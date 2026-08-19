@@ -6,7 +6,15 @@ import { Button, Panel, ProvenanceBadge, SimulatedDataBanner, StatTile } from '@
 import { useCurrentPlan, useRecomputePlan } from '@/hooks/usePlan';
 import { useSites } from '@/hooks/useSites';
 import { useScenario } from '@/hooks/useResources';
-import type { Assignment, Priority, ResourceScenario, ResponsePlan, SiteView } from '@/types';
+import { useExecutionTrace } from '@/hooks/useTrace';
+import type {
+  Assignment,
+  ExecutionTrace,
+  Priority,
+  ResourceScenario,
+  ResponsePlan,
+  SiteView,
+} from '@/types';
 
 import styles from './OptimizerDashboard.module.css';
 
@@ -47,6 +55,28 @@ function siteLocation(site: SiteView | undefined): string {
 function progress(value: number, maximum: number): string {
   if (maximum <= 0) return '0%';
   return `${Math.min(100, Math.max(0, (value / maximum) * 100))}%`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function coordinatorActionRefs(trace: ExecutionTrace | undefined): string[] {
+  return (trace?.steps ?? []).flatMap((step) => {
+    if (step.stage !== 'coordinator' || !step.output) return [];
+    const decision = step.output.decision;
+    if (!isRecord(decision) || !Array.isArray(decision.approved_actions)) return [];
+    return decision.approved_actions.flatMap((action) => {
+      if (!isRecord(action) || typeof action.action_id !== 'string') return [];
+      return [`${step.site_id ?? 'site'}:${action.action_id}`];
+    });
+  });
 }
 
 function boatName(scenario: ResourceScenario, boatId: string | null | undefined): string {
@@ -180,6 +210,7 @@ export function OptimizerDashboard() {
   const { data: scenarioView, isPending: scenarioPending, error: scenarioError } = useScenario();
   const { data: sites } = useSites();
   const recompute = useRecomputePlan();
+  const { data: trace } = useExecutionTrace(plan?.plan_id ?? null);
 
   const siteById = useMemo(
     () => new Map((sites ?? []).map((site) => [site.site_id, site])),
@@ -219,6 +250,24 @@ export function OptimizerDashboard() {
   const equipmentNote = (scenario.inventory.equipment ?? [])
     .map((item) => `${item.available_units} ${item.category}`)
     .join(' · ');
+  const liveSteps = trace?.steps.filter((step) => step.executor === 'llm') ?? [];
+  const liveProvider = liveSteps.find((step) => step.provider)?.provider;
+  const liveModel = liveSteps.find((step) => step.model)?.model;
+  const optimizerTrace = trace?.steps.find((step) => step.stage === 'optimizer');
+  const approvedActionRefs = coordinatorActionRefs(trace);
+  const assignmentRefs = stringArray(optimizerTrace?.output?.assignment_refs);
+  const deferredSiteIds = stringArray(optimizerTrace?.output?.deferred_site_ids);
+  const bindingTrace = stringArray(optimizerTrace?.output?.binding_constraints);
+  const visibleActionRefs = approvedActionRefs.slice(0, 6);
+  const isLiveResult = trace !== undefined && !trace.offline;
+  const freshLiveRun = recompute.data?.plan_id === plan.plan_id && isLiveResult;
+  const runStateLabel = recompute.isPending
+    ? 'Live run in progress'
+    : freshLiveRun
+      ? 'Live run completed'
+      : isLiveResult
+        ? 'Current plan is live'
+        : 'Default fixture baseline';
 
   function runLivePlan() {
     recompute.mutate({
@@ -273,23 +322,66 @@ export function OptimizerDashboard() {
       <div className={styles.agentCallout}>
         <span aria-hidden="true">🧠</span>
         <div className={styles.agentCopy}>
-          <strong>Live demo control</strong>
+          <div className={styles.agentTitleRow}>
+            <strong>Live demo control</strong>
+            <span className={isLiveResult ? styles.liveMode : styles.fixtureMode}>
+              {runStateLabel}
+            </span>
+          </div>
           <span>
-            The live Coordinator chooses eligible actions. The deterministic optimizer assigns
-            simulated resources under today&apos;s constraints.
+            {trace && !trace.offline && liveSteps.length > 0
+              ? `${liveSteps.length} validated ${liveProvider ?? 'LLM'} call(s) reviewed ${
+                  sites?.length ?? 0
+                } reef(s). The deterministic optimizer then assigned simulated resources.`
+              : `The live Coordinator reviews all ${
+                  sites?.length ?? 0
+                } reefs before the deterministic optimizer assigns simulated resources under today&apos;s constraints.`}
           </span>
         </div>
         <Button variant="coral" disabled={recompute.isPending} onClick={runLivePlan}>
-          {recompute.isPending ? 'Running agents...' : 'Run live Coordinator + optimize'}
+          {recompute.isPending ? 'Running live review...' : 'Run live review + optimize'}
         </Button>
       </div>
+
+      <section className={styles.handoff} aria-label="Validated Coordinator handoff to OR-Tools">
+        <div className={styles.handoffHead}>
+          <strong>Validated Coordinator handoff</strong>
+          <span>Structured output → OR-Tools</span>
+        </div>
+        <div className={styles.handoffFlow}>
+          <div className={styles.handoffStage}>
+            <span>Coordinator</span>
+            <strong>{approvedActionRefs.length}</strong>
+            <small>approved actions</small>
+          </div>
+          <span className={styles.handoffArrow} aria-hidden="true">
+            →
+          </span>
+          <div className={styles.handoffStage}>
+            <span>OR-Tools</span>
+            <strong>{assignmentRefs.length}</strong>
+            <small>assignments · {deferredSiteIds.length} deferred</small>
+          </div>
+        </div>
+        <div className={styles.handoffDetails}>
+          <span>
+            {visibleActionRefs.join(' · ') || 'No approved actions in the current trace'}
+            {approvedActionRefs.length > visibleActionRefs.length
+              ? ` · +${approvedActionRefs.length - visibleActionRefs.length} more`
+              : ''}
+          </span>
+          {bindingTrace.length > 0 ? <span>Constraint: {bindingTrace.join(', ')}</span> : null}
+        </div>
+      </section>
 
       {recompute.isError ? (
         <p className={styles.error}>Live run failed: {recompute.error.message}</p>
       ) : null}
       {recompute.isSuccess ? (
         <p className={styles.success}>
-          Live Coordinator decisions validated and the deterministic allocation was recomputed.
+          {trace && !trace.offline
+            ? `Live ${liveProvider ?? 'LLM'}${liveModel ? ` (${liveModel})` : ''} decisions were validated, then the deterministic allocation was recomputed.`
+            : 'The live run completed. Refreshing its validated trace...'}
         </p>
       ) : null}
 

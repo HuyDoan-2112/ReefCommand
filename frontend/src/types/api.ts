@@ -104,6 +104,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/plan/baseline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Baseline Plan
+         * @description The offline fixture plan used before a user starts a live run.
+         */
+        get: operations["baseline_plan_plan_baseline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/plan/current": {
         parameters: {
             query?: never;
@@ -158,6 +178,26 @@ export interface paths {
          * @description Force a recompute. Returns the new plan and its latency.
          */
         post: operations["recompute_plan_recompute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/plan/site/{site_id}/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Latest Site Plan
+         * @description The latest single-site diagnosis, if that reef has been run before.
+         */
+        get: operations["latest_site_plan_plan_site__site_id__latest_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1351,6 +1391,26 @@ export interface operations {
             };
         };
     };
+    baseline_plan_plan_baseline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponsePlan"];
+                };
+            };
+        };
+    };
     current_plan_plan_current_get: {
         parameters: {
             query?: never;
@@ -1414,6 +1474,37 @@ export interface operations {
                 "application/json": components["schemas"]["RecomputeRequest"] | null;
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponsePlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    latest_site_plan_plan_site__site_id__latest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                site_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -1573,7 +1664,9 @@ export interface operations {
     };
     site_evidence_sites__site_id__evidence_get: {
         parameters: {
-            query?: never;
+            query?: {
+                plan_id?: string | null;
+            };
             header?: never;
             path: {
                 site_id: string;

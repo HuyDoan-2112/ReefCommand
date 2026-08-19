@@ -15,9 +15,12 @@ export const queryKeys = {
 
   plan: () => [...queryKeys.all, 'plan'] as const,
   currentPlan: () => [...queryKeys.plan(), 'current'] as const,
+  baselinePlan: () => [...queryKeys.plan(), 'baseline'] as const,
+  latestSitePlan: (siteId: string) => [...queryKeys.plan(), 'site-latest', siteId] as const,
 
   sites: () => [...queryKeys.all, 'sites'] as const,
-  siteEvidence: (siteId: string) => [...queryKeys.sites(), siteId, 'evidence'] as const,
+  siteEvidence: (siteId: string, planId?: string | null) =>
+    [...queryKeys.sites(), siteId, 'evidence', planId ?? 'current'] as const,
 
   resources: () => [...queryKeys.all, 'resources'] as const,
   scenario: () => [...queryKeys.resources(), 'scenario'] as const,
