@@ -6,12 +6,7 @@ import { useState } from 'react';
 
 import { ApiError } from '@/api/client';
 import { Button, ConditionBadge, type Condition } from '@/components';
-import {
-  useBaselinePlan,
-  useCurrentPlan,
-  useLatestSitePlan,
-  useRecomputePlan,
-} from '@/hooks/usePlan';
+import { useBaselinePlan, useCurrentPlan, useRecomputePlan } from '@/hooks/usePlan';
 import { useSiteEvidence, useSites } from '@/hooks/useSites';
 import { useExecutionTrace } from '@/hooks/useTrace';
 import type { FusedEvidence, ResponsePlan, SiteView } from '@/types';
@@ -67,11 +62,12 @@ export function SiteSummary({ siteId }: { siteId: string }) {
   const { data: sites, isPending, error } = useSites();
   const { data: plan } = useCurrentPlan();
   const { data: baselinePlan } = useBaselinePlan();
-  const { data: latestSitePlan } = useLatestSitePlan(siteId);
   const [livePlan, setLivePlan] = useState<ResponsePlan | null>(null);
   const recompute = useRecomputePlan();
-  const displayedPlanId =
-    livePlan?.plan_id ?? latestSitePlan?.plan_id ?? baselinePlan?.plan_id ?? null;
+  // Start from the stable fixture trace. A previous live diagnosis is not
+  // shown until this page's button is pressed, so the demo has a clear
+  // before-and-after transition.
+  const displayedPlanId = livePlan?.plan_id ?? baselinePlan?.plan_id ?? null;
   const { data: siteEvidence } = useSiteEvidence(siteId, displayedPlanId);
   const { data: planTrace } = useExecutionTrace(displayedPlanId);
 
