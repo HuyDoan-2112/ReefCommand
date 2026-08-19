@@ -69,6 +69,11 @@
   letter-spacing: 0.25px;
 }
 
+.liveResult {
+  color: var(--status-good-text);
+  font-weight: 700;
+}
+
 .liveMode {
   border: 1px solid rgba(12, 163, 12, 0.28);
   background: rgba(12, 163, 12, 0.1);

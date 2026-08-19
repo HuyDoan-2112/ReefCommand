@@ -496,7 +496,7 @@ def run(
     if offline_mode:
         site_results = [assess_and_decide(site) for site in sites]
     else:
-        max_workers = min(4, len(sites)) or 1
+        max_workers = min(8, len(sites)) or 1
         with ThreadPoolExecutor(
             max_workers=max_workers,
             thread_name_prefix="reef-site",

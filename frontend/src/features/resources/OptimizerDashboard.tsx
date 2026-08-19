@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Button, Panel, ProvenanceBadge, SimulatedDataBanner, StatTile } from '@/components';
 import { useCurrentPlan, useRecomputePlan } from '@/hooks/usePlan';
@@ -46,6 +46,22 @@ function currency(value: number): string {
 
 function causeLabel(summary: string): string {
   return summary.replace(/^Supporting causes:\s*/i, '').replace(/, /g, ' + ');
+}
+
+function allocationSignature(plan: ResponsePlan): string {
+  const assignments = plan.assignments
+    .map((assignment) =>
+      [
+        assignment.site_id,
+        assignment.action_id,
+        assignment.boat_id ?? '',
+        assignment.team_id ?? '',
+        (assignment.equipment ?? []).join(','),
+      ].join('|'),
+    )
+    .sort();
+  const deferred = (plan.deferred ?? []).map((site) => `${site.site_id}|deferred`).sort();
+  return [...assignments, ...deferred].join(';;');
 }
 
 function siteLocation(site: SiteView | undefined): string {
@@ -210,7 +226,8 @@ export function OptimizerDashboard() {
   const { data: scenarioView, isPending: scenarioPending, error: scenarioError } = useScenario();
   const { data: sites } = useSites();
   const recompute = useRecomputePlan();
-  const livePlan = recompute.data?.plan_id === plan?.plan_id ? recompute.data : null;
+  const [preLiveAllocation, setPreLiveAllocation] = useState<string | null>(null);
+  const livePlan = recompute.data ?? null;
   const displayedPlan = livePlan ?? plan;
   const { data: trace } = useExecutionTrace(displayedPlan?.plan_id ?? null);
 
@@ -268,6 +285,10 @@ export function OptimizerDashboard() {
   const visibleActionRefs = approvedActionRefs.slice(0, 6);
   const isLiveResult = trace !== undefined && !trace.offline;
   const freshLiveRun = livePlan !== null && isLiveResult;
+  const liveAllocationChanged =
+    livePlan !== null && preLiveAllocation !== null
+      ? allocationSignature(livePlan) !== preLiveAllocation
+      : null;
   const runStateLabel = recompute.isPending
     ? 'Live run in progress'
     : freshLiveRun
@@ -277,6 +298,7 @@ export function OptimizerDashboard() {
         : 'Default fixture baseline';
 
   function runLivePlan() {
+    setPreLiveAllocation(allocationSignature(activePlan));
     recompute.mutate({
       scenario_id: scenarioId,
       site_ids: sites?.map((site) => site.site_id),
@@ -387,7 +409,9 @@ export function OptimizerDashboard() {
       {recompute.isSuccess ? (
         <p className={styles.success}>
           {trace && !trace.offline
-            ? `Live ${liveProvider ?? 'LLM'}${liveModel ? ` (${liveModel})` : ''} decisions were validated, then the deterministic allocation was recomputed.`
+            ? liveAllocationChanged
+              ? `Live ${liveProvider ?? 'LLM'}${liveModel ? ` (${liveModel})` : ''} decisions were validated and changed the allocation shown below.`
+              : `Live ${liveProvider ?? 'LLM'}${liveModel ? ` (${liveModel})` : ''} decisions were validated. The deterministic optimizer kept the same final allocation under the current constraints.`
             : 'The live run completed. Refreshing its validated trace...'}
         </p>
       ) : null}
@@ -396,7 +420,13 @@ export function OptimizerDashboard() {
         <Panel
           className={styles.allocationPanel}
           title="📋 This Week's Allocation Plan"
-          hint={`top ${activePlan.assignments.length} of ${totalSites} flagged sites, ranked by strategic value`}
+          hint={
+            <>
+              top {activePlan.assignments.length} of {totalSites} flagged sites, ranked by strategic
+              value
+              {livePlan ? <span className={styles.liveResult}> · live result</span> : null}
+            </>
+          }
           scrollX
         >
           <div className={styles.tableViewport}>
