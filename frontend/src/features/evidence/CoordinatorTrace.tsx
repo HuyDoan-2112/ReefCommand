@@ -1,7 +1,6 @@
 'use client';
 
 import { Panel } from '@/components';
-import { useCurrentPlan } from '@/hooks/usePlan';
 import { useSiteTrace } from '@/hooks/useTrace';
 import { cx } from '@/lib/cx';
 import type { TraceStep } from '@/types';
@@ -121,10 +120,8 @@ function StepRow({ step }: { step: TraceStep }) {
   );
 }
 
-export function CoordinatorTrace({ siteId, planId }: { siteId: string; planId?: string | null }) {
-  const { data: currentPlan } = useCurrentPlan();
-  const activePlanId = planId ?? currentPlan?.plan_id ?? null;
-  const { data: trace, isPending, error } = useSiteTrace(activePlanId, siteId);
+export function CoordinatorTrace({ siteId, planId }: { siteId: string; planId: string | null }) {
+  const { data: trace, isPending, error } = useSiteTrace(planId, siteId);
 
   if (isPending) {
     return (

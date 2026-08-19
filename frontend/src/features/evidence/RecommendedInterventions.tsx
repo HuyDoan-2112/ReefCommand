@@ -1,7 +1,6 @@
 'use client';
 
 import { Panel } from '@/components';
-import { useCurrentPlan } from '@/hooks/usePlan';
 import { useSiteTrace } from '@/hooks/useTrace';
 
 import {
@@ -11,13 +10,22 @@ import {
 } from './coordinatorDecision';
 import styles from './RecommendedInterventions.module.css';
 
-export function RecommendedInterventions({ siteId }: { siteId: string }) {
-  const { data: plan } = useCurrentPlan();
-  const { data: trace, isPending, error } = useSiteTrace(plan?.plan_id ?? null, siteId);
+export function RecommendedInterventions({
+  siteId,
+  planId,
+}: {
+  siteId: string;
+  planId: string | null;
+}) {
+  const { data: trace, isPending, error } = useSiteTrace(planId, siteId);
 
   if (isPending) {
     return (
-      <Panel title="Recommended interventions">
+      <Panel
+        title="Recommended interventions"
+        className={styles.fixedPanel}
+        bodyClassName={styles.fixedBody}
+      >
         <p className={styles.muted}>Loading policy-approved actions...</p>
       </Panel>
     );
@@ -25,7 +33,11 @@ export function RecommendedInterventions({ siteId }: { siteId: string }) {
 
   if (error || !trace) {
     return (
-      <Panel title="Recommended interventions">
+      <Panel
+        title="Recommended interventions"
+        className={styles.fixedPanel}
+        bodyClassName={styles.fixedBody}
+      >
         <p className={styles.muted}>No validated recommendation is available for this plan.</p>
       </Panel>
     );
@@ -40,6 +52,8 @@ export function RecommendedInterventions({ siteId }: { siteId: string }) {
     <Panel
       title="Recommended interventions"
       hint={decision?.executor === 'llm' ? 'live Coordinator output' : 'offline fixture baseline'}
+      className={styles.fixedPanel}
+      bodyClassName={styles.fixedBody}
     >
       {!decision ? (
         <p className={styles.muted}>The Coordinator did not return a usable validated decision.</p>

@@ -1,3 +1,35 @@
+.fixedPanel {
+  display: flex;
+  /* Keep this compact and stable. Long provenance text scrolls inside rather
+   * than stretching the right-hand column or the whole decision grid. */
+  height: 444px;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.fixedBody {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-color: var(--ocean-mid) var(--foam);
+  scrollbar-width: thin;
+}
+
+.fixedBody::-webkit-scrollbar {
+  width: 8px;
+}
+
+.fixedBody::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: var(--foam);
+}
+
+.fixedBody::-webkit-scrollbar-thumb {
+  border: 2px solid var(--foam);
+  border-radius: 999px;
+  background: var(--ocean-mid);
+}
+
 .list {
   margin: 0;
   padding: 0;

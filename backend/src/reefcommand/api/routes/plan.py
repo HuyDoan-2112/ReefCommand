@@ -51,6 +51,21 @@ def current_plan() -> ResponsePlan:
     return state.current_plan()
 
 
+@router.get("/baseline", response_model=ResponsePlan)
+def baseline_plan() -> ResponsePlan:
+    """The offline fixture plan used before a user starts a live run."""
+    return state.baseline_plan()
+
+
+@router.get("/site/{site_id}/latest", response_model=ResponsePlan)
+def latest_site_plan(site_id: str) -> ResponsePlan:
+    """The latest single-site diagnosis, if that reef has been run before."""
+    plan = state.latest_site_plan(site_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail=f"no site diagnosis for {site_id!r}")
+    return plan
+
+
 @router.post("/recompute", response_model=ResponsePlan)
 def recompute(request: RecomputeRequest | None = None) -> ResponsePlan:
     """Force a recompute. Returns the new plan and its latency."""

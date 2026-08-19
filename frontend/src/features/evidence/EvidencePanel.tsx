@@ -53,8 +53,8 @@ function Citations({ evidence }: { evidence: CauseEvidence }) {
   );
 }
 
-export function EvidencePanel({ siteId }: { siteId: string }) {
-  const { data: evidence, isPending, error } = useSiteEvidence(siteId);
+export function EvidencePanel({ siteId, planId }: { siteId: string; planId: string | null }) {
+  const { data: evidence, isPending, error } = useSiteEvidence(siteId, planId);
 
   if (isPending) {
     return <p className={styles.muted}>Loading the four hypothesis assessments...</p>;
@@ -70,7 +70,7 @@ export function EvidencePanel({ siteId }: { siteId: string }) {
     <section className={styles.root}>
       <div className={styles.sectionHead}>
         <h3>Hypothesis investigation - 4 independent modules</h3>
-        <span>Demo evidence uses synthetic inputs, not live measurements</span>
+        <span>Confidence bars are status-coloured; support remains in the audit trace</span>
       </div>
       <div className={styles.causeGrid}>
         {CAUSES.map((cause) => {
@@ -92,7 +92,7 @@ export function EvidencePanel({ siteId }: { siteId: string }) {
         })}
       </div>
       <p className={styles.disclaimer}>
-        Support scores are not probabilities and are not normalized against each other.
+        Status is based on the backend support score. Confidence is not a probability.
       </p>
     </section>
   );

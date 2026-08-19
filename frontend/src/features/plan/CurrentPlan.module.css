@@ -15,7 +15,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 310px);
   gap: var(--space-5);
-  align-items: stretch;
+  align-items: start;
 }
 
 .mapPanel,

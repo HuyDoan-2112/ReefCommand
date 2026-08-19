@@ -31,11 +31,11 @@ export function useSites() {
  * Returns 404 until a plan exists, which is a real answer rather than a
  * transient failure, so it is not retried.
  */
-export function useSiteEvidence(siteId: string | null) {
+export function useSiteEvidence(siteId: string | null, planId?: string | null) {
   return useQuery({
-    queryKey: queryKeys.siteEvidence(siteId ?? ''),
-    queryFn: () => fetchSiteEvidence(siteId as string),
-    enabled: siteId !== null,
+    queryKey: queryKeys.siteEvidence(siteId ?? '', planId),
+    queryFn: () => fetchSiteEvidence(siteId as string, planId),
+    enabled: siteId !== null && planId !== null,
     retry: false,
   });
 }

@@ -64,11 +64,11 @@ function ResourceMini() {
       </div>
       <div className={styles.workspaceChip}>
         <div className={styles.avatar} aria-hidden="true">
-          FK
+          KL
         </div>
         <div>
-          <div className={styles.workspaceName}>Florida Keys</div>
-          <div className={styles.workspaceRole}>Response workspace</div>
+          <div className={styles.workspaceName}>Kai Lindgren</div>
+          <div className={styles.workspaceRole}>Reef Manager · Maui Nui</div>
         </div>
       </div>
     </>
@@ -89,7 +89,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div>
             <div className={styles.brandName}>ReefCommand</div>
-            <div className={styles.brandTag}>Decision support</div>
+            <div className={styles.brandTag}>AI REEF OPS</div>
           </div>
         </div>
 

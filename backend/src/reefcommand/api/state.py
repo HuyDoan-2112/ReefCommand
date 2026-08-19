@@ -29,13 +29,44 @@ DEFAULT_SITE_IDS = [
 
 _state_lock = Lock()
 _mutation_lock = RLock()
+_baseline_plan: ResponsePlan | None = None
 _current_plan: ResponsePlan | None = None
+_latest_site_plans: dict[str, ResponsePlan] = {}
 
 
 def peek_current_plan() -> ResponsePlan | None:
     """Return the published plan without triggering pipeline execution."""
     with _state_lock:
         return _current_plan
+
+
+def baseline_plan() -> ResponsePlan:
+    """Return the stable offline fixture plan used as the demo starting point."""
+    global _baseline_plan
+    with _state_lock:
+        existing = _baseline_plan
+    if existing is not None:
+        return existing
+    with _mutation_lock:
+        with _state_lock:
+            existing = _baseline_plan
+        if existing is not None:
+            return existing
+        computed = run(
+            DEFAULT_SCENARIO_ID,
+            DEFAULT_SITE_IDS,
+            offline=True,
+            replan_trigger="demo_baseline",
+        )
+        with _state_lock:
+            _baseline_plan = computed
+        return computed
+
+
+def latest_site_plan(site_id: str) -> ResponsePlan | None:
+    """Return the latest single-site diagnosis without changing global plan state."""
+    with _state_lock:
+        return _latest_site_plans.get(site_id)
 
 
 def current_plan() -> ResponsePlan:
@@ -48,7 +79,7 @@ def current_plan() -> ResponsePlan:
         existing = peek_current_plan()
         if existing is not None:
             return existing
-        computed = run(DEFAULT_SCENARIO_ID, DEFAULT_SITE_IDS, offline=True)
+        computed = baseline_plan()
         with _state_lock:
             _current_plan = computed
         return computed
@@ -74,6 +105,9 @@ def recompute(
         if publish:
             with _state_lock:
                 _current_plan = computed
+        elif len(site_ids or []) == 1:
+            with _state_lock:
+                _latest_site_plans[site_ids[0]] = computed
         return computed
 
 

@@ -4,18 +4,17 @@ import type { Cause } from '@/types';
 import styles from './SupportConfidenceBar.module.css';
 
 /**
- * The support score for one cause, with the confidence in that score beneath it.
+ * A compact card for one cause. The visible metric is confidence; the backend
+ * support score drives the status label and colour without adding a second bar.
  *
  * Deliberate constraints, from `.agents/teammates/frontend.md`:
  *
  * - The word is "support", never "probability" or "likelihood". These scores
  *   are not calibrated against expert-labeled cases, so calling them
  *   probabilities would overstate what they prove.
- * - Confidence is always rendered next to support. A component cannot render
- *   one without the other, because both props are required.
- * - Each bar is scaled against a full 0 to 1 track of its own. The four causes
- *   are not competing shares of one quantity, so nothing here is ever scaled
- *   relative to the other causes.
+ * - Confidence is scaled against a full 0 to 1 track of its own.
+ * - Support remains a required input because it determines the status, but it
+ *   is intentionally not rendered as a second visual line in this compact UI.
  *
  * Rendering four of these side by side is the approved layout. Feeding them
  * into a pie or a stacked bar is not.
@@ -39,8 +38,18 @@ function toPercent(value: number): string {
   return `${Math.round(Math.min(Math.max(value, 0), 1) * 100)}%`;
 }
 
-function format(value: number): string {
-  return value.toFixed(2);
+type EvidenceStatus = 'supported' | 'investigating' | 'unsupported';
+
+const STATUS_LABELS: Record<EvidenceStatus, string> = {
+  supported: 'Supported',
+  investigating: 'Investigating',
+  unsupported: 'Unsupported',
+};
+
+function statusForEvidence(support: number, isDominant: boolean): EvidenceStatus {
+  if (isDominant || support >= 0.75) return 'supported';
+  if (support >= 0.2) return 'investigating';
+  return 'unsupported';
 }
 
 export interface SupportConfidenceBarProps {
@@ -66,6 +75,7 @@ export function SupportConfidenceBar({
   keyFindings,
 }: SupportConfidenceBarProps) {
   const label = CAUSE_LABELS[cause];
+  const status = statusForEvidence(support, isDominant);
 
   return (
     <div className={styles.root}>
@@ -74,40 +84,25 @@ export function SupportConfidenceBar({
           {CAUSE_ICONS[cause]}
         </span>
         <span className={styles.label}>{label}</span>
-        {isDominant ? <span className={styles.dominant}>In play</span> : null}
-      </div>
-
-      <div className={styles.metric}>
-        <span className={styles.metricLabel}>Support</span>
-        <span className={styles.metricValue}>{format(support)}</span>
-        <div
-          className={styles.track}
-          role="meter"
-          aria-valuenow={support}
-          aria-valuemin={0}
-          aria-valuemax={1}
-          aria-label={`${label} support score, ${format(support)} out of 1`}
-        >
-          <div
-            className={cx(styles.fill, styles.fillSupport)}
-            style={{ width: toPercent(support) }}
-          />
-        </div>
+        <span className={cx(styles.status, styles[`status-${status}`])}>
+          <span className={styles.statusDot} aria-hidden="true" />
+          {STATUS_LABELS[status]}
+        </span>
       </div>
 
       <div className={styles.metric}>
         <span className={styles.metricLabel}>Confidence</span>
-        <span className={styles.metricValue}>{format(confidence)}</span>
+        <span className={styles.metricValue}>{toPercent(confidence)}</span>
         <div
-          className={cx(styles.track, styles.trackConfidence)}
+          className={cx(styles.track, styles.trackConfidence, styles[`track-${status}`])}
           role="meter"
           aria-valuenow={confidence}
           aria-valuemin={0}
           aria-valuemax={1}
-          aria-label={`Confidence in the ${label} support score, ${format(confidence)} out of 1`}
+          aria-label={`${label} confidence, ${toPercent(confidence)}`}
         >
           <div
-            className={cx(styles.fill, styles.fillConfidence)}
+            className={cx(styles.fill, styles.fillConfidence, styles[`fill-${status}`])}
             style={{ width: toPercent(confidence) }}
           />
         </div>

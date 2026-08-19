@@ -14,7 +14,9 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 
 import {
   changeScenario,
+  fetchBaselinePlan,
   fetchCurrentPlan,
+  fetchLatestSitePlan,
   recomputePlan,
   structureObservation,
   submitObservation,
@@ -38,6 +40,26 @@ export function useCurrentPlan() {
   return useQuery({
     queryKey: queryKeys.currentPlan(),
     queryFn: fetchCurrentPlan,
+  });
+}
+
+/** Stable offline fixture plan used as Site Intelligence's initial trace. */
+export function useBaselinePlan() {
+  return useQuery({
+    queryKey: queryKeys.baselinePlan(),
+    queryFn: fetchBaselinePlan,
+    staleTime: Infinity,
+  });
+}
+
+/** Restore the latest live diagnosis for a site after navigating back to it. */
+export function useLatestSitePlan(siteId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.latestSitePlan(siteId ?? ''),
+    queryFn: () => fetchLatestSitePlan(siteId as string),
+    enabled: siteId !== null,
+    staleTime: Infinity,
+    retry: false,
   });
 }
 
@@ -102,7 +124,10 @@ export function useRecomputePlan() {
       // A live site diagnosis is intentionally scoped to one site. Keep the
       // global plan cache intact so the Command Map continues to show every
       // reef while the site page reads the returned single-site trace.
-      if (request?.execution_mode === 'live_llm' && request.site_ids?.length === 1) return;
+      if (request?.execution_mode === 'live_llm' && request.site_ids?.length === 1) {
+        client.setQueryData<ResponsePlan>(queryKeys.latestSitePlan(request.site_ids[0]!), plan);
+        return;
+      }
       client.setQueryData<ResponsePlan>(queryKeys.currentPlan(), plan);
       await invalidateAfterReplan(client);
     },
