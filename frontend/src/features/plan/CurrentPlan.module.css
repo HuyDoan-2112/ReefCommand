@@ -14,7 +14,7 @@
 .commandGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 310px);
-  grid-template-rows: minmax(334px, clamp(334px, calc(62vw - 398px), 620px));
+  grid-template-rows: var(--command-row-height, auto);
   gap: var(--space-5);
   align-items: stretch;
 }
@@ -423,7 +423,6 @@
 @media (max-width: 1180px) {
   .commandGrid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto;
   }
 
   .queueList {
