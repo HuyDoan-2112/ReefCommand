@@ -210,17 +210,23 @@ export function OptimizerDashboard() {
   const { data: scenarioView, isPending: scenarioPending, error: scenarioError } = useScenario();
   const { data: sites } = useSites();
   const recompute = useRecomputePlan();
-  const { data: trace } = useExecutionTrace(plan?.plan_id ?? null);
+  const livePlan = recompute.data?.plan_id === plan?.plan_id ? recompute.data : null;
+  const displayedPlan = livePlan ?? plan;
+  const { data: trace } = useExecutionTrace(displayedPlan?.plan_id ?? null);
 
   const siteById = useMemo(
     () => new Map((sites ?? []).map((site) => [site.site_id, site])),
     [sites],
   );
   const totalCost =
-    plan?.assignments.reduce((sum, assignment) => sum + assignment.estimated_cost_usd, 0) ?? 0;
+    displayedPlan?.assignments.reduce(
+      (sum, assignment) => sum + assignment.estimated_cost_usd,
+      0,
+    ) ?? 0;
   const totalHours =
-    plan?.assignments.reduce((sum, assignment) => sum + assignment.estimated_hours, 0) ?? 0;
-  const actionCosts = plan ? actionCostByClass(plan) : [];
+    displayedPlan?.assignments.reduce((sum, assignment) => sum + assignment.estimated_hours, 0) ??
+    0;
+  const actionCosts = displayedPlan ? actionCostByClass(displayedPlan) : [];
   const maxValue = Math.max(0.01, ...(sites ?? []).map((site) => site.scores.strategic_value));
 
   if (planPending || scenarioPending) {
@@ -235,15 +241,16 @@ export function OptimizerDashboard() {
     );
   }
 
+  const activePlan = displayedPlan ?? plan;
   const scenario = scenarioView.scenario;
-  const deferred = plan.deferred ?? [];
-  const bindingConstraints = plan.binding_constraints ?? [];
+  const deferred = activePlan.deferred ?? [];
+  const bindingConstraints = activePlan.binding_constraints ?? [];
   const availableBoats = scenario.boats.filter((boat) => boat.available !== false).length;
   const totalTeamHours = scenario.dive_teams.reduce((sum, team) => sum + team.available_hours, 0);
   const remainingBudget = Math.max(0, scenario.budget_usd - totalCost);
-  const totalSites = plan.assignments.length + deferred.length;
+  const totalSites = activePlan.assignments.length + deferred.length;
   const allocationTotal = actionCosts.reduce((sum, item) => sum + item.value, 0);
-  const scenarioId = plan.scenario_id;
+  const scenarioId = activePlan.scenario_id;
   const equipmentSummary = (scenario.inventory.equipment ?? [])
     .map((item) => `${item.available_units} ${item.name.toLowerCase()}`)
     .join(' · ');
@@ -260,7 +267,7 @@ export function OptimizerDashboard() {
   const bindingTrace = stringArray(optimizerTrace?.output?.binding_constraints);
   const visibleActionRefs = approvedActionRefs.slice(0, 6);
   const isLiveResult = trace !== undefined && !trace.offline;
-  const freshLiveRun = recompute.data?.plan_id === plan.plan_id && isLiveResult;
+  const freshLiveRun = livePlan !== null && isLiveResult;
   const runStateLabel = recompute.isPending
     ? 'Live run in progress'
     : freshLiveRun
@@ -389,7 +396,7 @@ export function OptimizerDashboard() {
         <Panel
           className={styles.allocationPanel}
           title="📋 This Week's Allocation Plan"
-          hint={`top ${plan.assignments.length} of ${totalSites} flagged sites, ranked by strategic value`}
+          hint={`top ${activePlan.assignments.length} of ${totalSites} flagged sites, ranked by strategic value`}
           scrollX
         >
           <div className={styles.tableViewport}>
@@ -403,7 +410,7 @@ export function OptimizerDashboard() {
                 <span>Budget</span>
                 <span>Strategic value</span>
               </div>
-              {plan.assignments.map((assignment, index) => (
+              {activePlan.assignments.map((assignment, index) => (
                 <AllocationRow
                   key={`${assignment.site_id}-${assignment.action_id}`}
                   assignment={assignment}
@@ -418,7 +425,7 @@ export function OptimizerDashboard() {
                   key={site.site_id}
                   name={site.site_name}
                   reason={site.reason}
-                  rank={plan.assignments.length + index + 1}
+                  rank={activePlan.assignments.length + index + 1}
                   site={siteById.get(site.site_id)}
                   maximumValue={maxValue}
                 />

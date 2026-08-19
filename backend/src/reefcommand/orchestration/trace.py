@@ -153,6 +153,7 @@ class TraceRecorder:
         self.started_at = datetime.now(UTC)
         self._started_clock = perf_counter()
         self._steps: list[TraceStep] = []
+        self._steps_lock = RLock()
 
     def record[ResultT](
         self,
@@ -176,24 +177,25 @@ class TraceRecorder:
             result = operation()
         except Exception as exc:
             completed_at = datetime.now(UTC)
-            self._steps.append(
-                TraceStep(
-                    sequence=len(self._steps) + 1,
-                    stage=stage,
-                    executor=executor,
-                    status=TraceStatus.FAILED,
-                    site_id=site_id,
-                    started_at=started_at,
-                    completed_at=completed_at,
-                    latency_ms=max(0, round((perf_counter() - started_clock) * 1000)),
-                    provider=provider,
-                    model=model,
-                    inputs=inputs or {},
-                    error_type=type(exc).__name__,
-                    error_message="Stage failed before producing validated output.",
-                    validation_checks=list(validation_checks),
+            with self._steps_lock:
+                self._steps.append(
+                    TraceStep(
+                        sequence=len(self._steps) + 1,
+                        stage=stage,
+                        executor=executor,
+                        status=TraceStatus.FAILED,
+                        site_id=site_id,
+                        started_at=started_at,
+                        completed_at=completed_at,
+                        latency_ms=max(0, round((perf_counter() - started_clock) * 1000)),
+                        provider=provider,
+                        model=model,
+                        inputs=inputs or {},
+                        error_type=type(exc).__name__,
+                        error_message="Stage failed before producing validated output.",
+                        validation_checks=list(validation_checks),
+                    )
                 )
-            )
             _remember_failed_trace(self.finalize(None, status=TraceStatus.FAILED))
             exc.add_note(f"ReefCommand execution trace id: {self.trace_id}")
             raise
@@ -211,25 +213,26 @@ class TraceRecorder:
                     input_tokens=sum(call.input_tokens or 0 for call in calls),
                     output_tokens=sum(call.output_tokens or 0 for call in calls),
                 )
-        self._steps.append(
-            TraceStep(
-                sequence=len(self._steps) + 1,
-                stage=stage,
-                executor=executor,
-                site_id=site_id,
-                started_at=started_at,
-                completed_at=completed_at,
-                latency_ms=latency_ms,
-                provider=provider,
-                model=model,
-                attempt_count=attempt_count,
-                token_usage=token_usage,
-                inputs=inputs or {},
-                output=serialize(result),
-                rationale=rationale(result) if rationale else None,
-                validation_checks=list(validation_checks),
+        with self._steps_lock:
+            self._steps.append(
+                TraceStep(
+                    sequence=len(self._steps) + 1,
+                    stage=stage,
+                    executor=executor,
+                    site_id=site_id,
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    latency_ms=latency_ms,
+                    provider=provider,
+                    model=model,
+                    attempt_count=attempt_count,
+                    token_usage=token_usage,
+                    inputs=inputs or {},
+                    output=serialize(result),
+                    rationale=rationale(result) if rationale else None,
+                    validation_checks=list(validation_checks),
+                )
             )
-        )
         return result
 
     def finalize(
@@ -241,6 +244,8 @@ class TraceRecorder:
     ) -> ExecutionTrace:
         """Freeze the completed run under the plan id returned by the optimizer."""
         completed_at = datetime.now(UTC)
+        with self._steps_lock:
+            steps = list(self._steps)
         return ExecutionTrace(
             trace_id=self.trace_id,
             plan_id=plan_id,
@@ -252,7 +257,7 @@ class TraceRecorder:
             started_at=self.started_at,
             completed_at=completed_at,
             latency_ms=max(0, round((perf_counter() - self._started_clock) * 1000)),
-            steps=list(self._steps),
+            steps=steps,
         )
 
 

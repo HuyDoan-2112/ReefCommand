@@ -69,11 +69,15 @@ def test_runoff_agent_uses_rainfall_result_and_labels_fixture() -> None:
     evidence = RunoffAgent(completer).assess(site, [_observation()], snapshot)
 
     assert evidence.cause is Cause.RUNOFF
-    assert evidence.support == 0.62
-    assert evidence.display_summary == "Rainfall and turbidity support runoff."
-    assert len(evidence.key_findings) == 2
+    assert evidence.support == 0.20
+    assert evidence.display_summary == "Rainfall alone does not establish runoff at this site."
+    assert evidence.key_findings == [
+        "No field turbidity or sediment was reported.",
+        "Rainfall is contextual, not direct runoff evidence.",
+    ]
     assert evidence.citations[-1].provenance is Provenance.SYNTHETIC
     assert "synthetic repository fixture" in evidence.rationale
+    assert "do not establish runoff" in evidence.rationale
     assert "Rainfall tool result" in completer.prompts[0]
 
 

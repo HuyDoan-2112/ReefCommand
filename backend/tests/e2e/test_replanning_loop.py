@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from reefcommand.domain.enums import ActionClass
+from reefcommand.domain.enums import ActionClass, Cause
 from reefcommand.domain.resources import Boat
 from reefcommand.ingestion.field_reports import load_demo_updates
 from reefcommand.orchestration.events import NewEvidence, ResourceChange
@@ -54,6 +54,15 @@ def test_initial_plan_is_produced_within_capacity() -> None:
         )
     limits = {team.team_id: team.available_hours for team in scenario.dive_teams}
     assert all(hours <= limits[team_id] for team_id, hours in team_hours.items())
+
+
+def test_cheeca_baseline_does_not_promote_runoff_without_field_signal() -> None:
+    plan = run("demo_default", ["cheeca_rocks"])
+    state = state_for_plan(plan.plan_id)
+
+    assert state is not None
+    assert Cause.RUNOFF not in state.evidence_by_site["cheeca_rocks"].dominant_causes
+    assert all("runoff" not in assignment.evidence_summary for assignment in plan.assignments)
 
 
 def test_new_field_report_changes_the_plan() -> None:

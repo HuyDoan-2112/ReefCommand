@@ -82,7 +82,7 @@ def runoff_completer(
         if field_signal and signal.total_mm >= 50.0:
             support, confidence = 0.82, 0.68
             rationale = "Field turbidity or sediment is paired with high recent rainfall."
-        elif field_signal or signal.total_mm >= 50.0:
+        elif field_signal:
             support, confidence = 0.62, 0.56
             rationale = "A runoff indicator is present, but the evidence is incomplete."
         else:

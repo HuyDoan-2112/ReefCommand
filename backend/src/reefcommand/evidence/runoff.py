@@ -129,7 +129,29 @@ class RunoffAgent:
             "a full audit rationale. Every statement must name only facts present above."
         )
         assessment = self._complete(system, user, RunoffAssessment)
+        has_field_runoff_signal = any(
+            bool(observation.turbidity_note or observation.sediment_note)
+            for observation in site_observations
+        )
+        support = assessment.support
+        display_summary = assessment.display_summary
+        key_findings = assessment.key_findings
         rationale_parts = [assessment.rationale]
+        if not has_field_runoff_signal:
+            # Rainfall and a repository turbidity fixture are contextual inputs,
+            # not proof that runoff affected this reef. Keep this cause from
+            # becoming dominant when the field report contains no turbidity or
+            # sediment observation.
+            support = min(support, 0.20)
+            display_summary = "Rainfall alone does not establish runoff at this site."
+            key_findings = [
+                "No field turbidity or sediment was reported.",
+                "Rainfall is contextual, not direct runoff evidence.",
+            ]
+            rationale_parts.append(
+                "No field turbidity or sediment was reported; rainfall and synthetic tool "
+                "context alone do not establish runoff at this site."
+            )
         if result.provenance in (Provenance.SIMULATED, Provenance.SYNTHETIC):
             rationale_parts.append(
                 "Rainfall input is a synthetic repository fixture, not a live measurement."
@@ -142,10 +164,10 @@ class RunoffAgent:
             rationale_parts.append("No field observations were supplied for this site.")
         return CauseEvidence(
             cause=self.cause,
-            support=assessment.support,
+            support=support,
             confidence=assessment.confidence,
-            display_summary=assessment.display_summary,
-            key_findings=assessment.key_findings,
+            display_summary=display_summary,
+            key_findings=key_findings,
             rationale=" ".join(rationale_parts),
             citations=_citations(site_observations, result, signal),
             computed_at=datetime.now(UTC),

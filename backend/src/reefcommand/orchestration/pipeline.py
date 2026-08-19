@@ -26,6 +26,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections.abc import Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache, partial
@@ -445,9 +446,7 @@ def run(
     agent_provider = None if offline_mode else settings.llm_provider
     agent_model = None if offline_mode else settings.llm_model
 
-    approved: list[EligibleAction] = []
-    evidence_by_site: dict[str, FusedEvidence] = {}
-    for site in sites:
+    def assess_and_decide(site: ReefSite) -> tuple[str, FusedEvidence, list[EligibleAction]]:
         evidence, candidates = _assess_site(
             site,
             structured,
@@ -456,7 +455,6 @@ def run(
             demo_data=demo_data_mode,
             trace=trace_recorder,
         )
-        evidence_by_site[site.site_id] = evidence
         coordinator_completer: CoordinatorCompleter | None = (
             offline_coordinator_completer(evidence, candidates) if offline_mode else None
         )
@@ -485,11 +483,31 @@ def run(
                 llm_calls=coordinator_calls,
             )
         approved_ids = {action.action_id: action for action in decision.approved_actions}
-        approved.extend(
+        approved_for_site = [
             action.model_copy(update={"priority": approved_ids[action.action_id].priority})
             for action in candidates
             if action.action_id in approved_ids
-        )
+        ]
+        return site.site_id, evidence, approved_for_site
+
+    # Provider calls are network-bound. Run independent live reef evaluations
+    # concurrently so one slow reef does not hold every other reef hostage.
+    # Offline fixtures stay sequential to preserve their deterministic trace.
+    if offline_mode:
+        site_results = [assess_and_decide(site) for site in sites]
+    else:
+        max_workers = min(4, len(sites)) or 1
+        with ThreadPoolExecutor(
+            max_workers=max_workers,
+            thread_name_prefix="reef-site",
+        ) as executor:
+            site_results = list(executor.map(assess_and_decide, sites))
+
+    approved: list[EligibleAction] = []
+    evidence_by_site: dict[str, FusedEvidence] = {}
+    for site_id, evidence, approved_for_site in site_results:
+        evidence_by_site[site_id] = evidence
+        approved.extend(approved_for_site)
 
     scores = score_sites(sites)
     problem = build_problem(

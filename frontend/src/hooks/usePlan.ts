@@ -120,7 +120,7 @@ export function useRecomputePlan() {
 
   return useMutation({
     mutationFn: recomputePlan,
-    onSuccess: async (plan, request) => {
+    onSuccess: (plan, request) => {
       // A live site diagnosis is intentionally scoped to one site. Keep the
       // global plan cache intact so the Command Map continues to show every
       // reef while the site page reads the returned single-site trace.
@@ -129,7 +129,10 @@ export function useRecomputePlan() {
         return;
       }
       client.setQueryData<ResponsePlan>(queryKeys.currentPlan(), plan);
-      await invalidateAfterReplan(client);
+      // The mutation response is the newest authoritative plan. Keep it
+      // visible immediately instead of waiting for every dependent query to
+      // refetch before clearing the button's pending state.
+      void invalidateAfterReplan(client);
     },
   });
 }

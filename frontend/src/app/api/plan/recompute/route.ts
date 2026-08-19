@@ -1,9 +1,9 @@
 import type { NextRequest } from 'next/server';
 
 /**
- * The provider-backed seven-site run can take longer than the generic rewrite
- * proxy's socket budget. Keep this one long request same-origin while allowing
- * the backend enough time to finish and publish one complete validated plan.
+ * A provider-backed site run can take longer than the generic rewrite proxy's
+ * socket budget. Keep this request same-origin while allowing the backend
+ * enough time to finish and return one complete validated site plan.
  */
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
