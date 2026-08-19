@@ -44,6 +44,28 @@
   background: var(--ocean-mid);
 }
 
+.structuredBody {
+  max-height: 620px;
+  overflow-y: auto;
+  scrollbar-color: var(--ocean-mid) var(--foam);
+  scrollbar-width: thin;
+}
+
+.structuredBody::-webkit-scrollbar {
+  width: 8px;
+}
+
+.structuredBody::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: var(--foam);
+}
+
+.structuredBody::-webkit-scrollbar-thumb {
+  border: 2px solid var(--foam);
+  border-radius: 999px;
+  background: var(--ocean-mid);
+}
+
 .reportList {
   display: flex;
   flex-direction: column;

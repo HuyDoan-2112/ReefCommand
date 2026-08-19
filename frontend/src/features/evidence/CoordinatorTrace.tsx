@@ -120,8 +120,10 @@ function StepRow({ step }: { step: TraceStep }) {
   );
 }
 
-export function CoordinatorTrace({ siteId, planId }: { siteId: string; planId: string | null }) {
-  const { data: trace, isPending, error } = useSiteTrace(planId, siteId);
+export function CoordinatorTrace({ siteId, planId }: { siteId: string; planId?: string | null }) {
+  const { data: currentPlan } = useCurrentPlan();
+  const activePlanId = planId ?? currentPlan?.plan_id ?? null;
+  const { data: trace, isPending, error } = useSiteTrace(activePlanId, siteId);
 
   if (isPending) {
     return (
