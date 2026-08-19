@@ -14,8 +14,9 @@
 .commandGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 310px);
+  grid-template-rows: minmax(334px, clamp(334px, calc(62vw - 398px), 620px));
   gap: var(--space-5);
-  align-items: start;
+  align-items: stretch;
 }
 
 .mapPanel,
@@ -23,11 +24,27 @@
   min-width: 0;
 }
 
+.queuePanel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.queuePanelBody {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
 .queueList {
   display: flex;
+  min-height: 0;
+  flex: 1;
+  width: 100%;
   flex-direction: column;
   gap: 10px;
-  max-height: 560px;
+  max-height: none;
   overflow-y: auto;
   padding-right: 6px;
   scrollbar-color: var(--ocean-mid) var(--foam);
@@ -406,6 +423,7 @@
 @media (max-width: 1180px) {
   .commandGrid {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
   }
 
   .queueList {

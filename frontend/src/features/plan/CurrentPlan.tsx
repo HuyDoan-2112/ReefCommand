@@ -210,7 +210,12 @@ function PriorityQueue({ plan }: { plan: ResponsePlan }) {
   }
 
   return (
-    <Panel title="Priority queue" hint="current plan order" className={styles.queuePanel}>
+    <Panel
+      title="Priority queue"
+      hint="current plan order"
+      className={styles.queuePanel}
+      bodyClassName={styles.queuePanelBody}
+    >
       <div className={styles.queueList}>
         {plan.assignments.map((assignment, index) => (
           <Link
